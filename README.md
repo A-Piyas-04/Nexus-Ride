@@ -84,3 +84,40 @@ uvicorn main:app --reload
   python -m pip install --upgrade pip
   ```
 - **PostgreSQL Driver**: If `psycopg2-binary` fails to install, ensure you have PostgreSQL development libraries installed on your system, or try installing `psycopg2` instead.
+
+
+**Backend Structure** :
+```ini
+nexusride-backend/
+│
+├── app/
+│   ├── main.py
+│   ├── core/
+│   │   ├── config.py
+│   │   ├── security.py
+│   │   └── database.py
+│   │
+│   ├── models/
+│   │   ├── user.py
+│   │   ├── staff.py
+│   │   └── subscription.py
+│   │
+│   ├── schemas/
+│   │   ├── auth.py
+│   │   ├── staff.py
+│   │   └── subscription.py
+│   │
+│   ├── api/
+│   │   ├── routes/
+│   │   │   ├── auth.py
+│   │   │   └── subscription.py
+│   │   └── router.py
+│   │
+│   └── services/
+│       ├── auth_service.py
+│       └── subscription_service.py
+│
+├── .env
+├── requirements.txt
+└── README.md
+```
