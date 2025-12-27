@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+sqlmodel
+psycopg2-binary
+python-jose
+passlib[bcrypt]
+python-multipart
+authlib
+httpx
+email-validator
+
