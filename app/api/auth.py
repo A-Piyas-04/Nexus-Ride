@@ -10,8 +10,9 @@ router = APIRouter(prefix="/auth")
 
 @router.post("/signup")
 def signup(data: SignupRequest, session: Session = Depends(get_session)):
+    email = data.email.strip().lower()
     user = User(
-        email=data.email,
+        email=email,
         password_hash=hash_password(data.password),
         full_name=data.full_name,
         user_type="STAFF"
@@ -22,8 +23,9 @@ def signup(data: SignupRequest, session: Session = Depends(get_session)):
 
 @router.post("/login")
 def login(data: LoginRequest, session: Session = Depends(get_session)):
+    email = data.email.strip().lower()
     user = session.exec(
-        select(User).where(User.email == data.email)
+        select(User).where(User.email == email)
     ).first()
 
     if not user or not verify_password(data.password, user.password_hash):

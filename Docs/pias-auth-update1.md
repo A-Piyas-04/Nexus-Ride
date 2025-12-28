@@ -389,3 +389,93 @@ and mounts it at `/var/lib/postgresql/data`, the database files remain on disk e
 - Foreign key column types must match the referenced primary key types (`UUID` vs `str`) in PostgreSQL.
 - Docker volumes (like `postgres_data`) are essential for preserving database data across container restarts.
 
+---
+
+## 8. Auth Input Validation Hardening (Latest Changes)
+
+After the initial work described above, we further tightened the authentication layer to enforce stronger input validation and stricter request schemas.
+
+### 8.1 Password length constraints
+
+**Files involved**
+
+- `app/schemas/auth.py`
+
+**What we changed**
+
+- Updated `SignupRequest` and `LoginRequest` schemas to use constrained string types for passwords:
+
+  ```python
+  from pydantic import EmailStr, constr
+
+  class SignupRequest(SQLModel):
+      email: EmailStr
+      password: constr(min_length=8, max_length=128)
+      full_name: constr(min_length=1, max_length=100)
+
+  class LoginRequest(SQLModel):
+      email: EmailStr
+      password: constr(min_length=8, max_length=128)
+  ```
+
+**Why this matters**
+
+- Enforces a minimum password length of 8 characters for both signup and login requests.
+- Prevents abnormally long passwords (over 128 characters), reducing the risk of abuse and making validation rules explicit at the API boundary.
+
+### 8.2 Forbidding extra fields in auth payloads
+
+**Files involved**
+
+- `app/schemas/auth.py`
+
+**What we changed**
+
+- Added `Config` classes to both auth request schemas to reject unknown fields:
+
+  ```python
+  class SignupRequest(SQLModel):
+      ...
+
+      class Config:
+          extra = "forbid"
+
+  class LoginRequest(SQLModel):
+      ...
+
+      class Config:
+          extra = "forbid"
+  ```
+
+**Effect**
+
+- Any extra/unexpected fields sent in `POST /auth/signup` or `POST /auth/login` are now rejected with a validation error (`422`), tightening the API surface.
+
+### 8.3 Email normalization on signup and login
+
+**Files involved**
+
+- `app/api/auth.py`
+
+**What we changed**
+
+- Normalized email addresses in both `signup` and `login` endpoints before storing or querying:
+
+  ```python
+  @router.post("/signup")
+  def signup(data: SignupRequest, session: Session = Depends(get_session)):
+      email = data.email.strip().lower()
+      ...
+
+  @router.post("/login")
+  def login(data: LoginRequest, session: Session = Depends(get_session)):
+      email = data.email.strip().lower()
+      ...
+  ```
+
+**Effect**
+
+- Prevents issues caused by leading/trailing whitespace or inconsistent casing in email addresses.
+- Ensures that email uniqueness and lookups are consistent (`User.email` is effectively treated as case-insensitive from the API’s perspective).
+
+
