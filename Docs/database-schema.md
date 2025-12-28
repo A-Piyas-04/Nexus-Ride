@@ -31,8 +31,9 @@ Each of these tables is created from the corresponding SQLModel class in the `ap
 | `password_hash`| str    | `varchar`     | Non-null, stores bcrypt password hash (never plain text)  |
 | `full_name`    | str    | `varchar`     | Non-null, user’s display name                             |
 | `user_type`    | str    | `varchar`     | Non-null, e.g. `"STAFF"` or `"DRIVER"`                    |
+| `last_login`   | datetime*| `timestamp`   | Nullable, stores last successful login timestamp          |
 
-\* In the model: `Optional[str] = Field(default=None, unique=True)`, which results in a nullable unique column. The application normalizes emails to lowercase before storage and lookup.
+\* `email` is `Optional[str] = Field(default=None, unique=True)`. `last_login` is `Optional[datetime] = Field(default=None)`.
 
 ### Key Behaviors
 

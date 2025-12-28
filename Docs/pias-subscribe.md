@@ -55,33 +55,23 @@ New endpoints were created to manage the subscription lifecycle. All endpoints r
 - **Response**: Subscription details or `404 Not Found`.
 
 #### 3. Update Subscription (`PUT /subscription/`)
-- **Access**: Authenticated User.
-- **Parameters**: `status_update` (query parameter).
-- **Logic**:
-  - Validates `status_update` is one of: "PENDING", "ACTIVE", "EXPIRED".
-  - Updates the status of the user's subscription.
-- **Response**: Updated subscription object.
+- **Status**: Not Implemented.
 
 #### 4. Delete Subscription (`DELETE /subscription/`)
-- **Access**: Authenticated User.
-- **Logic**: Permanently removes the subscription record from the database.
-- **Response**: `204 No Content`.
+- **Status**: Not Implemented.
 
 ## 3. Testing and Verification
 
-A comprehensive test script (`tests/test_workflow.py`) was created to validate the entire workflow.
+Separate test scripts are provided in `tests/` to validate individual components of the workflow.
 
-### Test Workflow
-1. **Signup**: Created a new Staff user. Verified 200 OK and DB record creation.
-2. **Login**: Authenticated the user. Verified 200 OK, JWT token receipt, and `last_login` timestamp update in DB.
-3. **Subscription Lifecycle**:
-   - **GET (Initial)**: Verified 404 (no subscription).
-   - **POST**: Created subscription. Verified 200 OK and status `PENDING` in DB.
-   - **PUT**: Updated status to `ACTIVE`. Verified 200 OK and status change in DB.
-   - **DELETE**: Removed subscription. Verified 204 No Content and record removal from DB.
+### Test Scripts
+1. **`test_signup.py`**: Verifies user registration.
+2. **`test_login.py`**: Verifies authentication and token retrieval.
+3. **`test_subscription_post.py`**: Verifies subscription creation.
+4. **`test_subscription_get.py`**: Verifies subscription retrieval.
 
 ### Verification Results
-All tests passed successfully using a local SQLite test database, confirming the integrity of the schema, API logic, and database operations.
+Tests verify the integrity of the schema, API logic, and database operations for implemented features.
 
 ## 4. Security Considerations
 - **SQL Injection Prevention**: All database queries use SQLModel/SQLAlchemy ORM, which automatically parameterizes queries to prevent SQL injection.
