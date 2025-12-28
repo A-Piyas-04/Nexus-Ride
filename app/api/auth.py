@@ -5,6 +5,7 @@ from app.models.user import User
 from app.schemas.auth import SignupRequest, LoginRequest
 from app.utils.hashing import hash_password, verify_password
 from app.core.security import create_access_token
+from datetime import datetime
 
 router = APIRouter(prefix="/auth")
 
@@ -30,6 +31,10 @@ def login(data: LoginRequest, session: Session = Depends(get_session)):
 
     if not user or not verify_password(data.password, user.password_hash):
         raise HTTPException(status_code=401)
+
+    user.last_login = datetime.utcnow()
+    session.add(user)
+    session.commit()
 
     token = create_access_token({"sub": str(user.id)})
     return {"access_token": token}

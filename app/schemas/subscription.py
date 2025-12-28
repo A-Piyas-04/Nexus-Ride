@@ -1,15 +1,14 @@
+from sqlmodel import SQLModel
 from typing import Optional
 from datetime import date
-from sqlmodel import SQLModel
+from uuid import UUID
 
-class SubscriptionBase(SQLModel):
+class SubscriptionRead(SQLModel):
+    id: int
+    user_id: UUID
     status: str
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
+    start_date: Optional[date]
+    end_date: Optional[date]
 
 class SubscriptionCreate(SQLModel):
     pass
-
-class SubscriptionRead(SubscriptionBase):
-    id: int
-    user_id: str  # UUID as str

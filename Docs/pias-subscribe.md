@@ -1,76 +1,89 @@
 # Subscription Feature Implementation Documentation
 
-## Overview
-This document details the backend implementation of the subscription feature for NexusRide. The feature allows users to subscribe to the service, enabling access to the "Sub Dashboard".
+This document details the backend implementation of the subscription feature for Staff users in the NexusRide application.
 
-## Architecture
-- **Framework**: FastAPI
-- **ORM**: SQLModel (SQLAlchemy + Pydantic)
-- **Database**: PostgreSQL
-- **Authentication**: JWT (JSON Web Tokens)
+## 1. Database Schema Changes
 
-## Implementation Details
-
-### 1. Authentication Dependency
-**File**: `app/api/deps.py`
-- **Purpose**: Validates JWT tokens and retrieves the current user.
-- **Function**: `get_current_user`
-- **Logic**:
-  - Decodes the JWT token using `SECRET_KEY` and `ALGORITHM`.
-  - Extracts the `sub` (subject/user_id) claim.
-  - Fetches the user from the database.
-  - Raises `401 Unauthorized` if token is invalid or user not found.
-
-### 2. Subscription Schemas
-**File**: `app/schemas/subscription.py`
-- **Purpose**: Defines Pydantic models for request and response validation.
-- **Models**:
-  - `SubscriptionBase`: Common fields (`status`, `start_date`, `end_date`).
-  - `SubscriptionCreate`: Request model for creating a subscription (currently empty as no input is required).
-  - `SubscriptionRead`: Response model including `id` and `user_id`.
-
-### 3. Subscription API Endpoints
-**File**: `app/api/subscription.py`
-- **Router**: `/subscription`
-- **Endpoints**:
-
-#### A. Subscribe (`POST /subscription/`)
-- **Description**: Creates a new active subscription for the authenticated user.
-- **Flow**:
-  1. Checks if the user already has an `ACTIVE` subscription.
-  2. If an active subscription exists and is not expired, returns `400 Bad Request`.
-  3. If an expired "active" subscription exists, marks it as `EXPIRED`.
-  4. Creates a new `Subscription` record with:
-     - `status`: "ACTIVE"
-     - `start_date`: Current date
-     - `end_date`: Current date + 30 days
-  5. Commits to the database and returns the new subscription.
-- **Security**: Requires authenticated user (`get_current_user` dependency).
-
-#### B. Get Subscription Status (`GET /subscription/`)
-- **Description**: Retrieves the latest subscription status for the authenticated user.
-- **Flow**:
-  1. Queries the `Subscription` table for the user's ID.
-  2. Orders by `id` descending to get the latest entry.
-  3. Returns the subscription details.
-  4. Returns `404 Not Found` if no subscription exists.
-- **Security**: Requires authenticated user.
-
-### 4. Main Application Update
-**File**: `app/main.py`
-- **Change**: Registered the `subscription_router` with the FastAPI application.
-- **Code**:
+### User Model (`app/models/user.py`)
+- **Added Field**: `last_login` (DateTime, Optional)
+- **Purpose**: To track the last successful login timestamp of the user, as required for audit and status verification.
+- **Updated Definition**:
   ```python
-  from app.api.subscription import router as subscription_router
-  # ...
-  app.include_router(subscription_router)
+  class User(SQLModel, table=True):
+      ...
+      last_login: Optional[datetime] = Field(default=None)
   ```
 
-## Security Measures
-- **SQL Injection Prevention**: utilized `SQLModel` (which uses `SQLAlchemy` under the hood) for all database interactions. Parameter binding is handled automatically by the ORM.
-- **Authentication**: All subscription endpoints are protected by `get_current_user` dependency, ensuring only valid, logged-in users can access them.
-- **Validation**: Pydantic schemas enforce data types and structure for API responses.
+### Subscription Model (`app/models/subscription.py`)
+- **Existing Structure** (utilized as is):
+  - `id`: Integer Primary Key
+  - `user_id`: UUID Foreign Key to User
+  - `status`: String (PENDING, ACTIVE, EXPIRED)
+  - `start_date`: Date
+  - `end_date`: Date
 
-## Future Considerations
-- Implement a background task (e.g., Celery) to automatically expire subscriptions when `end_date` is passed.
-- Add payment gateway integration (Stripe/PayPal) before activating the subscription.
+## 2. API Implementation
+
+### Authentication (`app/api/auth.py`)
+- **Login Endpoint** (`POST /auth/login`):
+  - **Modification**: Now updates the `last_login` field of the user upon successful password verification.
+  - **Logic**:
+    1. Verify credentials.
+    2. If valid, set `user.last_login = datetime.utcnow()`.
+    3. Commit changes to DB.
+    4. Generate and return JWT access token.
+
+### Security Core (`app/core/security.py`)
+- **Enhancement**: Improved UUID handling in JWT payload.
+- **Change**: Explicitly converts the `sub` claim (user ID string) from the JWT token back to a `UUID` object before querying the database. This prevents `AttributeError: 'str' object has no attribute 'hex'` when using SQLite with SQLModel/SQLAlchemy.
+
+### Subscription API (`app/api/subscription.py`)
+New endpoints were created to manage the subscription lifecycle. All endpoints require authentication (`get_current_user`).
+
+#### 1. Subscribe (`POST /subscription/`)
+- **Access**: Staff users only.
+- **Logic**:
+  - Checks if a subscription already exists for the user.
+  - If existing subscription is `ACTIVE` or `PENDING`, returns `400 Bad Request`.
+  - If existing but not active (e.g., EXPIRED or cancelled state logic if added later), or if new, creates/updates subscription to `PENDING` status.
+  - Sets `start_date` to today.
+- **Response**: Returns the created/updated subscription object.
+
+#### 2. Get Subscription (`GET /subscription/`)
+- **Access**: Authenticated User.
+- **Logic**: Retrieves the subscription associated with the current user.
+- **Response**: Subscription details or `404 Not Found`.
+
+#### 3. Update Subscription (`PUT /subscription/`)
+- **Access**: Authenticated User.
+- **Parameters**: `status_update` (query parameter).
+- **Logic**:
+  - Validates `status_update` is one of: "PENDING", "ACTIVE", "EXPIRED".
+  - Updates the status of the user's subscription.
+- **Response**: Updated subscription object.
+
+#### 4. Delete Subscription (`DELETE /subscription/`)
+- **Access**: Authenticated User.
+- **Logic**: Permanently removes the subscription record from the database.
+- **Response**: `204 No Content`.
+
+## 3. Testing and Verification
+
+A comprehensive test script (`tests/test_workflow.py`) was created to validate the entire workflow.
+
+### Test Workflow
+1. **Signup**: Created a new Staff user. Verified 200 OK and DB record creation.
+2. **Login**: Authenticated the user. Verified 200 OK, JWT token receipt, and `last_login` timestamp update in DB.
+3. **Subscription Lifecycle**:
+   - **GET (Initial)**: Verified 404 (no subscription).
+   - **POST**: Created subscription. Verified 200 OK and status `PENDING` in DB.
+   - **PUT**: Updated status to `ACTIVE`. Verified 200 OK and status change in DB.
+   - **DELETE**: Removed subscription. Verified 204 No Content and record removal from DB.
+
+### Verification Results
+All tests passed successfully using a local SQLite test database, confirming the integrity of the schema, API logic, and database operations.
+
+## 4. Security Considerations
+- **SQL Injection Prevention**: All database queries use SQLModel/SQLAlchemy ORM, which automatically parameterizes queries to prevent SQL injection.
+- **Authentication**: Endpoints are protected using OAuth2 with JWT tokens.
+- **Role-Based Access Control**: The subscribe endpoint enforces `user_type == "STAFF"` check.
