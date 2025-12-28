@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from sqlmodel import SQLModel
 from app.db.session import engine
 from app.api.auth import router as auth_router
+from app.api.subscription import router as subscription_router
 
 # Import models to ensure they are registered with SQLModel
 from app.models.user import User
@@ -20,3 +21,4 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(auth_router)
+app.include_router(subscription_router)

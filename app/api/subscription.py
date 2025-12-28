@@ -1,94 +1,69 @@
-from datetime import date
-from typing import List, Optional
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
-
+from datetime import date, timedelta
 from app.db.session import get_session
-from app.models.subscription import Subscription
 from app.models.user import User
+from app.models.subscription import Subscription
 from app.schemas.subscription import SubscriptionRead, SubscriptionCreate
-from app.core.security import get_current_user
+from app.api.deps import get_current_user
 
-router = APIRouter(prefix="/subscriptions", tags=["subscriptions"])
+router = APIRouter(prefix="/subscription", tags=["subscription"])
 
-
-@router.post(
-    "",
-    response_model=SubscriptionRead,
-    status_code=status.HTTP_201_CREATED,
-)
-def create_subscription(
-    data: SubscriptionCreate,
+@router.post("/", response_model=SubscriptionRead)
+def subscribe(
+    *,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user)
 ):
-    # Security Policy: Only STAFF can subscribe
-    if current_user.user_type != "STAFF":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only staff members can subscribe.",
-        )
+    # Check if user already has an active subscription
+    statement = select(Subscription).where(
+        Subscription.user_id == current_user.id,
+        Subscription.status == "ACTIVE"
+    )
+    existing_sub = session.exec(statement).first()
+    
+    if existing_sub:
+        # Check if it's expired (though status should reflect this, double check date)
+        if existing_sub.end_date and existing_sub.end_date >= date.today():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User already has an active subscription"
+            )
+        else:
+            # Update status to EXPIRED if date passed but status says ACTIVE
+            existing_sub.status = "EXPIRED"
+            session.add(existing_sub)
+            session.commit()
 
-    # Check if user already has an ACTIVE subscription
-    existing_active = session.exec(
-        select(Subscription).where(
-            Subscription.user_id == current_user.id,
-            Subscription.status == "ACTIVE",
-        )
-    ).first()
-
-    if existing_active:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User already has an active subscription",
-        )
-
-    today = date.today()
-
-    subscription = Subscription(
+    # Create new subscription
+    start_date = date.today()
+    end_date = start_date + timedelta(days=30) # Default 30 days
+    
+    new_sub = Subscription(
         user_id=current_user.id,
         status="ACTIVE",
-        start_date=today,
-        end_date=None,  # Ongoing until cancelled or expired
+        start_date=start_date,
+        end_date=end_date
     )
-    session.add(subscription)
+    
+    session.add(new_sub)
     session.commit()
-    session.refresh(subscription)
+    session.refresh(new_sub)
+    return new_sub
 
-    return subscription
-
-
-@router.get(
-    "/me",
-    response_model=Optional[SubscriptionRead],
-)
-def get_my_active_subscription(
+@router.get("/", response_model=SubscriptionRead)
+def get_subscription_status(
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user)
 ):
-    subscription = session.exec(
-        select(Subscription).where(
-            Subscription.user_id == current_user.id,
-            Subscription.status == "ACTIVE",
-        )
-    ).first()
-
+    # Get latest subscription
+    statement = select(Subscription).where(
+        Subscription.user_id == current_user.id
+    ).order_by(Subscription.id.desc())
+    
+    subscription = session.exec(statement).first()
+    
+    if not subscription:
+        raise HTTPException(status_code=404, detail="No subscription found")
+        
     return subscription
-
-
-@router.get(
-    "/history",
-    response_model=List[SubscriptionRead],
-)
-def get_my_subscription_history(
-    session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
-):
-    subscriptions = session.exec(
-        select(Subscription)
-        .where(Subscription.user_id == current_user.id)
-        .order_by(Subscription.start_date.desc())
-    ).all()
-
-    return subscriptions
