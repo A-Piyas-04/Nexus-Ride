@@ -73,6 +73,31 @@ Separate test scripts are provided in `tests/` to validate individual components
 ### Verification Results
 Tests verify the integrity of the schema, API logic, and database operations for implemented features.
 
+### Manual Testing via Swagger UI
+
+When testing the subscription feature through the built-in Swagger UI (`/docs`), the initial behavior was that `POST /subscription/` returned `401 Unauthorized`. This behavior was expected for two reasons:
+
+- The endpoint is protected by `get_current_user`, which requires a valid JWT access token in the `Authorization` header.
+- The endpoint is also restricted to users with `user_type == "STAFF"`.
+
+In Swagger UI, if you try to call `POST /subscription/` without first authenticating and providing a Bearer token, the request has no `Authorization` header, so the backend correctly responds with `401 Unauthorized`.
+
+To test the endpoint without changing any internal code, we followed this flow entirely through the API:
+
+1. Used `POST /auth/signup` (or an already existing user) to register a STAFF user.
+2. Called `POST /auth/login` with that user’s credentials to obtain an `access_token`.
+3. In Swagger UI, clicked the **Authorize** button and entered the token as:
+   - `Bearer <access_token>`
+4. After authorization, called `POST /subscription/` again from Swagger UI.
+
+With a valid Bearer token set in Swagger’s global authorization, the request included the required `Authorization` header. The backend then:
+
+- Loaded the current user from the token.
+- Confirmed `user_type == "STAFF"`.
+- Created or updated the `subscription` record with `status = "PENDING"` for that user.
+
+This confirmed that the earlier `401 Unauthorized` response was the correct, secure behavior when no token was provided, and that no internal code changes were necessary—only correct usage of authentication in Swagger UI.
+
 ## 4. Security Considerations
 - **SQL Injection Prevention**: All database queries use SQLModel/SQLAlchemy ORM, which automatically parameterizes queries to prevent SQL injection.
 - **Authentication**: Endpoints are protected using OAuth2 with JWT tokens.
