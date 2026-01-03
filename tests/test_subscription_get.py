@@ -1,7 +1,7 @@
 import httpx
 import uuid
 
-BASE_URL = "http://127.0.0.1:8001"
+BASE_URL = "http://127.0.0.1:8000"
 
 def get_auth_token_with_subscription():
     # Helper to get a valid token and ensure subscription exists
