@@ -11,3 +11,11 @@ class StaffProfile(SQLModel, table=True):
     department: str
     default_route_id: Optional[UUID] = Field(default=None, foreign_key="route.id")
     default_pickup_stop_id: Optional[UUID] = Field(default=None, foreign_key="route_stop.id")
+
+class DriverProfile(SQLModel, table=True):
+    __tablename__ = "driver_profile"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: UUID = Field(foreign_key="user.id", unique=True)
+    license_number: str
+    assigned_vehicle_id: Optional[UUID] = Field(default=None, foreign_key="vehicle.id")

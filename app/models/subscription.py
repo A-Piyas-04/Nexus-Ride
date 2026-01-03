@@ -9,3 +9,12 @@ class Subscription(SQLModel, table=True):
     status: str   # PENDING, ACTIVE, EXPIRED
     start_date: Optional[date]
     end_date: Optional[date]
+
+class SubscriptionLeave(SQLModel, table=True):
+    __tablename__ = "subscription_leave"
+    
+    id: Optional[int] = Field(default=None, primary_key=True)
+    subscription_id: int = Field(foreign_key="subscription.id")
+    from_date: date
+    to_date: date
+    reason: Optional[str] = None

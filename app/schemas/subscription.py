@@ -12,3 +12,15 @@ class SubscriptionRead(SQLModel):
 
 class SubscriptionCreate(SQLModel):
     pass
+
+class SubscriptionLeaveBase(SQLModel):
+    subscription_id: int
+    from_date: date
+    to_date: date
+    reason: Optional[str] = None
+
+class SubscriptionLeaveCreate(SubscriptionLeaveBase):
+    pass
+
+class SubscriptionLeaveRead(SubscriptionLeaveBase):
+    id: int
