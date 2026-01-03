@@ -15,3 +15,10 @@ class TripCreate(TripBase):
 
 class TripRead(TripBase):
     id: UUID
+
+class TripAvailabilityRead(TripRead):
+    route_name: str
+    vehicle_number: str
+    total_capacity: int
+    booked_seats: int
+    available_seats: int
