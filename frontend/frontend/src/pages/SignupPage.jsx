@@ -11,8 +11,12 @@ export default function SignupPage() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { signup, loading, error } = useAuth();
+  const { signup, loading, error, clearError } = useAuth();
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    clearError();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

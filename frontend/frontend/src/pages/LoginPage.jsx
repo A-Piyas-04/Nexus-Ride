@@ -10,8 +10,12 @@ import { AlertCircle } from 'lucide-react';
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login, loading, error } = useAuth();
+  const { login, loading, error, clearError } = useAuth();
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    clearError();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

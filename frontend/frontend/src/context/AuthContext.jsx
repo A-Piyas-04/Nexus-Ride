@@ -44,8 +44,12 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const clearError = () => {
+    setError(null);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, error, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, loading, error, login, signup, logout, clearError }}>
       {children}
     </AuthContext.Provider>
   );

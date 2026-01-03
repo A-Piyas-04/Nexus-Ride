@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import AuthLayout from './layouts/AuthLayout';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
+import DashboardPage from './pages/DashboardPage';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
           </Route>
+          <Route path="/dashboard" element={<DashboardPage />} />
           {/* Redirect root to login for now */}
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
