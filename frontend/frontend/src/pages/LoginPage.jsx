@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/auth-context';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Label } from '../components/ui/Label';
@@ -15,15 +15,15 @@ export default function LoginPage() {
 
   React.useEffect(() => {
     clearError();
-  }, []);
+  }, [clearError]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       await login(email, password);
       navigate('/dashboard'); // Redirect to dashboard after login
-    } catch (err) {
-      // Error is handled in context
+    } catch {
+      return;
     }
   };
 

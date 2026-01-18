@@ -5,7 +5,7 @@ from app.models.role import Role, UserRole
 from app.models.user import User
 from app.schemas.auth import SignupRequest, LoginRequest
 from app.utils.hashing import hash_password, verify_password
-from app.core.security import create_access_token
+from app.core.security import create_access_token, get_current_user
 from datetime import datetime
 
 router = APIRouter(prefix="/auth")
@@ -54,3 +54,13 @@ def login(data: LoginRequest, session: Session = Depends(get_session)):
 
     token = create_access_token({"sub": str(user.id)})
     return {"access_token": token}
+
+
+@router.get("/me")
+def me(current_user: User = Depends(get_current_user)):
+    return {
+        "id": str(current_user.id),
+        "email": current_user.email,
+        "full_name": current_user.full_name,
+        "user_type": current_user.user_type,
+    }

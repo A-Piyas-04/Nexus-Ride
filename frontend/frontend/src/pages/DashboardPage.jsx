@@ -10,7 +10,7 @@ import {
   XCircle,
 } from 'lucide-react';
 
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/auth-context';
 import { Button } from '../components/ui/Button';
 import TokenHistory from './TokenHistory';
 
@@ -27,7 +27,7 @@ function DashboardActionCard({ icon: Icon, label, iconClassName, onClick }) {
       className="w-full h-28 md:h-32 rounded-2xl border border-gray-200 bg-white text-gray-900 shadow-sm hover:shadow-md hover:border-primary-200 transition-all px-6"
     >
       <div className="w-full flex items-center justify-center gap-3">
-        <Icon className={`h-5 w-5 ${iconClassName}`} />
+        {React.createElement(Icon, { className: `h-5 w-5 ${iconClassName}` })}
         <span className="font-semibold">{label}</span>
       </div>
     </Button>

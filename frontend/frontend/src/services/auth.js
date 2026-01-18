@@ -19,4 +19,13 @@ export const signup = async (data) => {
   return response.data;
 };
 
+export const getMe = async (token) => {
+  const response = await api.get('/auth/me', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
 export default api;

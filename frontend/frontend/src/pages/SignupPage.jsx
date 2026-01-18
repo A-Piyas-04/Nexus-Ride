@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/auth-context';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Label } from '../components/ui/Label';
@@ -16,15 +16,15 @@ export default function SignupPage() {
 
   React.useEffect(() => {
     clearError();
-  }, []);
+  }, [clearError]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       await signup(fullName, email, password);
       navigate('/login'); // Redirect to login after signup
-    } catch (err) {
-      // Error is handled in context
+    } catch {
+      return;
     }
   };
 
