@@ -1,18 +1,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  History,
-  LogOut,
-  Menu,
-  Settings,
-  Ticket,
-  User,
-  XCircle,
-} from 'lucide-react';
+import { History, LogOut, Menu, Settings, Ticket, User, XCircle } from 'lucide-react';
 
-import { useAuth } from '../context/auth-context';
-import { Button } from '../components/ui/Button';
-import TokenHistory from './TokenHistory';
+import { useAuth } from '../../context/auth-context';
+import { Button } from '../../components/ui/Button';
+import SubscriptionModal from '../../modals/SubscriptionModal';
+import TokenHistory from '../TokenHistory';
 
 const DASHBOARD_VIEWS = {
   DASHBOARD: 'dashboard',
@@ -40,6 +33,7 @@ export default function DashboardPage() {
 
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [view, setView] = React.useState(DASHBOARD_VIEWS.DASHBOARD);
+  const [subscribeOpen, setSubscribeOpen] = React.useState(false);
 
   const fullName =
     (typeof window !== 'undefined' &&
@@ -50,7 +44,6 @@ export default function DashboardPage() {
 
   const userEmail = user?.email || '';
 
-  // Username for welcome (omit everything after '@')
   const welcomeName = userEmail ? userEmail.split('@')[0] : fullName;
 
   const handleLogout = () => {
@@ -58,7 +51,6 @@ export default function DashboardPage() {
     navigate('/login');
   };
 
-  // Do not change logic/functionality
   const handleSeatAvailability = () => window.alert('Seat availability');
   const handleBuyToken = () => window.alert('Buy token');
   const handleCancelToken = () => window.alert('Cancel token');
@@ -66,10 +58,17 @@ export default function DashboardPage() {
 
   const handleCloseSidebar = () => setSidebarOpen(false);
   const handleOpenSidebar = () => setSidebarOpen(true);
+  const handleOpenSubscribe = () => setSubscribeOpen(true);
+  const handleCloseSubscribe = () => setSubscribeOpen(false);
+
+  const handleSubscribe = ({ startMonth, endMonth, year, stopName }) => {
+    const period = startMonth === endMonth ? `${year}-${startMonth}` : `${year}-${startMonth} to ${year}-${endMonth}`;
+    window.alert(`Subscribed for ${period} at ${stopName}`);
+    setSubscribeOpen(false);
+  };
 
   return (
     <div className="min-h-screen w-full bg-gray-100 flex">
-      {/* Sidebar */}
       <aside
         className={[
           'fixed inset-y-0 left-0 z-30 w-64 bg-white border-r shadow-sm p-4',
@@ -113,38 +112,36 @@ export default function DashboardPage() {
         </nav>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 min-w-0">
-        {/* Mobile top bar */}
         <div className="flex items-center justify-between px-4 py-3 border-b bg-white md:hidden">
           <Button variant="ghost" onClick={handleOpenSidebar} aria-label="Open sidebar">
             <Menu className="h-5 w-5" />
           </Button>
 
-          <div className="text-sm text-gray-700 font-medium truncate max-w-[70%]">
-            {fullName}
-          </div>
+          <div className="text-sm text-gray-700 font-medium truncate max-w-[70%]">{fullName}</div>
         </div>
 
         {view === DASHBOARD_VIEWS.DASHBOARD && (
           <section className="w-full px-4 py-8 md:px-8 md:py-10">
             <div className="w-full max-w-6xl">
-              {/* Darker green header section (ALL 3 lines inside) */}
               <div className="rounded-2xl border border-green-200 bg-green-100 px-6 py-6 shadow-sm">
-                {/* <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">
-                  Dashboard
-                </h1> */}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-3xl font-extrabold tracking-tight text-gray-900">
+                      Welcome, <span className="font-extrabold">{welcomeName}</span>
+                    </p>
 
-                <p className="text-3xl font-extrabold tracking-tight text-gray-900">
-                  Welcome, <span className="font-extrabold">{welcomeName}</span>
-                </p>
+                    <p className="mt-1 text-sm md:text-base text-green-900/80 font-medium">
+                      Logged in as <span className="font-semibold">{userEmail}</span>
+                    </p>
+                  </div>
 
-                <p className="mt-1 text-sm md:text-base text-green-900/80 font-medium">
-                  Logged in as <span className="font-semibold">{userEmail}</span>
-                </p>
+                  <div className="flex-none">
+                    <Button onClick={handleOpenSubscribe}>Subscribe</Button>
+                  </div>
+                </div>
               </div>
 
-              {/* Options */}
               <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-5 md:gap-6">
                 <DashboardActionCard
                   icon={Ticket}
@@ -175,6 +172,12 @@ export default function DashboardPage() {
                 />
               </div>
             </div>
+
+            <SubscriptionModal
+              open={subscribeOpen}
+              onClose={handleCloseSubscribe}
+              onSubmit={handleSubscribe}
+            />
           </section>
         )}
 
