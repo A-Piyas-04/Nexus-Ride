@@ -5,6 +5,7 @@ import AuthLayout from './layouts/AuthLayout';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import DashboardPage from './pages/dashboard/DashboardPage';
+import SubscriberDashboardPage from './pages/dashboard/SubscriberDashboardPage';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
             <Route path="/signup" element={<SignupPage />} />
           </Route>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/subscriber" element={<SubscriberDashboardPage />} />
           {/* Redirect root to login for now */}
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="*" element={<Navigate to="/login" replace />} />

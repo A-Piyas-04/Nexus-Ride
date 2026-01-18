@@ -4,6 +4,7 @@ import { LogOut, Menu, Settings, Ticket, User, XCircle } from 'lucide-react';
 
 import { useAuth } from '../../context/auth-context';
 import { Button } from '../../components/ui/Button';
+import { getSubscription } from '../../services/auth';
 
 const SUBSCRIBER_VIEWS = {
   DASHBOARD: 'dashboard',
@@ -31,6 +32,33 @@ export default function SubscriberDashboardPage() {
 
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [view, setView] = React.useState(SUBSCRIBER_VIEWS.DASHBOARD);
+  const [checkingAccess, setCheckingAccess] = React.useState(true);
+
+  React.useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    const checkAccess = async () => {
+      try {
+        const subscription = await getSubscription(token);
+        if (!subscription || !['PENDING', 'ACTIVE'].includes(subscription.status)) {
+          navigate('/dashboard');
+          return;
+        }
+      } catch {
+        navigate('/dashboard');
+        return;
+      } finally {
+        setCheckingAccess(false);
+      }
+    };
+
+    checkAccess();
+  }, [navigate]);
 
   const fullName =
     (typeof window !== 'undefined' &&
@@ -55,6 +83,10 @@ export default function SubscriberDashboardPage() {
 
   const handleCloseSidebar = () => setSidebarOpen(false);
   const handleOpenSidebar = () => setSidebarOpen(true);
+
+  if (checkingAccess) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen w-full bg-gray-100 flex">
@@ -196,4 +228,3 @@ export default function SubscriberDashboardPage() {
     </div>
   );
 }
-

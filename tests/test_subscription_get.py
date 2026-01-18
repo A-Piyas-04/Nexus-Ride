@@ -16,9 +16,15 @@ def get_auth_token_with_subscription():
         "password": "password123"
     })
     token = login_res.json()["access_token"]
-    
-    # Create subscription
-    httpx.post(f"{BASE_URL}/subscription/", headers={"Authorization": f"Bearer {token}"})
+
+    body = {
+        "start_month": "01",
+        "end_month": "01",
+        "year": 2025,
+        "stop_name": "Main Street Stop",
+    }
+
+    httpx.post(f"{BASE_URL}/subscription/", headers={"Authorization": f"Bearer {token}"}, json=body)
     return token
 
 def test_subscription_get():

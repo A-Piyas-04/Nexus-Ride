@@ -21,9 +21,15 @@ def test_subscription_post():
     try:
         token = get_auth_token()
         headers = {"Authorization": f"Bearer {token}"}
-        
+        body = {
+            "start_month": "01",
+            "end_month": "01",
+            "year": 2025,
+            "stop_name": "Main Street Stop",
+        }
+
         print("Attempting to create subscription...")
-        response = httpx.post(f"{BASE_URL}/subscription/", headers=headers)
+        response = httpx.post(f"{BASE_URL}/subscription/", headers=headers, json=body)
         
         print(f"Status Code: {response.status_code}")
         print(f"Response: {response.json()}")

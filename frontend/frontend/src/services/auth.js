@@ -28,4 +28,22 @@ export const getMe = async (token) => {
   return response.data;
 };
 
+export const createSubscription = async (data, token) => {
+  const response = await api.post('/subscription/', data, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
+export const getSubscription = async (token) => {
+  const response = await api.get('/subscription/', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
 export default api;

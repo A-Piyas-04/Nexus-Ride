@@ -6,12 +6,16 @@ from uuid import UUID
 class SubscriptionRead(SQLModel):
     id: int
     user_id: UUID
+    stop_name: str
     status: str
     start_date: Optional[date]
     end_date: Optional[date]
 
 class SubscriptionCreate(SQLModel):
-    pass
+    start_month: str
+    end_month: str
+    year: int
+    stop_name: str
 
 class SubscriptionLeaveBase(SQLModel):
     subscription_id: int

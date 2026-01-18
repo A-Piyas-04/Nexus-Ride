@@ -6,6 +6,7 @@ import { useAuth } from '../../context/auth-context';
 import { Button } from '../../components/ui/Button';
 import SubscriptionModal from '../../modals/SubscriptionModal';
 import TokenHistory from '../TokenHistory';
+import { createSubscription } from '../../services/auth';
 
 const DASHBOARD_VIEWS = {
   DASHBOARD: 'dashboard',
@@ -61,10 +62,29 @@ export default function DashboardPage() {
   const handleOpenSubscribe = () => setSubscribeOpen(true);
   const handleCloseSubscribe = () => setSubscribeOpen(false);
 
-  const handleSubscribe = ({ startMonth, endMonth, year, stopName }) => {
-    const period = startMonth === endMonth ? `${year}-${startMonth}` : `${year}-${startMonth} to ${year}-${endMonth}`;
-    window.alert(`Subscribed for ${period} at ${stopName}`);
-    setSubscribeOpen(false);
+  const handleSubscribe = async ({ startMonth, endMonth, year, stopName }) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token) {
+      window.alert('You must be logged in to subscribe');
+      return;
+    }
+
+    try {
+      await createSubscription(
+        {
+          start_month: startMonth,
+          end_month: endMonth,
+          year: Number(year),
+          stop_name: stopName,
+        },
+        token
+      );
+      setSubscribeOpen(false);
+      navigate('/subscriber');
+    } catch (error) {
+      const message = error.response?.data?.detail || 'Subscription failed';
+      window.alert(message);
+    }
   };
 
   return (

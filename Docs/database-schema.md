@@ -88,6 +88,7 @@ This document describes the complete database schema for the NexusRide Universit
 |---|---|---|
 | `id` | INTEGER | PK |
 | `user_id` | UUID | FK → `user.id` |
+| `stop_name` | VARCHAR | Unique, FK → `route_stop.stop_name` |
 | `status` | VARCHAR | `PENDING`, `ACTIVE`, `EXPIRED` |
 | `start_date` | DATE | Nullable |
 | `end_date` | DATE | Nullable |
@@ -144,7 +145,7 @@ This document describes the complete database schema for the NexusRide Universit
 |---|---|---|
 | `id` | UUID | PK |
 | `route_id` | UUID | FK → `route.id` |
-| `stop_name` | VARCHAR | |
+| `stop_name` | VARCHAR | Unique |
 | `sequence_number` | INTEGER | Order of stop in route |
 
 ### `trip`
@@ -211,5 +212,6 @@ This document describes the complete database schema for the NexusRide Universit
 ### Booking
 - **User ↔ Subscription**: One-to-Many.
 - **Subscription ↔ SubscriptionLeave**: One-to-Many.
+- **Subscription ↔ RouteStop**: One-to-One (via `subscription.stop_name` ↔ `route_stop.stop_name`).
 - **User ↔ Token**: One-to-Many.
 - **Trip ↔ SeatAllocation**: One-to-Many (Tracks which user is on which trip).

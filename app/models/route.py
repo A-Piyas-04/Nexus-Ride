@@ -14,5 +14,5 @@ class RouteStop(SQLModel, table=True):
     
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     route_id: UUID = Field(foreign_key="route.id")
-    stop_name: str
+    stop_name: str = Field(unique=True)
     sequence_number: int
