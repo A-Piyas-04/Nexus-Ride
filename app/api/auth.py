@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 from app.db.session import get_session
+from app.models.role import Role, UserRole
 from app.models.user import User
 from app.schemas.auth import SignupRequest, LoginRequest
 from app.utils.hashing import hash_password, verify_password
@@ -12,6 +13,11 @@ router = APIRouter(prefix="/auth")
 @router.post("/signup")
 def signup(data: SignupRequest, session: Session = Depends(get_session)):
     email = data.email.strip().lower()
+
+    existing_user = session.exec(select(User).where(User.email == email)).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
     user = User(
         email=email,
         password_hash=hash_password(data.password),
@@ -19,6 +25,16 @@ def signup(data: SignupRequest, session: Session = Depends(get_session)):
         user_type="STAFF"
     )
     session.add(user)
+    session.flush()
+
+    default_role = session.exec(select(Role).where(Role.name == "NORMAL_STAFF")).first()
+    if not default_role:
+        default_role = Role(name="NORMAL_STAFF")
+        session.add(default_role)
+        session.flush()
+
+    session.add(UserRole(user_id=user.id, role_id=default_role.id))
+
     session.commit()
     return {"msg": "Signup successful"}
 

@@ -4,7 +4,7 @@ load_dotenv()
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlmodel import SQLModel
+from sqlmodel import SQLModel, Session, select
 from app.db.session import engine
 from app.api.auth import router as auth_router
 from app.api.subscription import router as subscription_router
@@ -27,6 +27,14 @@ from app.models.token import Token
 async def lifespan(app: FastAPI):
     # Create tables on startup
     SQLModel.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        for name in ["NORMAL_STAFF", "FACULTY", "TO"]:
+            existing = session.exec(select(Role).where(Role.name == name)).first()
+            if not existing:
+                session.add(Role(name=name))
+        session.commit()
+
     yield
 
 app = FastAPI(lifespan=lifespan)
