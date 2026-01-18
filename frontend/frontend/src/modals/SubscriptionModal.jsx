@@ -18,7 +18,30 @@ const MONTH_OPTIONS = [
   { value: '12', label: 'December' },
 ];
 
-const DUMMY_STOPS = ['Main Street Stop', 'Central Station', 'Tech Park Gate', 'City Mall Entrance'];
+const ROUTES = [
+  {
+    name: 'Route-1',
+    stops: [
+      'Tongi Station Road',
+      'Uttara Sector 7',
+      'Airport',
+      'Banani',
+      'Mohakhali',
+      'Farmgate',
+    ],
+  },
+  {
+    name: 'Route-2',
+    stops: [
+      'Abdullahpur',
+      'Mirpur 10',
+      'Agargaon',
+      'Bijoy Sarani',
+      'Shahbagh',
+      'Motijheel',
+    ],
+  },
+];
 
 function monthToNumber(value) {
   return Number.parseInt(value, 10);
@@ -41,7 +64,7 @@ export default function SubscriptionModal({ open, onClose, onSubmit }) {
   const [startMonth, setStartMonth] = React.useState(defaultMonth);
   const [endMonth, setEndMonth] = React.useState(defaultMonth);
   const [year, setYear] = React.useState(String(currentYear));
-  const [stopName, setStopName] = React.useState(DUMMY_STOPS[0]);
+  const [stopName, setStopName] = React.useState(ROUTES[0].stops[0]);
 
   const endMonthOptions = React.useMemo(() => {
     const start = monthToNumber(startMonth);
@@ -62,7 +85,7 @@ export default function SubscriptionModal({ open, onClose, onSubmit }) {
     setStartMonth(defaultMonth);
     setEndMonth(defaultMonth);
     setYear(String(currentYear));
-    setStopName(DUMMY_STOPS[0]);
+    setStopName(ROUTES[0].stops[0]);
   }, [open, currentYear, defaultMonth]);
 
   React.useEffect(() => {
@@ -157,10 +180,14 @@ export default function SubscriptionModal({ open, onClose, onSubmit }) {
                 value={stopName}
                 onChange={(e) => setStopName(e.target.value)}
               >
-                {DUMMY_STOPS.map((stop) => (
-                  <option key={stop} value={stop}>
-                    {stop}
-                  </option>
+                {ROUTES.map((route) => (
+                  <optgroup key={route.name} label={route.name}>
+                    {route.stops.map((stop) => (
+                      <option key={stop} value={stop}>
+                        {stop}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </select>
             </div>
@@ -177,4 +204,3 @@ export default function SubscriptionModal({ open, onClose, onSubmit }) {
     </div>
   );
 }
-

@@ -7,7 +7,7 @@ How to Run Tests
 2. Start the Application Server
    The tests require the server to be running on port 8001.
    Run this command in a separate terminal window:
-   uvicorn app.main:app --reload --port 8001
+   uvicorn app.main:app --reload --port 8000
 
 3. Run the Test Scripts
    Open a new terminal (or use the original one), ensure the virtual environment is activated, and run the tests sequentially:
