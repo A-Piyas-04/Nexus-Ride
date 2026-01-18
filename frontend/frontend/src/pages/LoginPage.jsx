@@ -6,6 +6,7 @@ import { Input } from '../components/ui/Input';
 import { Label } from '../components/ui/Label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/Card';
 import { AlertCircle } from 'lucide-react';
+import { getSubscription } from '../services/auth';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -20,8 +21,18 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await login(email, password);
-      navigate('/dashboard'); // Redirect to dashboard after login
+      const data = await login(email, password);
+      const token = data?.access_token || localStorage.getItem('token');
+
+      if (token) {
+        const subscription = await getSubscription(token).catch(() => null);
+        if (subscription && ['PENDING', 'ACTIVE'].includes(subscription.status)) {
+          navigate('/subscriber');
+          return;
+        }
+      }
+
+      navigate('/dashboard');
     } catch {
       return;
     }

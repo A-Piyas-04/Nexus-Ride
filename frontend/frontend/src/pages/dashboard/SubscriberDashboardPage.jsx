@@ -20,7 +20,7 @@ function DashboardActionCard({ icon: Icon, label, iconClassName, onClick }) {
     >
       <div className="w-full flex items-center justify-center gap-3">
         {React.createElement(Icon, { className: `h-5 w-5 ${iconClassName}` })}
-        <span className="font-semibold text-center">{label}</span>
+        <span className="font-semibold text-center text-base md:text-lg">{label}</span>
       </div>
     </Button>
   );
@@ -158,21 +158,21 @@ export default function SubscriberDashboardPage() {
               <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-5 md:gap-6">
                 <DashboardActionCard
                   icon={Ticket}
-                  label="Take leave for one or multiple days, releasing reserved seats"
+                  label="Take leave"
                   iconClassName="text-primary-600"
                   onClick={handleTakeLeave}
                 />
 
                 <DashboardActionCard
                   icon={Ticket}
-                  label="Change route for the current day"
+                  label="Change route"
                   iconClassName="text-primary-600"
                   onClick={handleChangeRoute}
                 />
 
                 <DashboardActionCard
                   icon={Ticket}
-                  label="Change pickup location for the current day"
+                  label="Change pickup"
                   iconClassName="text-primary-600"
                   onClick={handleChangePickup}
                 />
