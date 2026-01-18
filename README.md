@@ -1,180 +1,98 @@
-# NexusRide Backend
+# NexusRide
 
-NexusRide is a Transport platform backend built with **FastAPI** and **SQLModel**. This service handles user authentication, role management, and subscription tracking, backed by a PostgreSQL database.
+NexusRide is a transport subscription platform with a FastAPI backend and a React (Vite) frontend. It provides staff and subscriber dashboards, authentication, and subscription management backed by PostgreSQL.
 
-## 📂 Project Structure
+## Overview
 
+- User signup and login with JWT-based authentication.
+- Staff dashboard for managing subscriptions and travel tokens.
+- Subscriber dashboard for managing monthly subscriptions, routes, and pickup locations.
+- PostgreSQL database with SQLModel models for users, roles, routes, trips, tokens, and subscriptions.
+
+## Tech Stack
+
+- **Backend:** FastAPI, SQLModel, Uvicorn.
+- **Frontend:** React 19, Vite, Tailwind-based styling, React Router.
+- **Database:** PostgreSQL.
+- **Infrastructure:** Docker and Docker Compose for local development.
+
+## Project Structure
+
+High-level layout of the repository:
+
+```text
+NexusRide/
+├── app/              # FastAPI application (API, models, schemas, core)
+├── frontend/
+│   └── frontend/     # React + Vite single-page application
+├── tests/            # API tests and helpers
+├── Docs/             # Design notes and implementation logs
+├── docker-compose.yml
+├── Dockerfile
+└── requirements.txt
 ```
-e:\Projects\NexusRide\
-├── app/
-│   ├── api/
-│   │   └── auth.py          # Authentication endpoints (Signup/Login)
-│   ├── core/
-│   │   └── security.py      # JWT token generation and configuration
-│   ├── db/
-│   │   └── session.py       # Database connection and session management
-│   ├── models/              # Database models (SQLModel)
-│   │   ├── role.py          # Role and UserRole definitions
-│   │   ├── subscription.py  # Subscription management
-│   │   └── user.py          # User entity definition
-│   ├── schemas/             # Pydantic schemas for request/response validation
-│   │   └── auth.py          # Schemas for auth requests
-│   ├── utils/
-│   │   └── hashing.py       # Password hashing utilities
-│   └── main.py              # Application entry point
-├── Dockerfile               # Docker configuration
-├── docker-compose.yml       # Docker Compose configuration
-├── requirements.txt         # Python dependencies
-└── README.md                # Project documentation
-```
 
-## 🚀 Getting Started
-
-Follow these instructions to set up the project on your local machine.
+## Getting Started
 
 ### Prerequisites
 
-*   **Python 3.10+**
-*   **PostgreSQL** (Ensure a database instance is running)
-*   **Git**
+- Docker and Docker Compose.
+- Node.js and npm (for frontend development).
+- Python 3.10+ (for running backend or tests directly).
 
-### Installation
+### Quickstart with Docker
 
-1.  **Clone the repository**
-    ```bash
-    git clone <repository-url>
-    cd NexusRide
-    ```
-
-2.  **Create a virtual environment**
-    ```bash
-    # Windows
-    python -m venv venv
-    venv\Scripts\activate
-
-    # macOS/Linux
-    python3 -m venv venv
-    source venv/bin/activate
-    ```
-
-3.  **Install dependencies**
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-### Configuration
-
-The application requires environment variables to connect to the database.
-
-1.  Create a `.env` file in the root directory (same level as `main.py` implies, but usually root).
-    *   *Note: The current setup reads `DATABASE_URL` from the system environment or `.env` if loaded explicitly.*
-
-2.  Add the following variable to `.env` (or export it in your shell):
-
-    ```ini
-    DATABASE_URL=postgresql://user:password@localhost:5432/nexusride_db
-    ```
-    *Replace `user`, `password`, `localhost`, and `nexusride_db` with your actual PostgreSQL credentials.*
-
-    *Note: The `SECRET_KEY` for JWT is currently hardcoded in `app/core/security.py`. For production, this should be moved to environment variables.*
-
-## 🏃 Execution
-
-### Running the Application
-
-Start the development server using Uvicorn:
+From the project root:
 
 ```bash
-uvicorn app.main:app --reload
+docker-compose up --build
 ```
 
-The API will be available at `http://127.0.0.1:8000`.
+This will:
 
-### Interactive API Documentation
+- Start PostgreSQL on `localhost:5433`.
+- Start the FastAPI backend on `http://localhost:8000`.
 
-FastAPI provides automatic interactive documentation. Once the server is running, verify the API by visiting:
+### Run the Frontend
 
-*   **Swagger UI**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-*   **ReDoc**: [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
+In a separate terminal:
 
-## 📡 API Endpoints
-
-### Authentication (`/auth`)
-
-#### 1. Signup
-*   **Endpoint**: `POST /auth/signup`
-*   **Description**: Registers a new user with "STAFF" type by default.
-*   **Request Body**:
-    ```json
-    {
-      "email": "user@example.com",
-      "password": "strongpassword123",
-      "full_name": "John Doe"
-    }
-    ```
-*   **Response**: `{"msg": "Signup successful"}`
-
-#### 2. Login
-*   **Endpoint**: `POST /auth/login`
-*   **Description**: Authenticates a user and returns a JWT access token.
-*   **Request Body**:
-    ```json
-    {
-      "email": "user@example.com",
-      "password": "strongpassword123"
-    }
-    ```
-*   **Response**:
-    ```json
-    {
-      "access_token": "eyJhbGciOiJIUzI1NiIsInR...",
-      "token_type": "bearer"
-    }
-    ```
-
-## 🧠 Code Flow & Architecture
-
-### Main Execution Flow
-1.  **Entry Point**: `app/main.py` initializes the `FastAPI` app and includes the `auth_router`.
-2.  **Request Handling**:
-    *   Requests to `/auth/*` are routed to `app/api/auth.py`.
-    *   **Signup**: Validates input using `SignupRequest` schema -> Hashes password -> Creates `User` model -> Saves to DB.
-    *   **Login**: Validates input -> Retrieves user by email -> Verifies password hash -> Generates JWT token using `app/core/security.py`.
-3.  **Database Interaction**:
-    *   `app/db/session.py` creates the SQLAlchemy engine and provides a session dependency (`get_session`) used by API routes to interact with the database.
-
-### Database Models
-
-The project uses **SQLModel** (SQLAlchemy + Pydantic) for ORM.
-
-#### Schema Overview
-
-*   **User** (`users` table)
-    *   `id`: UUID (Primary Key)
-    *   `email`: String (Unique)
-    *   `password_hash`: String
-    *   `full_name`: String
-    *   `user_type`: String (e.g., "STAFF")
-
-*   **Role** (`role` table)
-    *   `id`: Integer (Primary Key)
-    *   `name`: String (Unique)
-
-*   **UserRole** (`userrole` table)
-    *   *Many-to-Many link between User and Role*
-    *   `user_id`: String (Foreign Key to `user.id`)
-    *   `role_id`: Integer (Foreign Key to `role.id`)
-
-*   **Subscription** (`subscription` table)
-    *   `id`: Integer (Primary Key)
-    *   `user_id`: String (Foreign Key to `user.id`)
-    *   `status`: String (e.g., "PENDING", "ACTIVE")
-    *   `start_date`: Date
-    *   `end_date`: Date
-
-#### Sample Query (SQLAlchemy style)
-```python
-# Select a user by email
-statement = select(User).where(User.email == "user@example.com")
-user = session.exec(statement).first()
+```bash
+cd frontend/frontend
+npm install        # first time only
+npm run dev
 ```
+
+Then open the URL shown in the terminal (typically `http://localhost:5173`).
+
+## API and Frontend
+
+- Backend base URL: `http://localhost:8000`
+  - Interactive docs (Swagger): `http://localhost:8000/docs`
+- Frontend UI (development): typically `http://localhost:5173`
+
+The frontend talks to the backend via REST endpoints defined under `app/api/` (authentication, subscriptions, trips, etc.).
+
+## Running Tests
+
+Backend integration tests live in the `tests/` directory.
+
+Typical flow:
+
+1. Create and activate a virtual environment.
+2. Install backend dependencies:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Start the FastAPI app.
+4. Run the test scripts in `tests/` (see `tests/how_to_test.txt` for exact commands).
+
+## Additional Documentation
+
+More detailed design notes and implementation logs are under `Docs/`, including:
+
+- `Docs/database-schema.md` – current database schema.
+- `Docs/how-to-run.md` – step-by-step run instructions.
+- `Docs/modifications/...` – change logs for subscription and routing features.
