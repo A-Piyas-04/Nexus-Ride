@@ -25,7 +25,7 @@ def test_subscription_post():
             "start_month": "01",
             "end_month": "01",
             "year": 2025,
-            "stop_name": "Main Street Stop",
+            "stop_name": "Tongi Station Road",
         }
 
         print("Attempting to create subscription...")

@@ -135,8 +135,6 @@ This document describes the complete database schema for the NexusRide Universit
 |---|---|---|
 | `id` | UUID | PK |
 | `route_name` | VARCHAR | |
-| `start_point` | VARCHAR | |
-| `end_point` | VARCHAR | |
 | `is_active` | BOOLEAN | Default: `True` |
 
 ### `route_stop`

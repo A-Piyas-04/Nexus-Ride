@@ -21,7 +21,7 @@ def get_auth_token_with_subscription():
         "start_month": "01",
         "end_month": "01",
         "year": 2025,
-        "stop_name": "Main Street Stop",
+        "stop_name": "Abdullahpur",
     }
 
     httpx.post(f"{BASE_URL}/subscription/", headers={"Authorization": f"Bearer {token}"}, json=body)
