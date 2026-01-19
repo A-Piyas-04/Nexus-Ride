@@ -4,7 +4,7 @@ import uuid
 BASE_URL = "http://127.0.0.1:8000"
 
 def test_signup():
-    email = f"pias_{uuid.uuid4()}@example.com"
+    email = f"pias_{uuid.uuid4()}@iut-dhaka.edu"
     payload = {
         "email": email,
         "password": "password123",

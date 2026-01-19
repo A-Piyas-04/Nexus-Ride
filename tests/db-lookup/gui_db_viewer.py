@@ -3,7 +3,8 @@ import os
 from pathlib import Path
 import tkinter as tk
 from tkinter import ttk, messagebox
-from sqlmodel import create_engine, Session, select
+from sqlalchemy import delete, and_, inspect, MetaData, Table
+from sqlmodel import SQLModel, create_engine, Session, select
 
 # Add project root to sys.path
 project_root = Path(__file__).resolve().parents[2]
@@ -52,10 +53,15 @@ class DBViewerApp:
         self.root.geometry("1200x700")
 
         # State for sorting and data
-        self.current_data = []  # List of tuples/lists
+        self.current_data = []
+        self.current_rows = []
         self.current_columns = []
         self.sort_column = None
         self.sort_reverse = False
+        self.row_data_map = {}
+        self.metadata = MetaData()
+        self.inspector = inspect(engine)
+        self.reflected_tables = {}
 
         # Main layout
         self.paned_window = ttk.PanedWindow(root, orient=tk.HORIZONTAL)
@@ -88,6 +94,9 @@ class DBViewerApp:
 
         self.btn_refresh = ttk.Button(self.control_frame, text="↻ Refresh", command=self.refresh_current_table)
         self.btn_refresh.pack(side=tk.RIGHT, padx=5)
+
+        self.btn_delete = ttk.Button(self.control_frame, text="Delete Selected", command=self.delete_selected_rows)
+        self.btn_delete.pack(side=tk.RIGHT, padx=5)
 
         # Search Bar
         self.search_var = tk.StringVar()
@@ -136,6 +145,49 @@ class DBViewerApp:
         else:
             messagebox.showinfo("Info", "Please select a table first.")
 
+    def delete_selected_rows(self):
+        selection = self.tree.selection()
+        if not selection:
+            messagebox.showinfo("Info", "Please select one or more rows to delete.")
+            return
+
+        table_selection = self.table_listbox.curselection()
+        if not table_selection:
+            messagebox.showinfo("Info", "Please select a table first.")
+            return
+
+        table_name = self.table_listbox.get(table_selection[0])
+        model = TABLE_MAP.get(table_name)
+        if not model:
+            return
+
+        table = model.__table__
+        if not table.primary_key.columns:
+            messagebox.showerror("Error", "Cannot delete rows without a primary key.")
+            return
+
+        confirm = messagebox.askyesno(
+            "Confirm Delete",
+            f"Delete {len(selection)} row(s) from {table_name}? This will also delete related rows."
+        )
+        if not confirm:
+            return
+
+        try:
+            visited = set()
+            with Session(engine) as session:
+                for item_id in selection:
+                    row_data = self.row_data_map.get(item_id)
+                    if not row_data:
+                        continue
+                    self.delete_with_cascade(session, table, row_data, visited)
+                session.commit()
+
+            self.load_table_data(table_name)
+            self.status_var.set(f"Deleted {len(selection)} row(s) from {table_name}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to delete rows:\n{str(e)}")
+
     def load_table_data(self, table_name):
         self.status_var.set(f"Loading {table_name}...")
         self.root.update_idletasks()
@@ -143,7 +195,9 @@ class DBViewerApp:
         # Clear existing tree
         self.tree.delete(*self.tree.get_children())
         self.tree["columns"] = []
-        self.search_var.set("") # Clear search
+        self.search_var.set("")
+        self.sort_column = None
+        self.sort_reverse = False
         
         model = TABLE_MAP.get(table_name)
         if not model:
@@ -162,14 +216,16 @@ class DBViewerApp:
                 results = session.exec(statement).all()
 
                 self.current_data = []
+                self.current_rows = []
                 if results:
                     for row in results:
                         row_data = row.model_dump()
                         # Convert all to string for display/search
                         values = [str(row_data.get(col, "")) for col in columns]
                         self.current_data.append(values)
+                        self.current_rows.append(row_data)
 
-                self.populate_tree(self.current_data)
+                self.populate_tree(self.current_data, self.current_rows)
                 self.status_var.set(f"Loaded {len(self.current_data)} records from {table_name}")
 
         except Exception as e:
@@ -184,25 +240,29 @@ class DBViewerApp:
             width = max(100, min(300, len(col) * 12))
             self.tree.column(col, width=width, anchor=tk.W)
 
-    def populate_tree(self, data):
+    def populate_tree(self, data, row_dicts):
         self.tree.delete(*self.tree.get_children())
-        for values in data:
-            self.tree.insert("", tk.END, values=values)
+        self.row_data_map = {}
+        for values, row_data in zip(data, row_dicts):
+            item_id = self.tree.insert("", tk.END, values=values)
+            self.row_data_map[item_id] = row_data
 
     def filter_data(self, *args):
         query = self.search_var.get().lower()
         if not query:
-            self.populate_tree(self.current_data)
+            self.populate_tree(self.current_data, self.current_rows)
             self.status_var.set(f"Showing all {len(self.current_data)} records")
             return
 
         filtered_data = []
-        for row in self.current_data:
+        filtered_rows = []
+        for row, row_data in zip(self.current_data, self.current_rows):
             # Check if query matches any column in the row
             if any(query in str(cell).lower() for cell in row):
                 filtered_data.append(row)
+                filtered_rows.append(row_data)
         
-        self.populate_tree(filtered_data)
+        self.populate_tree(filtered_data, filtered_rows)
         self.status_var.set(f"Found {len(filtered_data)} matching records")
 
     def sort_by_column(self, col):
@@ -225,14 +285,19 @@ class DBViewerApp:
         # For simplicity, we sort the master list and re-apply filter
         
         # Helper to try sorting as numbers if possible, else strings
-        def sort_key(row):
-            val = row[col_index]
+        def sort_key(row_data):
+            val = row_data.get(col)
             try:
                 return float(val)
-            except ValueError:
+            except (TypeError, ValueError):
                 return str(val).lower()
 
-        self.current_data.sort(key=sort_key, reverse=self.sort_reverse)
+        combined = list(zip(self.current_data, self.current_rows))
+        combined.sort(key=lambda pair: sort_key(pair[1]), reverse=self.sort_reverse)
+        if combined:
+            self.current_data, self.current_rows = map(list, zip(*combined))
+        else:
+            self.current_data, self.current_rows = [], []
         
         # Update header arrow (visual cue)
         for c in self.current_columns:
@@ -243,6 +308,47 @@ class DBViewerApp:
 
         # Re-apply filter to show sorted results
         self.filter_data()
+
+    def get_referencing_tables(self, table):
+        references = []
+        for table_name in self.inspector.get_table_names():
+            for fk in self.inspector.get_foreign_keys(table_name):
+                if fk.get("referred_table") != table.name:
+                    continue
+                child_table = self.get_reflected_table(table_name)
+                for local_col, remote_col in zip(fk.get("constrained_columns", []), fk.get("referred_columns", [])):
+                    if local_col in child_table.c and remote_col in table.c:
+                        references.append((child_table, child_table.c[local_col], table.c[remote_col]))
+        return references
+
+    def get_reflected_table(self, table_name):
+        if table_name not in self.reflected_tables:
+            self.reflected_tables[table_name] = Table(table_name, self.metadata, autoload_with=engine)
+        return self.reflected_tables[table_name]
+
+    def delete_with_cascade(self, session, table, row_data, visited):
+        pk_values = tuple((col.name, row_data.get(col.name)) for col in table.primary_key.columns)
+        key = (table.name, pk_values)
+        if key in visited:
+            return
+        visited.add(key)
+
+        for child_table, child_col, parent_col in self.get_referencing_tables(table):
+            parent_value = row_data.get(parent_col.name)
+            if parent_value is None:
+                continue
+
+            child_rows = session.exec(select(child_table).where(child_col == parent_value)).all()
+            for child_row in child_rows:
+                row_mapping = child_row._mapping
+                child_row_data = {col.name: row_mapping[col] for col in child_table.columns}
+                self.delete_with_cascade(session, child_table, child_row_data, visited)
+
+        filters = [table.c[col.name] == row_data.get(col.name) for col in table.primary_key.columns]
+        if not filters:
+            return
+        where_clause = filters[0] if len(filters) == 1 else and_(*filters)
+        session.exec(delete(table).where(where_clause))
 
 def main():
     try:

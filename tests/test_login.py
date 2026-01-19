@@ -5,7 +5,7 @@ BASE_URL = "http://127.0.0.1:8000"
 
 def test_login():
     # First ensure we have a user to login with
-    email = f"test_{uuid.uuid4()}@example.com"
+    email = f"test_{uuid.uuid4()}@iut-dhaka.edu"
     signup_payload = {
         "email": email,
         "password": "password123",

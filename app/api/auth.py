@@ -12,7 +12,7 @@ router = APIRouter(prefix="/auth")
 
 @router.post("/signup")
 def signup(data: SignupRequest, session: Session = Depends(get_session)):
-    email = data.email.strip().lower()
+    email = data.email
 
     existing_user = session.exec(select(User).where(User.email == email)).first()
     if existing_user:
@@ -40,7 +40,7 @@ def signup(data: SignupRequest, session: Session = Depends(get_session)):
 
 @router.post("/login")
 def login(data: LoginRequest, session: Session = Depends(get_session)):
-    email = data.email.strip().lower()
+    email = data.email
     user = session.exec(
         select(User).where(User.email == email)
     ).first()

@@ -53,11 +53,12 @@ export default function SignupPage() {
             <Input
               id="email"
               type="email"
-              placeholder="m@example.com"
+              placeholder="name@iut-dhaka.edu"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
+            <p className="text-xs text-gray-500">Use your @iut-dhaka.edu email</p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>

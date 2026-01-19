@@ -5,7 +5,7 @@ BASE_URL = "http://127.0.0.1:8000"
 
 def get_auth_token_with_subscription():
     # Helper to get a valid token and ensure subscription exists
-    email = f"test_{uuid.uuid4()}@example.com"
+    email = f"test_{uuid.uuid4()}@iut-dhaka.edu"
     httpx.post(f"{BASE_URL}/auth/signup", json={
         "email": email,
         "password": "password123",
