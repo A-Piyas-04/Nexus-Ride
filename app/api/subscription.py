@@ -6,7 +6,7 @@ from calendar import monthrange
 from app.db.session import get_session
 from app.models.subscription import Subscription
 from app.models.user import User
-from app.models.route import RouteStop
+from app.models.route import RouteStop, Route
 from app.schemas.subscription import SubscriptionRead, SubscriptionCreate
 from app.core.security import get_current_user
 
@@ -76,7 +76,17 @@ def subscribe(
 
     session.commit()
     session.refresh(subscription)
-    return subscription
+    route = session.get(Route, stop.route_id)
+    route_name = route.route_name if route else None
+    return SubscriptionRead(
+        id=subscription.id,
+        user_id=subscription.user_id,
+        stop_name=subscription.stop_name,
+        status=subscription.status,
+        start_date=subscription.start_date,
+        end_date=subscription.end_date,
+        route_name=route_name,
+    )
 
 
 
@@ -95,4 +105,17 @@ def get_subscription(
             detail="Subscription not found"
         )
 
-    return subscription
+    stop = session.exec(
+        select(RouteStop).where(RouteStop.stop_name == subscription.stop_name)
+    ).first()
+    route = session.get(Route, stop.route_id) if stop else None
+    route_name = route.route_name if route else None
+    return SubscriptionRead(
+        id=subscription.id,
+        user_id=subscription.user_id,
+        stop_name=subscription.stop_name,
+        status=subscription.status,
+        start_date=subscription.start_date,
+        end_date=subscription.end_date,
+        route_name=route_name,
+    )

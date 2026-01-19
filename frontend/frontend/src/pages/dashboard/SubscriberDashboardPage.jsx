@@ -5,11 +5,7 @@ import { LogOut, Menu, Settings, Ticket, User, XCircle } from 'lucide-react';
 import { useAuth } from '../../context/auth-context';
 import { Button } from '../../components/ui/Button';
 import { getSubscription } from '../../services/auth';
-
-const SUBSCRIBER_VIEWS = {
-  DASHBOARD: 'dashboard',
-  SUBSCRIPTION_DETAILS: 'subscription-details',
-};
+import SubscriptionDetailsModal from '../../modals/SubscriptionDetailsModal';
 
 function DashboardActionCard({ icon: Icon, label, iconClassName, onClick }) {
   return (
@@ -31,8 +27,10 @@ export default function SubscriberDashboardPage() {
   const navigate = useNavigate();
 
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
-  const [view, setView] = React.useState(SUBSCRIBER_VIEWS.DASHBOARD);
   const [checkingAccess, setCheckingAccess] = React.useState(true);
+  const [subscriptionDetails, setSubscriptionDetails] = React.useState(null);
+  const [detailsLoading, setDetailsLoading] = React.useState(false);
+  const [detailsOpen, setDetailsOpen] = React.useState(false);
 
   React.useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -45,6 +43,7 @@ export default function SubscriberDashboardPage() {
     const checkAccess = async () => {
       try {
         const subscription = await getSubscription(token);
+        setSubscriptionDetails(subscription);
         if (!subscription || !['PENDING', 'ACTIVE'].includes(subscription.status)) {
           navigate('/dashboard');
           return;
@@ -79,7 +78,26 @@ export default function SubscriberDashboardPage() {
     window.alert('Take leave for one or multiple days, releasing reserved seats');
   const handleChangeRoute = () => window.alert('Change route for the current day');
   const handleChangePickup = () => window.alert('Change pickup location for the current day');
-  const handleSubscriptionDetails = () => setView(SUBSCRIBER_VIEWS.SUBSCRIPTION_DETAILS);
+  const handleSubscriptionDetails = async () => {
+    if (detailsLoading) {
+      return;
+    }
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token) {
+      window.alert('You must be logged in to view subscription details');
+      return;
+    }
+    setDetailsLoading(true);
+    try {
+      const subscription = await getSubscription(token);
+      setSubscriptionDetails(subscription);
+      setDetailsOpen(true);
+    } catch {
+      window.alert('Unable to load subscription details');
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
 
   const handleCloseSidebar = () => setSidebarOpen(false);
   const handleOpenSidebar = () => setSidebarOpen(true);
@@ -142,88 +160,55 @@ export default function SubscriberDashboardPage() {
           <div className="text-sm text-gray-700 font-medium truncate max-w-[70%]">{fullName}</div>
         </div>
 
-        {view === SUBSCRIBER_VIEWS.DASHBOARD && (
-          <section className="w-full px-4 py-8 md:px-8 md:py-10">
-            <div className="w-full max-w-6xl">
-              <div className="rounded-2xl border border-green-200 bg-green-100 px-6 py-6 shadow-sm">
-                <p className="text-3xl font-extrabold tracking-tight text-gray-900">
-                  Welcome, <span className="font-extrabold">{welcomeName}</span>
-                </p>
+        <section className="w-full px-4 py-8 md:px-8 md:py-10">
+          <div className="w-full max-w-6xl">
+            <div className="rounded-2xl border border-green-200 bg-green-100 px-6 py-6 shadow-sm">
+              <p className="text-3xl font-extrabold tracking-tight text-gray-900">
+                Welcome, <span className="font-extrabold">{welcomeName}</span>
+              </p>
 
-                <p className="mt-1 text-sm md:text-base text-green-900/80 font-medium">
-                  Logged in as <span className="font-semibold">{userEmail}</span>
-                </p>
-              </div>
-
-              <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-5 md:gap-6">
-                <DashboardActionCard
-                  icon={Ticket}
-                  label="Take leave"
-                  iconClassName="text-primary-600"
-                  onClick={handleTakeLeave}
-                />
-
-                <DashboardActionCard
-                  icon={Ticket}
-                  label="Change route"
-                  iconClassName="text-primary-600"
-                  onClick={handleChangeRoute}
-                />
-
-                <DashboardActionCard
-                  icon={Ticket}
-                  label="Change pickup"
-                  iconClassName="text-primary-600"
-                  onClick={handleChangePickup}
-                />
-
-                <DashboardActionCard
-                  icon={User}
-                  label="Subscription details"
-                  iconClassName="text-primary-600"
-                  onClick={handleSubscriptionDetails}
-                />
-              </div>
+              <p className="mt-1 text-sm md:text-base text-green-900/80 font-medium">
+                Logged in as <span className="font-semibold">{userEmail}</span>
+              </p>
             </div>
-          </section>
-        )}
 
-        {view === SUBSCRIBER_VIEWS.SUBSCRIPTION_DETAILS && (
-          <section className="px-4 py-6 md:px-8 md:py-8">
-            <div className="w-full max-w-6xl">
-              <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Subscription details</h1>
-                    <p className="text-gray-600 mt-1">Overview of your current subscription</p>
-                  </div>
-                  <Button variant="secondary" onClick={() => setView(SUBSCRIBER_VIEWS.DASHBOARD)}>
-                    Back
-                  </Button>
-                </div>
+            <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-5 md:gap-6">
+              <DashboardActionCard
+                icon={Ticket}
+                label="Take leave"
+                iconClassName="text-primary-600"
+                onClick={handleTakeLeave}
+              />
 
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                    <div className="text-sm text-gray-600">Plan</div>
-                    <div className="mt-1 font-semibold text-gray-900">Monthly Subscriber</div>
-                  </div>
-                  <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                    <div className="text-sm text-gray-600">Status</div>
-                    <div className="mt-1 font-semibold text-gray-900">Active</div>
-                  </div>
-                  <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                    <div className="text-sm text-gray-600">Route</div>
-                    <div className="mt-1 font-semibold text-gray-900">Route A</div>
-                  </div>
-                  <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                    <div className="text-sm text-gray-600">Pickup location</div>
-                    <div className="mt-1 font-semibold text-gray-900">Main Street Stop</div>
-                  </div>
-                </div>
-              </div>
+              <DashboardActionCard
+                icon={Ticket}
+                label="Change route"
+                iconClassName="text-primary-600"
+                onClick={handleChangeRoute}
+              />
+
+              <DashboardActionCard
+                icon={Ticket}
+                label="Change pickup"
+                iconClassName="text-primary-600"
+                onClick={handleChangePickup}
+              />
+
+              <DashboardActionCard
+                icon={User}
+                label="Subscription details"
+                iconClassName="text-primary-600"
+                onClick={handleSubscriptionDetails}
+              />
             </div>
-          </section>
-        )}
+          </div>
+        </section>
+        <SubscriptionDetailsModal
+          open={detailsOpen}
+          onClose={() => setDetailsOpen(false)}
+          subscription={subscriptionDetails}
+          loading={detailsLoading}
+        />
       </main>
     </div>
   );

@@ -10,6 +10,7 @@ class SubscriptionRead(SQLModel):
     status: str
     start_date: Optional[date]
     end_date: Optional[date]
+    route_name: Optional[str] = None
 
 class SubscriptionCreate(SQLModel):
     start_month: str
