@@ -2,7 +2,8 @@ import React from 'react';
 import { XCircle } from 'lucide-react';
 
 import { Button } from '../components/ui/Button';
-import Transition from '../components/ui/Transition';
+import { Modal } from '../components/ui/Modal';
+import { ROUTE_DEFINITIONS } from '../constants/routes';
 
 const MONTH_OPTIONS = [
   { value: '01', label: 'January' },
@@ -17,31 +18,6 @@ const MONTH_OPTIONS = [
   { value: '10', label: 'October' },
   { value: '11', label: 'November' },
   { value: '12', label: 'December' },
-];
-
-const ROUTES = [
-  {
-    name: 'Route-1',
-    stops: [
-      'Tongi Station Road',
-      'Uttara Sector 7',
-      'Airport',
-      'Banani',
-      'Mohakhali',
-      'Farmgate',
-    ],
-  },
-  {
-    name: 'Route-2',
-    stops: [
-      'Abdullahpur',
-      'Mirpur 10',
-      'Agargaon',
-      'Bijoy Sarani',
-      'Shahbagh',
-      'Motijheel',
-    ],
-  },
 ];
 
 function monthToNumber(value) {
@@ -65,7 +41,7 @@ export default function SubscriptionModal({ open, onClose, onSubmit }) {
   const [startMonth, setStartMonth] = React.useState(defaultMonth);
   const [endMonth, setEndMonth] = React.useState(defaultMonth);
   const [year, setYear] = React.useState(String(currentYear));
-  const [stopName, setStopName] = React.useState(ROUTES[0].stops[0]);
+  const [stopName, setStopName] = React.useState(ROUTE_DEFINITIONS[0].stops[0]);
 
   const endMonthOptions = React.useMemo(() => {
     const start = monthToNumber(startMonth);
@@ -74,19 +50,10 @@ export default function SubscriptionModal({ open, onClose, onSubmit }) {
 
   React.useEffect(() => {
     if (!open) return;
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open, onClose]);
-
-  React.useEffect(() => {
-    if (!open) return;
     setStartMonth(defaultMonth);
     setEndMonth(defaultMonth);
     setYear(String(currentYear));
-    setStopName(ROUTES[0].stops[0]);
+    setStopName(ROUTE_DEFINITIONS[0].stops[0]);
   }, [open, currentYear, defaultMonth]);
 
   React.useEffect(() => {
@@ -104,114 +71,88 @@ export default function SubscriptionModal({ open, onClose, onSubmit }) {
     'flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50';
 
   return (
-    <Transition
+    <Modal
       open={open}
-      enterClassName="opacity-100"
-      exitClassName="opacity-0"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      onClose={onClose}
+      title="Subscription"
+      description="Choose period and stop"
     >
-      <button
-        type="button"
-        className="absolute inset-0 bg-black/30"
-        onClick={onClose}
-        aria-label="Close subscription modal"
-      />
-
-      <Transition
-        open={open}
-        enterClassName="opacity-100 translate-y-0 scale-100"
-        exitClassName="opacity-0 translate-y-4 scale-95"
-        className="relative w-full max-w-lg rounded-2xl border border-gray-200 bg-white shadow-xl"
-        role="dialog"
-        aria-modal="true"
-      >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <div>
-            <div className="text-lg font-semibold text-gray-900">Subscription</div>
-            <div className="text-sm text-gray-600">Choose period and stop</div>
+      <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <div className="text-sm font-medium text-gray-700">Start month</div>
+            <select
+              className={fieldClassName}
+              value={startMonth}
+              onChange={(e) => setStartMonth(e.target.value)}
+            >
+              {MONTH_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
-          <Button variant="ghost" onClick={onClose} aria-label="Close subscription modal">
-            <XCircle className="h-5 w-5" />
-          </Button>
+
+          <div className="space-y-2">
+            <div className="text-sm font-medium text-gray-700">End month</div>
+            <select
+              className={fieldClassName}
+              value={endMonth}
+              onChange={(e) => setEndMonth(e.target.value)}
+            >
+              {endMonthOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <div className="text-sm font-medium text-gray-700">Start month</div>
-              <select
-                className={fieldClassName}
-                value={startMonth}
-                onChange={(e) => setStartMonth(e.target.value)}
-              >
-                {MONTH_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <div className="text-sm font-medium text-gray-700">End month</div>
-              <select
-                className={fieldClassName}
-                value={endMonth}
-                onChange={(e) => setEndMonth(e.target.value)}
-              >
-                {endMonthOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <div className="text-sm font-medium text-gray-700">Year</div>
+            <select
+              className={fieldClassName}
+              value={year}
+              onChange={(e) => setYear(e.target.value)}
+            >
+              {yearOptions.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <div className="text-sm font-medium text-gray-700">Year</div>
-              <select
-                className={fieldClassName}
-                value={year}
-                onChange={(e) => setYear(e.target.value)}
-              >
-                {yearOptions.map((y) => (
-                  <option key={y} value={y}>
-                    {y}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <div className="text-sm font-medium text-gray-700">Stop name</div>
-              <select
-                className={fieldClassName}
-                value={stopName}
-                onChange={(e) => setStopName(e.target.value)}
-              >
-                {ROUTES.map((route) => (
-                  <optgroup key={route.name} label={route.name}>
-                    {route.stops.map((stop) => (
-                      <option key={stop} value={stop}>
-                        {stop}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-            </div>
+          <div className="space-y-2">
+            <div className="text-sm font-medium text-gray-700">Stop name</div>
+            <select
+              className={fieldClassName}
+              value={stopName}
+              onChange={(e) => setStopName(e.target.value)}
+            >
+              {ROUTE_DEFINITIONS.map((route) => (
+                <optgroup key={route.route_name} label={route.route_name}>
+                  {route.stops.map((stop) => (
+                    <option key={stop} value={stop}>
+                      {stop}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
           </div>
+        </div>
 
-          <div className="flex items-center justify-end gap-3 pt-2">
-            <Button variant="secondary" type="button" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit">Subscribe</Button>
-          </div>
-        </form>
-      </Transition>
-    </Transition>
+        <div className="flex items-center justify-end gap-3 pt-2">
+          <Button type="button" variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit">Subscribe</Button>
+        </div>
+      </form>
+    </Modal>
   );
 }

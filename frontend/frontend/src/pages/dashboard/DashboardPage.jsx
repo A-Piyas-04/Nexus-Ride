@@ -1,10 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Bus, Calendar, Clock, History, MapPin, Ticket, Users, XCircle } from 'lucide-react';
+import { Bus, Calendar, Clock, History, MapPin, Ticket, Users, XCircle } from 'lucide-react';
 
-import { useAuth } from '../../context/auth-context';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
+import { StatCard } from '../../components/ui/StatCard';
+import { ActionCard } from '../../components/ui/ActionCard';
+import { WelcomeBanner } from '../../components/ui/WelcomeBanner';
 import SubscriptionModal from '../../modals/SubscriptionModal';
 import { createSubscription } from '../../services/auth';
 import DashboardLayout from './DashboardLayout';
@@ -17,65 +19,9 @@ const DASHBOARD_SUMMARY = {
   nextRoute: 'Campus ↔ Uttara',
 };
 
-function StatCard({ icon: Icon, label, value, helper }) {
-  return (
-    <Card className="border-gray-200">
-      <CardContent className="flex items-center justify-between gap-4 p-5">
-        <div>
-          <p className="text-sm font-medium text-gray-600">{label}</p>
-          <p className="text-2xl font-semibold text-gray-900">{value}</p>
-          {helper && <p className="text-xs text-gray-500">{helper}</p>}
-        </div>
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary-50">
-          {React.createElement(Icon, { className: 'h-5 w-5 text-primary-600' })}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function DashboardActionCard({ icon: Icon, label, description, iconClassName, onClick }) {
-  return (
-    <Button
-      variant="secondary"
-      onClick={onClick}
-      className="w-full min-h-[130px] md:min-h-[160px] rounded-xl border-2 border-primary-300 bg-white text-gray-900 shadow-md hover:shadow-lg hover:border-primary-400 transition-all px-6 py-6"
-    >
-      <div className="w-full flex items-center gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-50">
-          {React.createElement(Icon, { className: `h-6 w-6 ${iconClassName}` })}
-        </div>
-        <div className="flex-1 text-left">
-          <p className="font-semibold text-lg md:text-xl">{label}</p>
-          <p className="text-sm md:text-base text-gray-500">{description}</p>
-        </div>
-        <ArrowRight className="h-5 w-5 text-gray-400" />
-      </div>
-    </Button>
-  );
-}
-
 export default function DashboardPage() {
-  const { user, logout } = useAuth();
   const navigate = useNavigate();
-
   const [subscribeOpen, setSubscribeOpen] = React.useState(false);
-
-  const fullName =
-    (typeof window !== 'undefined' &&
-      (localStorage.getItem('full_name') || localStorage.getItem('name'))) ||
-    user?.full_name ||
-    user?.name ||
-    'User';
-
-  const userEmail = user?.email || '';
-
-  const welcomeName = userEmail ? userEmail.split('@')[0] : fullName;
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
 
   const handleSeatAvailability = () => navigate('/seat-availability');
   const handleBuyToken = () => window.alert('Buy token');
@@ -110,27 +56,12 @@ export default function DashboardPage() {
   };
 
   return (
-    <DashboardLayout fullName={fullName} userEmail={userEmail} onLogout={handleLogout}>
+    <DashboardLayout>
       <section className="w-full px-4 py-8 md:px-8 md:py-10">
         <div className="w-full max-w-6xl space-y-8">
-          <div className="rounded-2xl border border-green-200 bg-green-100 px-6 py-6 shadow-sm">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div className="min-w-0">
-                <p className="text-3xl font-extrabold tracking-tight text-gray-900">
-                  Welcome back, <span className="font-extrabold">{welcomeName}</span>
-                </p>
-                <p className="mt-2 text-sm md:text-base text-green-900/80 font-medium">
-                  Logged in as <span className="font-semibold">{userEmail}</span>
-                </p>
-                <p className="mt-1 text-sm text-gray-700">
-                  Manage your daily commute, tokens, and seat availability in one place.
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <Button onClick={handleOpenSubscribe}>Subscribe</Button>
-              </div>
-            </div>
-          </div>
+          <WelcomeBanner>
+            <Button onClick={handleOpenSubscribe}>Subscribe</Button>
+          </WelcomeBanner>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <StatCard
@@ -154,7 +85,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <DashboardActionCard
+            <ActionCard
               icon={Ticket}
               label="Seat availability"
               description="Review today’s trips, capacity, and available seats."
@@ -162,7 +93,7 @@ export default function DashboardPage() {
               onClick={handleSeatAvailability}
             />
 
-            <DashboardActionCard
+            <ActionCard
               icon={Ticket}
               label="Buy token"
               description="Purchase a token for a one-time ride."
@@ -170,7 +101,7 @@ export default function DashboardPage() {
               onClick={handleBuyToken}
             />
 
-            <DashboardActionCard
+            <ActionCard
               icon={XCircle}
               label="Cancel token"
               description="Cancel an existing token and free the seat."
@@ -178,7 +109,7 @@ export default function DashboardPage() {
               onClick={handleCancelToken}
             />
 
-            <DashboardActionCard
+            <ActionCard
               icon={History}
               label="Token history"
               description="Track recent purchases, cancellations, and usage."

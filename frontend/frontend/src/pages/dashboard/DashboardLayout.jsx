@@ -1,23 +1,33 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { LogOut, Menu, Settings, User, XCircle } from 'lucide-react';
 
+import { useAuth } from '../../context/auth-context';
+import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { Button } from '../../components/ui/Button';
-import Transition from '../../components/ui/Transition';
+import { cn } from '../../utils/cn';
 
-export default function DashboardLayout({ fullName, userEmail, onLogout, children }) {
+export default function DashboardLayout({ children }) {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+  const { fullName, userEmail } = useCurrentUser();
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
 
   const handleCloseSidebar = () => setSidebarOpen(false);
   const handleOpenSidebar = () => setSidebarOpen(true);
 
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   return (
     <div className="min-h-screen w-full bg-gray-100 flex">
-      <Transition
-        open={sidebarOpen}
-        persist
-        enterClassName="opacity-100 translate-x-0"
-        exitClassName="opacity-0 -translate-x-full md:opacity-100 md:translate-x-0"
-        className="fixed inset-y-0 left-0 z-30 w-64 bg-white border-r shadow-sm p-4 transform md:static md:block"
+      <aside
+        className={cn(
+          'fixed inset-y-0 left-0 z-30 w-64 bg-white border-r shadow-sm p-4 transition-transform duration-300 ease-in-out md:static md:translate-x-0',
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        )}
       >
         <div className="flex items-center justify-between mb-6">
           <div className="text-2xl font-bold text-primary-900">NexusRide</div>
@@ -49,12 +59,12 @@ export default function DashboardLayout({ fullName, userEmail, onLogout, childre
             Profile
           </Button>
 
-          <Button variant="secondary" className="w-full justify-start" onClick={onLogout}>
+          <Button variant="secondary" className="w-full justify-start" onClick={handleLogout}>
             <LogOut className="h-4 w-4 mr-2" />
             Logout
           </Button>
         </nav>
-      </Transition>
+      </aside>
 
       <main className="flex-1 min-w-0">
         <div className="flex items-center justify-between px-4 py-3 border-b bg-white md:hidden">

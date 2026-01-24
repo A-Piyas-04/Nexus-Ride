@@ -1,42 +1,59 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Ticket, XCircle, History } from 'lucide-react';
 
-import { useAuth } from '../context/auth-context';
+import { Button } from '../components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import DashboardLayout from './dashboard/DashboardLayout';
-import TokenHistory from './TokenHistory';
-import Transition from '../components/ui/Transition';
 
 export default function TokenHistoryPage() {
-  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const fullName =
-    (typeof window !== 'undefined' &&
-      (localStorage.getItem('full_name') || localStorage.getItem('name'))) ||
-    user?.full_name ||
-    user?.name ||
-    'User';
-
-  const userEmail = user?.email || '';
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
   return (
-    <DashboardLayout fullName={fullName} userEmail={userEmail} onLogout={handleLogout}>
-      <Transition
-        open
-        enterClassName="opacity-100 translate-y-0"
-        exitClassName="opacity-0 translate-y-4"
-      >
-        <section className="px-4 py-6 md:px-8 md:py-8">
-          <div className="w-full max-w-6xl">
-            <TokenHistory onBack={() => navigate('/dashboard')} />
+    <DashboardLayout>
+      <section className="px-4 py-6 md:px-8 md:py-8">
+        <div className="w-full max-w-6xl">
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-2xl font-bold">Token History</h1>
+              <p className="text-gray-600">Overview of tokens bought and cancelled</p>
+            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Recent Activity</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <Ticket className="h-4 w-4 text-primary-600 mr-2" />
+                    <span>Bought token for Route A</span>
+                  </div>
+                  <span className="text-sm text-gray-500">2026-01-12 10:30</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <XCircle className="h-4 w-4 text-red-600 mr-2" />
+                    <span>Cancelled token for Route B</span>
+                  </div>
+                  <span className="text-sm text-gray-500">2026-01-13 14:05</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <History className="h-4 w-4 text-gray-700 mr-2" />
+                    <span>Used token for Route C</span>
+                  </div>
+                  <span className="text-sm text-gray-500">2026-01-14 08:45</span>
+                </div>
+              </CardContent>
+            </Card>
+            <div>
+              <Button variant="secondary" onClick={() => navigate('/dashboard')}>
+                Back to Dashboard
+              </Button>
+            </div>
           </div>
-        </section>
-      </Transition>
+        </div>
+      </section>
     </DashboardLayout>
   );
 }
