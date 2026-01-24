@@ -24,6 +24,11 @@ export default function LoginPage() {
       const data = await login(email, password);
       const token = data?.access_token || localStorage.getItem('token');
 
+      if (email === 'transportofficer@iut-dhaka.edu') {
+        navigate('/to-dashboard');
+        return;
+      }
+
       if (token) {
         const subscription = await getSubscription(token).catch(() => null);
         if (subscription && ['PENDING', 'ACTIVE'].includes(subscription.status)) {
