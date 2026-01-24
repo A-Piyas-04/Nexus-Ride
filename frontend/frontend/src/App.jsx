@@ -13,6 +13,7 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import DashboardPage from './pages/dashboard/DashboardPage';
 import TODashboard from './pages/dashboard/TODashboard';
+import SubscriptionRequestsPage from './pages/dashboard/SubscriptionRequestsPage';
 import SubscriberDashboardPage from './pages/dashboard/SubscriberDashboardPage';
 import SeatAvailabilityPage from './pages/SeatAvailabilityPage';
 import TokenHistoryPage from './pages/TokenHistoryPage';
@@ -52,8 +53,9 @@ function AppRoutes() {
           <Route path="/signup" element={<SignupPage />} />
         </Route>
         <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/to-dashboard" element={<TODashboard />} />
-        <Route path="/subscriber" element={<SubscriberDashboardPage />} />
+          <Route path="/to-dashboard" element={<TODashboard />} />
+          <Route path="/subscription-requests" element={<SubscriptionRequestsPage />} />
+          <Route path="/subscriber" element={<SubscriberDashboardPage />} />
         <Route path="/seat-availability" element={<SeatAvailabilityPage />} />
         <Route path="/token-history" element={<TokenHistoryPage />} />
         <Route path="/" element={<Navigate to="/login" replace />} />

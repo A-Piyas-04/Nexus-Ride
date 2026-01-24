@@ -9,7 +9,7 @@ class Subscription(SQLModel, table=True):
     user_id: UUID = Field(foreign_key="user.id")
     stop_name: str = Field(foreign_key="route_stop.stop_name", unique=True)
     # stop_name: str = Field(foreign_key="route_stop.stop_name")
-    status: str
+    status: str # ACTIVE / PENDING / INACTIVE
     start_date: Optional[date]
     end_date: Optional[date]
 

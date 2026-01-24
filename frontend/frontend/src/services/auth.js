@@ -46,6 +46,33 @@ export const getSubscription = async (token) => {
   return response.data;
 };
 
+export const getSubscriptionRequests = async (token) => {
+  const response = await api.get('/subscription/requests', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
+export const approveSubscription = async (id, token) => {
+  const response = await api.put(`/subscription/${id}/approve`, {}, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
+export const declineSubscription = async (id, token) => {
+  const response = await api.put(`/subscription/${id}/decline`, {}, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
 export const getTripsAvailability = async (token) => {
   const response = await api.get('/trips/availability', {
     headers: {

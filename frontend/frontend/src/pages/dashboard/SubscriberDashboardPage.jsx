@@ -44,7 +44,7 @@ export default function SubscriberDashboardPage() {
         ]);
 
         setSubscriptionDetails(subscription);
-        if (!subscription || !['PENDING', 'ACTIVE'].includes(subscription.status)) {
+        if (!subscription || subscription.status !== 'ACTIVE') {
           navigate('/dashboard');
           return;
         }

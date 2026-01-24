@@ -31,7 +31,7 @@ export default function LoginPage() {
 
       if (token) {
         const subscription = await getSubscription(token).catch(() => null);
-        if (subscription && ['PENDING', 'ACTIVE'].includes(subscription.status)) {
+        if (subscription && subscription.status === 'ACTIVE') {
           navigate('/subscriber');
           return;
         }

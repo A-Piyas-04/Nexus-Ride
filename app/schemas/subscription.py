@@ -6,6 +6,7 @@ from uuid import UUID
 class SubscriptionRead(SQLModel):
     id: int
     user_id: UUID
+    user_name: Optional[str] = None
     stop_name: str
     status: str
     start_date: Optional[date]

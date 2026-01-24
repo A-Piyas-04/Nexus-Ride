@@ -23,6 +23,22 @@ This document outlines the initial implementation of the Transport Officer (TO) 
     1. `NORMAL_STAFF` (to access basic staff features)
     2. `TO` (to access officer-specific features)
 
+### 2.3 Subscription Request Management
+#### 2.3.1 API Endpoints
+- **File**: `app/api/subscription.py`
+- **Get Requests (`GET /subscription/requests`)**:
+  - **Logic**: Fetches all `PENDING` subscriptions.
+  - **Optimization**: Uses a SQL `JOIN` between `Subscription` and `User` tables to efficiently retrieve the user's `full_name` alongside subscription details.
+  - **Response**: Returns a list of `SubscriptionRead` objects including `user_name`.
+- **Approve Request (`PUT /subscription/{id}/approve`)**:
+  - **Logic**: Verifies TO role, checks if subscription exists and is pending, updates status to `ACTIVE`.
+- **Decline Request (`PUT /subscription/{id}/decline`)**:
+  - **Logic**: Verifies TO role, checks if subscription exists and is pending, updates status to `INACTIVE`.
+
+#### 2.3.2 Data Schemas
+- **File**: `app/schemas/subscription.py`
+- **Changes**: Added `user_name` field to `SubscriptionRead` model to support displaying applicant names on the frontend.
+
 ## 3. Frontend Implementation
 
 ### 3.1 TO Dashboard
@@ -30,21 +46,42 @@ This document outlines the initial implementation of the Transport Officer (TO) 
 - **Route**: `/to-dashboard`
 - **Features**:
   - Replicates the standard staff dashboard layout.
-  - **Exclusive Feature**: Adds a "Subscription requests" action card.
-  - Retains access to standard features:
-    - Seat availability
-    - Token purchase/history
-    - Subscription management
+  - **Exclusive Feature**: Adds a "Subscription requests" action card linking to `/subscription-requests`.
+  - Retains access to standard features (Seat availability, Token purchase, etc.).
 
-### 3.2 Authentication & Routing
+### 3.2 Subscription Requests Page
+- **File**: `frontend/src/pages/dashboard/SubscriptionRequestsPage.jsx`
+- **Route**: `/subscription-requests`
+- **Features**:
+  - **Grid Layout**: Displays pending requests as professional cards.
+  - **User Info**: Shows Applicant's Full Name (fetched from DB) instead of ID.
+  - **Actions**:
+    - **Approve**: Activates the subscription immediately.
+    - **Decline**: Prompts for confirmation, then marks subscription as INACTIVE (red styling).
+  - **Visuals**: Hover effects on cards, color-coded badges (Pending), and loading states.
+
+### 3.3 Service Layer
+- **File**: `frontend/src/services/auth.js`
+- **Functions Added**:
+  - `getSubscriptionRequests(token)`
+  - `approveSubscription(id, token)`
+  - `declineSubscription(id, token)`
+
+### 3.4 Authentication & Routing
 - **File**: `frontend/src/pages/LoginPage.jsx`
-  - **Logic**: Added a check during login. If the email matches the TO email, the user is redirected specifically to `/to-dashboard` instead of the standard `/dashboard`.
+  - **Logic**: Added a check during login. If the email matches the TO email, the user is redirected specifically to `/to-dashboard`.
 - **File**: `frontend/src/App.jsx`
-  - **Route Added**: `<Route path="/to-dashboard" element={<TODashboard />} />`
+  - **Routes Added**: 
+    - `/to-dashboard`
+    - `/subscription-requests`
 
 ## 4. Key Files Modified
 - `app/main.py` (Seeding logic)
 - `app/core/to_credentials.py` (New file)
+- `app/api/subscription.py` (Endpoints for TO)
+- `app/schemas/subscription.py` (Schema update)
 - `frontend/src/App.jsx` (Routing)
 - `frontend/src/pages/LoginPage.jsx` (Redirection logic)
 - `frontend/src/pages/dashboard/TODashboard.jsx` (New file)
+- `frontend/src/pages/dashboard/SubscriptionRequestsPage.jsx` (New file)
+- `frontend/src/services/auth.js` (API integration)

@@ -90,6 +90,179 @@ def subscribe(
 
 
 
+
+@router.get("/requests", response_model=list[SubscriptionRead])
+def get_subscription_requests(
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    # Verify if user has TO role
+    # This is a basic check. In a more robust system, we would use a dependency like require_role("TO")
+    # For now, we check if the user is a STAFF and has the email of the TO, or we check roles.
+    # Since we implemented UserRole, let's check roles properly or stick to the simple check for now if we want to be fast.
+    # The requirement says: "only 1 transport officer".
+    # Let's check against the TO email or check if they have the TO role.
+    
+    # Check if user has TO role
+    # We need to import UserRole and Role models to do a proper check
+    from app.models.role import Role, UserRole
+    
+    statement = (
+        select(Role)
+        .join(UserRole)
+        .where(UserRole.user_id == current_user.id)
+        .where(Role.name == "TO")
+    )
+    is_to = session.exec(statement).first()
+    
+    if not is_to:
+         raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only Transport Officer can view subscription requests"
+        )
+
+    # Use join to fetch Subscription and User together
+    statement = (
+        select(Subscription, User)
+        .join(User, Subscription.user_id == User.id)
+        .where(Subscription.status == "PENDING")
+    )
+    results = session.exec(statement).all()
+    
+    response = []
+    for sub, user in results:
+        stop = session.exec(
+            select(RouteStop).where(RouteStop.stop_name == sub.stop_name)
+        ).first()
+        route = session.get(Route, stop.route_id) if stop else None
+        route_name = route.route_name if route else None
+        
+        # Ensure we have a name to display
+        display_name = user.full_name if user.full_name else "No Name"
+
+        response.append(SubscriptionRead(
+            id=sub.id,
+            user_id=sub.user_id,
+            user_name=display_name,
+            stop_name=sub.stop_name,
+            status=sub.status,
+            start_date=sub.start_date,
+            end_date=sub.end_date,
+            route_name=route_name,
+        ))
+        
+    return response
+
+@router.put("/{subscription_id}/approve", response_model=SubscriptionRead)
+def approve_subscription(
+    subscription_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    # Check if user has TO role
+    from app.models.role import Role, UserRole
+    
+    statement = (
+        select(Role)
+        .join(UserRole)
+        .where(UserRole.user_id == current_user.id)
+        .where(Role.name == "TO")
+    )
+    is_to = session.exec(statement).first()
+    
+    if not is_to:
+         raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only Transport Officer can approve subscriptions"
+        )
+        
+    subscription = session.get(Subscription, subscription_id)
+    if not subscription:
+        raise HTTPException(status_code=404, detail="Subscription not found")
+        
+    if subscription.status != "PENDING":
+        raise HTTPException(status_code=400, detail="Subscription is not pending")
+        
+    subscription.status = "ACTIVE"
+    session.add(subscription)
+    session.commit()
+    session.refresh(subscription)
+    
+    stop = session.exec(
+        select(RouteStop).where(RouteStop.stop_name == subscription.stop_name)
+    ).first()
+    route = session.get(Route, stop.route_id) if stop else None
+    route_name = route.route_name if route else None
+    
+    user = session.get(User, subscription.user_id)
+    user_name = user.full_name if user else "Unknown User"
+
+    return SubscriptionRead(
+        id=subscription.id,
+        user_id=subscription.user_id,
+        user_name=user_name,
+        stop_name=subscription.stop_name,
+        status=subscription.status,
+        start_date=subscription.start_date,
+        end_date=subscription.end_date,
+        route_name=route_name,
+    )
+
+@router.put("/{subscription_id}/decline", response_model=SubscriptionRead)
+def decline_subscription(
+    subscription_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    # Check if user has TO role
+    from app.models.role import Role, UserRole
+    
+    statement = (
+        select(Role)
+        .join(UserRole)
+        .where(UserRole.user_id == current_user.id)
+        .where(Role.name == "TO")
+    )
+    is_to = session.exec(statement).first()
+    
+    if not is_to:
+         raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only Transport Officer can decline subscriptions"
+        )
+        
+    subscription = session.get(Subscription, subscription_id)
+    if not subscription:
+        raise HTTPException(status_code=404, detail="Subscription not found")
+        
+    if subscription.status != "PENDING":
+        raise HTTPException(status_code=400, detail="Subscription is not pending")
+        
+    subscription.status = "INACTIVE" # Or REJECTED if available in enum, but defaulting to INACTIVE as per recent changes
+    session.add(subscription)
+    session.commit()
+    session.refresh(subscription)
+    
+    stop = session.exec(
+        select(RouteStop).where(RouteStop.stop_name == subscription.stop_name)
+    ).first()
+    route = session.get(Route, stop.route_id) if stop else None
+    route_name = route.route_name if route else None
+    
+    user = session.get(User, subscription.user_id)
+    user_name = user.full_name if user else "Unknown User"
+
+    return SubscriptionRead(
+        id=subscription.id,
+        user_id=subscription.user_id,
+        user_name=user_name,
+        stop_name=subscription.stop_name,
+        status=subscription.status,
+        start_date=subscription.start_date,
+        end_date=subscription.end_date,
+        route_name=route_name,
+    )
+
 @router.get("/", response_model=SubscriptionRead)
 def get_subscription(
     current_user: User = Depends(get_current_user),
