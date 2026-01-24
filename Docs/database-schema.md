@@ -89,7 +89,7 @@ This document describes the complete database schema for the NexusRide Universit
 | `id` | INTEGER | PK |
 | `user_id` | UUID | FK → `user.id` |
 | `stop_name` | VARCHAR | Unique, FK → `route_stop.stop_name` |
-| `status` | VARCHAR | `PENDING`, `ACTIVE`, `EXPIRED` |
+| `status` | VARCHAR | `PENDING`, `ACTIVE`, `INACTIVE` |
 | `start_date` | DATE | Nullable |
 | `end_date` | DATE | Nullable |
 
