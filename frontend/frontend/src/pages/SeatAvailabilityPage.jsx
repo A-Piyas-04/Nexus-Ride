@@ -5,19 +5,64 @@ import { ArrowRight, Bus, Ticket, Users } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { StatCard } from '../components/ui/StatCard';
-import { SEAT_AVAILABILITY_SECTIONS } from '../constants/routes';
+import { getTripsAvailability } from '../services/auth';
 import DashboardLayout from './dashboard/DashboardLayout';
 
 export default function SeatAvailabilityPage() {
   const navigate = useNavigate();
 
-  const allTrips = SEAT_AVAILABILITY_SECTIONS.flatMap((section) =>
-    section.routes.flatMap((route) => route.vehicles.flatMap((vehicle) => vehicle.trips))
-  );
+  const [trips, setTrips] = React.useState([]);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState(null);
 
-  const totalCapacity = allTrips.reduce((sum, trip) => sum + trip.total_capacity, 0);
-  const totalBooked = allTrips.reduce((sum, trip) => sum + trip.booked_seats, 0);
-  const totalAvailable = allTrips.reduce((sum, trip) => sum + trip.available_seats, 0);
+  const loadAvailability = React.useCallback(async () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token) {
+      window.alert('You must be logged in to view seat availability');
+      navigate('/login');
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getTripsAvailability(token);
+      setTrips(Array.isArray(data) ? data : []);
+    } catch {
+      setError('Unable to load seat availability');
+    } finally {
+      setLoading(false);
+    }
+  }, [navigate]);
+
+  React.useEffect(() => {
+    loadAvailability();
+  }, [loadAvailability]);
+
+  const routes = React.useMemo(() => {
+    const grouped = trips.reduce((acc, trip) => {
+      const key = trip.route_name || 'Unknown route';
+      if (!acc[key]) {
+        acc[key] = [];
+      }
+      acc[key].push(trip);
+      return acc;
+    }, {});
+
+    return Object.entries(grouped)
+      .map(([name, routeTrips]) => ({
+        name,
+        trips: routeTrips.sort((a, b) => {
+          const dateCompare = String(a.trip_date).localeCompare(String(b.trip_date));
+          if (dateCompare !== 0) return dateCompare;
+          return String(a.start_time).localeCompare(String(b.start_time));
+        }),
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [trips]);
+
+  const totalCapacity = trips.reduce((sum, trip) => sum + trip.total_capacity, 0);
+  const totalBooked = trips.reduce((sum, trip) => sum + trip.booked_seats, 0);
+  const totalAvailable = trips.reduce((sum, trip) => sum + trip.available_seats, 0);
 
   return (
     <DashboardLayout>
@@ -38,7 +83,9 @@ export default function SeatAvailabilityPage() {
                 </p>
               </div>
             </div>
-            <Button variant="secondary">Refresh</Button>
+            <Button variant="secondary" onClick={loadAvailability} disabled={loading}>
+              Refresh
+            </Button>
           </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -62,126 +109,79 @@ export default function SeatAvailabilityPage() {
             />
           </div>
 
-          <div className="space-y-8">
-            {SEAT_AVAILABILITY_SECTIONS.map((section) => (
-              <div
-                key={section.id}
-                className="rounded-2xl border border-primary-100 bg-white shadow-sm"
-              >
-                <div className="flex flex-col gap-3 border-b border-primary-100 bg-primary-50 px-6 py-5 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-primary-700">
-                      Direction
-                    </p>
-                    <h2 className="text-2xl font-bold text-primary-900">{section.title}</h2>
-                    <p className="text-sm text-primary-700/80">{section.description}</p>
-                  </div>
-                  <div className="inline-flex items-center rounded-full border border-primary-200 bg-white px-4 py-2 text-sm font-semibold text-primary-700">
-                    {section.routes.length} routes
-                  </div>
-                </div>
-                <div className="space-y-6 p-6">
-                  {section.routes.map((route) => (
-                    <Card key={route.id} className="border-primary-100">
-                      <CardHeader className="flex flex-col gap-2">
-                        <CardTitle className="text-lg text-gray-900">{route.name}</CardTitle>
-                        <p className="text-sm text-gray-600">Stops in order</p>
-                        <div className="flex flex-wrap gap-2">
-                          {route.stops.map((stop, index) => (
-                            <div
-                              key={`${route.id}-${stop}`}
-                              className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs text-gray-600"
-                            >
-                              <span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-semibold text-primary-700">
-                                {index + 1}
-                              </span>
-                              <span>{stop}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-5 pt-0">
-                        {route.vehicles.map((vehicle) => (
-                          <div
-                            key={vehicle.id}
-                            className="rounded-xl border border-gray-200 bg-gray-50 p-4"
-                          >
-                            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                              <div>
-                                <p className="text-xs uppercase tracking-wide text-gray-500">
-                                  Vehicle
-                                </p>
-                                <p className="text-lg font-semibold text-gray-900">
-                                  {vehicle.number}
-                                </p>
-                                <p className="text-sm text-gray-600">Driver: {vehicle.driver}</p>
-                              </div>
-                              <div className="text-left md:text-right">
-                                <p className="text-xs uppercase tracking-wide text-gray-500">
-                                  Trips
-                                </p>
-                                <p className="text-lg font-semibold text-gray-900">
-                                  {vehicle.trips.length}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="mt-4 overflow-x-auto">
-                              <table className="w-full text-sm">
-                                <thead>
-                                  <tr className="text-left text-gray-500 border-b">
-                                    <th className="py-3 pr-4 font-medium">Trip ID</th>
-                                    <th className="py-3 pr-4 font-medium">Date</th>
-                                    <th className="py-3 pr-4 font-medium">Time</th>
-                                    <th className="py-3 pr-4 font-medium">Status</th>
-                                    <th className="py-3 pr-4 font-medium">Capacity</th>
-                                    <th className="py-3 pr-4 font-medium">Booked</th>
-                                    <th className="py-3 pr-4 font-medium">Available</th>
-                                    <th className="py-3 pr-4 font-medium">Action</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {vehicle.trips.map((trip) => (
-                                    <tr key={trip.id} className="border-b last:border-none text-gray-700">
-                                      <td className="py-3 pr-4 font-semibold text-gray-900">
-                                        {trip.id}
-                                      </td>
-                                      <td className="py-3 pr-4">{trip.trip_date}</td>
-                                      <td className="py-3 pr-4">{trip.start_time}</td>
-                                      <td className="py-3 pr-4">
-                                        <span
-                                          className={[
-                                            'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold',
-                                            trip.status === 'BOARDING'
-                                              ? 'bg-green-100 text-green-700'
-                                              : 'bg-primary-50 text-primary-700',
-                                          ].join(' ')}
-                                        >
-                                          {trip.status}
-                                        </span>
-                                      </td>
-                                      <td className="py-3 pr-4">{trip.total_capacity}</td>
-                                      <td className="py-3 pr-4">{trip.booked_seats}</td>
-                                      <td className="py-3 pr-4 font-semibold text-gray-900">
-                                        {trip.available_seats}
-                                      </td>
-                                      <td className="py-3 pr-4">
-                                        <Button variant="secondary" size="sm">
-                                          Reserve
-                                        </Button>
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        ))}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+          {error && (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+
+          <div className="space-y-6">
+            {routes.length === 0 && !loading ? (
+              <div className="rounded-2xl border border-gray-200 bg-white px-6 py-8 text-center text-sm text-gray-600">
+                No trips available for today.
               </div>
-            ))}
+            ) : (
+              routes.map((route) => (
+                <Card key={route.name} className="border-primary-100">
+                  <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <CardTitle className="text-lg text-gray-900">{route.name}</CardTitle>
+                      <p className="text-sm text-gray-600">Trips assigned to this route</p>
+                    </div>
+                    <div className="text-sm font-semibold text-gray-700">
+                      {route.trips.length} trips
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-left text-gray-500 border-b">
+                            <th className="py-3 pr-4 font-medium">Date</th>
+                            <th className="py-3 pr-4 font-medium">Time</th>
+                            <th className="py-3 pr-4 font-medium">Status</th>
+                            <th className="py-3 pr-4 font-medium">Vehicle</th>
+                            <th className="py-3 pr-4 font-medium">Capacity</th>
+                            <th className="py-3 pr-4 font-medium">Available</th>
+                            <th className="py-3 pr-4 font-medium">Driver</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {route.trips.map((trip) => (
+                            <tr key={trip.id} className="border-b last:border-none text-gray-700">
+                              <td className="py-3 pr-4">{trip.trip_date}</td>
+                              <td className="py-3 pr-4">{trip.start_time}</td>
+                              <td className="py-3 pr-4">
+                                <span
+                                  className={[
+                                    'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold',
+                                    trip.status === 'STARTED'
+                                      ? 'bg-green-100 text-green-700'
+                                      : trip.status === 'COMPLETED'
+                                      ? 'bg-gray-200 text-gray-700'
+                                      : 'bg-primary-50 text-primary-700',
+                                  ].join(' ')}
+                                >
+                                  {trip.status}
+                                </span>
+                              </td>
+                              <td className="py-3 pr-4 font-semibold text-gray-900">
+                                {trip.vehicle_number}
+                              </td>
+                              <td className="py-3 pr-4">{trip.total_capacity}</td>
+                              <td className="py-3 pr-4 font-semibold text-gray-900">
+                                {trip.available_seats}
+                              </td>
+                              <td className="py-3 pr-4">{trip.driver_name}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
         </div>
       </section>

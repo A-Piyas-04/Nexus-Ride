@@ -8,6 +8,7 @@ from app.db.session import get_session
 from app.models.trip import Trip
 from app.models.vehicle import Vehicle
 from app.models.route import Route
+from app.models.profile import DriverProfile
 from app.models.seat_allocation import SeatAllocation
 from app.schemas.trip import TripAvailabilityRead
 from app.core.security import get_current_user
@@ -31,9 +32,11 @@ def get_trips_availability(
     
     # Base query: Trip + Vehicle + Route
     query = (
-        select(Trip, Vehicle, Route)
+        select(Trip, Vehicle, Route, DriverProfile, User)
         .join(Vehicle, Trip.vehicle_id == Vehicle.id)
         .join(Route, Trip.route_id == Route.id)
+        .join(DriverProfile, Trip.driver_profile_id == DriverProfile.id)
+        .join(User, DriverProfile.user_id == User.id)
     )
 
     # Apply filters
@@ -56,7 +59,7 @@ def get_trips_availability(
     
     response_data = []
     
-    for trip, vehicle, route in results:
+    for trip, vehicle, route, driver_profile, driver_user in results:
         # Count booked seats for this trip
         # Note: In a high-traffic production app, we would optimize this N+1 query 
         # with a group_by on the main query or a separate batch count query.
@@ -71,6 +74,7 @@ def get_trips_availability(
             **trip.dict(),
             route_name=route.route_name,
             vehicle_number=vehicle.vehicle_number,
+            driver_name=driver_user.full_name,
             total_capacity=vehicle.capacity,
             booked_seats=booked_count,
             available_seats=available_seats
