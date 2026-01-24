@@ -6,6 +6,8 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import DashboardPage from './pages/dashboard/DashboardPage';
 import SubscriberDashboardPage from './pages/dashboard/SubscriberDashboardPage';
+import SeatAvailabilityPage from './pages/SeatAvailabilityPage';
+import TokenHistoryPage from './pages/TokenHistoryPage';
 
 function PageTransition({ children }) {
   const [visible, setVisible] = React.useState(false);
@@ -18,7 +20,7 @@ function PageTransition({ children }) {
   return (
     <div
       className={[
-        'transition-all duration-300 ease-out',
+        'transition-all duration-500 ease-out',
         visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3',
       ].join(' ')}
     >
@@ -55,6 +57,22 @@ function App() {
             element={
               <PageTransition>
                 <SubscriberDashboardPage />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/seat-availability"
+            element={
+              <PageTransition>
+                <SeatAvailabilityPage />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/token-history"
+            element={
+              <PageTransition>
+                <TokenHistoryPage />
               </PageTransition>
             }
           />
