@@ -2,6 +2,7 @@ import React from 'react';
 import { LogOut, Menu, Settings, User, XCircle } from 'lucide-react';
 
 import { Button } from '../../components/ui/Button';
+import Transition from '../../components/ui/Transition';
 
 export default function DashboardLayout({ fullName, userEmail, onLogout, children }) {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
@@ -11,13 +12,12 @@ export default function DashboardLayout({ fullName, userEmail, onLogout, childre
 
   return (
     <div className="min-h-screen w-full bg-gray-100 flex">
-      <aside
-        className={[
-          'fixed inset-y-0 left-0 z-30 w-64 bg-white border-r shadow-sm p-4',
-          'transform transition-transform duration-200 md:translate-x-0',
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full',
-          'md:static md:block',
-        ].join(' ')}
+      <Transition
+        open={sidebarOpen}
+        persist
+        enterClassName="opacity-100 translate-x-0"
+        exitClassName="opacity-0 -translate-x-full md:opacity-100 md:translate-x-0"
+        className="fixed inset-y-0 left-0 z-30 w-64 bg-white border-r shadow-sm p-4 transform md:static md:block"
       >
         <div className="flex items-center justify-between mb-6">
           <div className="text-2xl font-bold text-primary-900">NexusRide</div>
@@ -54,7 +54,7 @@ export default function DashboardLayout({ fullName, userEmail, onLogout, childre
             Logout
           </Button>
         </nav>
-      </aside>
+      </Transition>
 
       <main className="flex-1 min-w-0">
         <div className="flex items-center justify-between px-4 py-3 border-b bg-white md:hidden">

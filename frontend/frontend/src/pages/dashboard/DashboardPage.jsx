@@ -39,7 +39,7 @@ function DashboardActionCard({ icon: Icon, label, description, iconClassName, on
     <Button
       variant="secondary"
       onClick={onClick}
-      className="w-full min-h-[130px] md:min-h-[160px] rounded-xl border-2 border-primary-100 bg-white text-gray-900 shadow-md hover:shadow-lg hover:border-primary-200 transition-all px-6 py-6"
+      className="w-full min-h-[130px] md:min-h-[160px] rounded-xl border-2 border-primary-300 bg-white text-gray-900 shadow-md hover:shadow-lg hover:border-primary-400 transition-all px-6 py-6"
     >
       <div className="w-full flex items-center gap-4">
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-50">

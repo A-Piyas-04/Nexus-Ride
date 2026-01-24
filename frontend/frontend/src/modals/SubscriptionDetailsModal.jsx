@@ -2,6 +2,7 @@ import React from 'react';
 import { XCircle } from 'lucide-react';
 
 import { Button } from '../components/ui/Button';
+import Transition from '../components/ui/Transition';
 
 export default function SubscriptionDetailsModal({ open, onClose, subscription, loading }) {
   React.useEffect(() => {
@@ -13,8 +14,6 @@ export default function SubscriptionDetailsModal({ open, onClose, subscription, 
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [open, onClose]);
 
-  if (!open) return null;
-
   const status = subscription?.status || 'Unavailable';
   const routeName = subscription?.route_name || 'Unavailable';
   const stopName = subscription?.stop_name || 'Unavailable';
@@ -22,7 +21,12 @@ export default function SubscriptionDetailsModal({ open, onClose, subscription, 
   const endDate = subscription?.end_date || 'Unavailable';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <Transition
+      open={open}
+      enterClassName="opacity-100"
+      exitClassName="opacity-0"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+    >
       <button
         type="button"
         className="absolute inset-0 bg-black/30"
@@ -30,10 +34,13 @@ export default function SubscriptionDetailsModal({ open, onClose, subscription, 
         aria-label="Close subscription details modal"
       />
 
-      <div
+      <Transition
+        open={open}
+        enterClassName="opacity-100 translate-y-0 scale-100"
+        exitClassName="opacity-0 translate-y-4 scale-95"
+        className="relative w-full max-w-lg rounded-2xl border border-gray-200 bg-white shadow-xl"
         role="dialog"
         aria-modal="true"
-        className="relative w-full max-w-lg rounded-2xl border border-gray-200 bg-white shadow-xl"
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <div>
@@ -80,7 +87,7 @@ export default function SubscriptionDetailsModal({ open, onClose, subscription, 
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </Transition>
+    </Transition>
   );
 }

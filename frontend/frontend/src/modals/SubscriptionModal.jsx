@@ -2,6 +2,7 @@ import React from 'react';
 import { XCircle } from 'lucide-react';
 
 import { Button } from '../components/ui/Button';
+import Transition from '../components/ui/Transition';
 
 const MONTH_OPTIONS = [
   { value: '01', label: 'January' },
@@ -94,8 +95,6 @@ export default function SubscriptionModal({ open, onClose, onSubmit }) {
     if (end < start) setEndMonth(startMonth);
   }, [startMonth, endMonth]);
 
-  if (!open) return null;
-
   const handleSubmit = (event) => {
     event.preventDefault();
     onSubmit({ startMonth, endMonth, year, stopName });
@@ -105,7 +104,12 @@ export default function SubscriptionModal({ open, onClose, onSubmit }) {
     'flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <Transition
+      open={open}
+      enterClassName="opacity-100"
+      exitClassName="opacity-0"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+    >
       <button
         type="button"
         className="absolute inset-0 bg-black/30"
@@ -113,10 +117,13 @@ export default function SubscriptionModal({ open, onClose, onSubmit }) {
         aria-label="Close subscription modal"
       />
 
-      <div
+      <Transition
+        open={open}
+        enterClassName="opacity-100 translate-y-0 scale-100"
+        exitClassName="opacity-0 translate-y-4 scale-95"
+        className="relative w-full max-w-lg rounded-2xl border border-gray-200 bg-white shadow-xl"
         role="dialog"
         aria-modal="true"
-        className="relative w-full max-w-lg rounded-2xl border border-gray-200 bg-white shadow-xl"
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <div>
@@ -164,7 +171,11 @@ export default function SubscriptionModal({ open, onClose, onSubmit }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <div className="text-sm font-medium text-gray-700">Year</div>
-              <select className={fieldClassName} value={year} onChange={(e) => setYear(e.target.value)}>
+              <select
+                className={fieldClassName}
+                value={year}
+                onChange={(e) => setYear(e.target.value)}
+              >
                 {yearOptions.map((y) => (
                   <option key={y} value={y}>
                     {y}
@@ -200,7 +211,7 @@ export default function SubscriptionModal({ open, onClose, onSubmit }) {
             <Button type="submit">Subscribe</Button>
           </div>
         </form>
-      </div>
-    </div>
+      </Transition>
+    </Transition>
   );
 }
