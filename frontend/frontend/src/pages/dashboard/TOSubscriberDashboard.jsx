@@ -16,6 +16,25 @@ export default function TOSubscriberDashboard() {
   const [detailsLoading, setDetailsLoading] = React.useState(false);
   const [detailsOpen, setDetailsOpen] = React.useState(false);
   
+  React.useEffect(() => {
+    const checkSubscription = async () => {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      if (!token) {
+          navigate('/login');
+          return;
+      }
+      try {
+        const sub = await getSubscription(token);
+        if (!sub || sub.status !== 'ACTIVE') {
+          navigate('/to-dashboard');
+        }
+      } catch {
+        navigate('/to-dashboard');
+      }
+    };
+    checkSubscription();
+  }, [navigate]);
+
   // TO specific navigation
   const handleSubscriptionRequests = () => navigate('/subscription-requests');
 

@@ -24,8 +24,10 @@ export default function DashboardPage() {
     }
   }, [userEmail, navigate]);
 
-  // Fetch subscription status
+  // Fetch subscription status and redirect if active
   React.useEffect(() => {
+    if (userEmail === 'transportofficer@iut-dhaka.edu') return; // Skip for TO, handled by first effect
+
     const fetchSubscription = async () => {
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       if (token) {
@@ -33,6 +35,9 @@ export default function DashboardPage() {
           const sub = await getSubscription(token);
           if (sub) {
             setSubscriptionStatus(sub.status);
+            if (sub.status === 'ACTIVE') {
+              navigate('/subscriber');
+            }
           }
         } catch (error) {
           // Ignore 404s or other errors, user might not have a subscription
@@ -40,7 +45,7 @@ export default function DashboardPage() {
       }
     };
     fetchSubscription();
-  }, []);
+  }, [navigate, userEmail]);
 
   const handleSeatAvailability = () => navigate('/seat-availability');
   const handleBuyToken = () => window.alert('Buy token');

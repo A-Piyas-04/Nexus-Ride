@@ -8,9 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Ca
 import { getSubscription, getTripsAvailability } from '../../services/auth';
 import SubscriptionDetailsModal from '../../modals/SubscriptionDetailsModal';
 import DashboardLayout from './DashboardLayout';
+import { useCurrentUser } from '../../hooks/useCurrentUser';
 
 export default function SubscriberDashboardPage() {
   const navigate = useNavigate();
+  const { userEmail } = useCurrentUser();
 
   const [checkingAccess, setCheckingAccess] = React.useState(true);
   const [subscriptionDetails, setSubscriptionDetails] = React.useState(null);
@@ -29,6 +31,11 @@ export default function SubscriberDashboardPage() {
 
     if (!token) {
       navigate('/login');
+      return;
+    }
+
+    if (userEmail === 'transportofficer@iut-dhaka.edu') {
+      navigate('/to-subscriber-dashboard');
       return;
     }
 
