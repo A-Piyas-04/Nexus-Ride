@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bus, Calendar, Clock, History, MapPin, Ticket, Users, XCircle, FileText } from 'lucide-react';
 
@@ -8,7 +8,7 @@ import { StatCard } from '../../components/ui/StatCard';
 import { ActionCard } from '../../components/ui/ActionCard';
 import { WelcomeBanner } from '../../components/ui/WelcomeBanner';
 import SubscriptionModal from '../../modals/SubscriptionModal';
-import { createSubscription } from '../../services/auth';
+import { createSubscription, getSubscription } from '../../services/auth';
 import DashboardLayout from './DashboardLayout';
 
 const DASHBOARD_SUMMARY = {
@@ -21,7 +21,26 @@ const DASHBOARD_SUMMARY = {
 
 export default function TODashboard() {
   const navigate = useNavigate();
-  const [subscribeOpen, setSubscribeOpen] = React.useState(false);
+  const [subscribeOpen, setSubscribeOpen] = useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] = useState(null);
+
+  // Fetch subscription status
+  useEffect(() => {
+    const fetchSubscription = async () => {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      if (token) {
+        try {
+          const sub = await getSubscription(token);
+          if (sub) {
+            setSubscriptionStatus(sub.status);
+          }
+        } catch (error) {
+          // Ignore 404s or other errors
+        }
+      }
+    };
+    fetchSubscription();
+  }, []);
 
   const handleSeatAvailability = () => navigate('/seat-availability');
   const handleBuyToken = () => window.alert('Buy token');
@@ -61,7 +80,11 @@ export default function TODashboard() {
       <section className="w-full px-4 py-8 md:px-8 md:py-10">
         <div className="w-full max-w-6xl space-y-8">
           <WelcomeBanner>
-            <Button onClick={handleOpenSubscribe}>Subscribe</Button>
+            <div className="inline-block" title={subscriptionStatus === 'PENDING' ? "Subscription request pending" : ""}>
+              <Button onClick={handleOpenSubscribe} disabled={subscriptionStatus === 'PENDING'}>
+                Subscribe
+              </Button>
+            </div>
           </WelcomeBanner>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">

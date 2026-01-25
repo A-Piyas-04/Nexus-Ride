@@ -19,74 +19,97 @@ def subscribe(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
-    if current_user.user_type != "STAFF":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only STAFF users can subscribe"
-        )
-
-    start_month = int(data.start_month)
-    end_month = int(data.end_month)
-    year = data.year
-
-    if start_month > end_month:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="start_month cannot be after end_month"
-        )
-
-    start_date = date(year, start_month, 1)
-    last_day = monthrange(year, end_month)[1]
-    end_date = date(year, end_month, last_day)
-
-    stop = session.exec(
-        select(RouteStop).where(RouteStop.stop_name == data.stop_name)
-    ).first()
-    if not stop:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid stop name"
-        )
-
-    subscription = session.exec(
-        select(Subscription).where(Subscription.user_id == current_user.id)
-    ).first()
-
-    if subscription:
-        if subscription.status in {"ACTIVE", "PENDING"}:
+    try:
+        if current_user.user_type != "STAFF":
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Subscription already active or pending"
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only STAFF users can subscribe"
             )
 
-        subscription.stop_name = data.stop_name
-        subscription.status = "PENDING"
-        subscription.start_date = start_date
-        subscription.end_date = end_date
+        try:
+            start_month = int(data.start_month)
+            end_month = int(data.end_month)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid month format. Must be a number string (e.g. '01')"
+            )
+            
+        year = data.year
 
-    else:
-        subscription = Subscription(
-            user_id=current_user.id,
-            stop_name=data.stop_name,
-            status="PENDING",
-            start_date=start_date,
-            end_date=end_date
+        if start_month > end_month:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="start_month cannot be after end_month"
+            )
+
+        try:
+            start_date = date(year, start_month, 1)
+            last_day = monthrange(year, end_month)[1]
+            end_date = date(year, end_month, last_day)
+        except ValueError as e:
+             raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid date calculation: {str(e)}"
+            )
+
+        stop = session.exec(
+            select(RouteStop).where(RouteStop.stop_name == data.stop_name)
+        ).first()
+        if not stop:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid stop name: {data.stop_name}"
+            )
+
+        subscription = session.exec(
+            select(Subscription).where(Subscription.user_id == current_user.id)
+        ).first()
+
+        if subscription:
+            if subscription.status in {"ACTIVE", "PENDING"}:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Subscription already active or pending"
+                )
+
+            subscription.stop_name = data.stop_name
+            subscription.status = "PENDING"
+            subscription.start_date = start_date
+            subscription.end_date = end_date
+            session.add(subscription) # Ensure update is tracked
+
+        else:
+            subscription = Subscription(
+                user_id=current_user.id,
+                stop_name=data.stop_name,
+                status="PENDING",
+                start_date=start_date,
+                end_date=end_date
+            )
+            session.add(subscription)
+
+        session.commit()
+        session.refresh(subscription)
+        route = session.get(Route, stop.route_id)
+        route_name = route.route_name if route else None
+        return SubscriptionRead(
+            id=subscription.id,
+            user_id=subscription.user_id,
+            stop_name=subscription.stop_name,
+            status=subscription.status,
+            start_date=subscription.start_date,
+            end_date=subscription.end_date,
+            route_name=route_name,
         )
-        session.add(subscription)
-
-    session.commit()
-    session.refresh(subscription)
-    route = session.get(Route, stop.route_id)
-    route_name = route.route_name if route else None
-    return SubscriptionRead(
-        id=subscription.id,
-        user_id=subscription.user_id,
-        stop_name=subscription.stop_name,
-        status=subscription.status,
-        start_date=subscription.start_date,
-        end_date=subscription.end_date,
-        route_name=route_name,
-    )
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in subscribe endpoint: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error processing subscription: {str(e)}"
+        )
 
 
 
