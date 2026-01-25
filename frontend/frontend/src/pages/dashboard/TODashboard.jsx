@@ -1,23 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bus, Calendar, Clock, History, MapPin, Ticket, Users, XCircle, FileText } from 'lucide-react';
+import { Bus, Calendar, History, MapPin, Ticket, XCircle, FileText } from 'lucide-react';
 
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
-import { StatCard } from '../../components/ui/StatCard';
 import { ActionCard } from '../../components/ui/ActionCard';
 import { WelcomeBanner } from '../../components/ui/WelcomeBanner';
 import SubscriptionModal from '../../modals/SubscriptionModal';
 import { createSubscription, getSubscription } from '../../services/auth';
 import DashboardLayout from './DashboardLayout';
-
-const DASHBOARD_SUMMARY = {
-  tripsAvailable: 3,
-  seatsRemaining: 21,
-  totalCapacity: 96,
-  nextDeparture: '07:30 AM',
-  nextRoute: 'Campus ↔ Uttara',
-};
 
 export default function TODashboard() {
   const navigate = useNavigate();
@@ -33,6 +24,9 @@ export default function TODashboard() {
           const sub = await getSubscription(token);
           if (sub) {
             setSubscriptionStatus(sub.status);
+            if (sub.status === 'ACTIVE') {
+                navigate('/to-subscriber-dashboard');
+            }
           }
         } catch (error) {
           // Ignore 404s or other errors
@@ -40,7 +34,7 @@ export default function TODashboard() {
       }
     };
     fetchSubscription();
-  }, []);
+  }, [navigate]);
 
   const handleSeatAvailability = () => navigate('/seat-availability');
   const handleBuyToken = () => window.alert('Buy token');
@@ -86,27 +80,6 @@ export default function TODashboard() {
               </Button>
             </div>
           </WelcomeBanner>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <StatCard
-              icon={Bus}
-              label="Trips available"
-              value={DASHBOARD_SUMMARY.tripsAvailable}
-              helper="Scheduled for today"
-            />
-            <StatCard
-              icon={Users}
-              label="Seats remaining"
-              value={DASHBOARD_SUMMARY.seatsRemaining}
-              helper={`${DASHBOARD_SUMMARY.totalCapacity} total capacity`}
-            />
-            <StatCard
-              icon={Clock}
-              label="Next departure"
-              value={DASHBOARD_SUMMARY.nextDeparture}
-              helper={DASHBOARD_SUMMARY.nextRoute}
-            />
-          </div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <ActionCard

@@ -1,24 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bus, Calendar, Clock, History, MapPin, Ticket, Users, XCircle } from 'lucide-react';
+import { Bus, Calendar, History, MapPin, Ticket, XCircle } from 'lucide-react';
 
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
-import { StatCard } from '../../components/ui/StatCard';
 import { ActionCard } from '../../components/ui/ActionCard';
 import { WelcomeBanner } from '../../components/ui/WelcomeBanner';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import SubscriptionModal from '../../modals/SubscriptionModal';
 import { createSubscription, getSubscription } from '../../services/auth';
 import DashboardLayout from './DashboardLayout';
-
-const DASHBOARD_SUMMARY = {
-  tripsAvailable: 3,
-  seatsRemaining: 21,
-  totalCapacity: 96,
-  nextDeparture: '07:30 AM',
-  nextRoute: 'Campus ↔ Uttara',
-};
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -94,27 +85,6 @@ export default function DashboardPage() {
               </Button>
             </div>
           </WelcomeBanner>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <StatCard
-              icon={Bus}
-              label="Trips available"
-              value={DASHBOARD_SUMMARY.tripsAvailable}
-              helper="Scheduled for today"
-            />
-            <StatCard
-              icon={Users}
-              label="Seats remaining"
-              value={DASHBOARD_SUMMARY.seatsRemaining}
-              helper={`${DASHBOARD_SUMMARY.totalCapacity} total capacity`}
-            />
-            <StatCard
-              icon={Clock}
-              label="Next departure"
-              value={DASHBOARD_SUMMARY.nextDeparture}
-              helper={DASHBOARD_SUMMARY.nextRoute}
-            />
-          </div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <ActionCard

@@ -1,76 +1,30 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Ticket, User, Bus, Users, Clock, History, XCircle, MapPin, Calendar } from 'lucide-react';
+import { Ticket, User, Bus, Users, Clock, History, XCircle, MapPin, Calendar, FileText } from 'lucide-react';
 
 import { ActionCard } from '../../components/ui/ActionCard';
 import { WelcomeBanner } from '../../components/ui/WelcomeBanner';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
-import { getSubscription, getTripsAvailability } from '../../services/auth';
+import { getSubscription } from '../../services/auth';
 import SubscriptionDetailsModal from '../../modals/SubscriptionDetailsModal';
 import DashboardLayout from './DashboardLayout';
 
-export default function SubscriberDashboardPage() {
+export default function TOSubscriberDashboard() {
   const navigate = useNavigate();
 
-  const [checkingAccess, setCheckingAccess] = React.useState(true);
   const [subscriptionDetails, setSubscriptionDetails] = React.useState(null);
   const [detailsLoading, setDetailsLoading] = React.useState(false);
   const [detailsOpen, setDetailsOpen] = React.useState(false);
-  const [dashboardSummary, setDashboardSummary] = React.useState({
-    nextDeparture: '--:--',
-    nextRoute: 'No upcoming trips',
-    nextDate: '--',
-    nextVehicle: '--',
-    nextPickup: 'Your Stop'
-  });
+  
+  // TO specific navigation
+  const handleSubscriptionRequests = () => navigate('/subscription-requests');
 
-  React.useEffect(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-
-    if (!token) {
-      navigate('/login');
-      return;
-    }
-
-    const fetchData = async () => {
-      try {
-        const [subscription, trips] = await Promise.all([
-          getSubscription(token),
-          getTripsAvailability(token)
-        ]);
-
-        setSubscriptionDetails(subscription);
-        if (!subscription || subscription.status !== 'ACTIVE') {
-          navigate('/dashboard');
-          return;
-        }
-
-        // Process trips data
-        const tripsArray = Array.isArray(trips) ? trips : [];
-        const nextTrip = tripsArray[0]; 
-        
-        setDashboardSummary({
-          nextDeparture: nextTrip ? nextTrip.start_time.slice(0, 5) : '--:--',
-          nextRoute: nextTrip ? nextTrip.route_name : 'No upcoming trips',
-          nextDate: nextTrip ? new Date(nextTrip.trip_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '--',
-          nextVehicle: nextTrip ? `${nextTrip.vehicle_number} · ${nextTrip.total_capacity} seats` : '--',
-          nextPickup: subscription?.pickup_point || 'Your Stop'
-        });
-
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-        if (!subscriptionDetails) navigate('/dashboard'); 
-      } finally {
-        setCheckingAccess(false);
-      }
-    };
-
-    fetchData();
-  }, [navigate]);
-
+  // Subscriber specific actions
   const handleTakeLeave = () =>
     window.alert('Take leave for one or multiple days, releasing reserved seats');
   const handleChangePickup = () => window.alert('Change pickup location for the current day');
+  
+  // Token actions
   const handleBuyToken = () => window.alert('Buy token');
   const handleCancelToken = () => window.alert('Cancel token');
   const handleTokenHistory = () => navigate('/token-history');
@@ -96,15 +50,25 @@ export default function SubscriberDashboardPage() {
     }
   };
 
-  if (checkingAccess) {
-    return null;
-  }
-
   return (
     <DashboardLayout>
       <section className="w-full px-4 py-8 md:px-8 md:py-10">
         <div className="w-full max-w-6xl space-y-8">
           <WelcomeBanner />
+
+          {/* Request Section */}
+          <div>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Requests</h2>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <ActionCard
+                    icon={FileText}
+                    label="Subscription requests"
+                    description="Review and manage pending subscription requests."
+                    iconClassName="text-primary-600"
+                    onClick={handleSubscriptionRequests}
+                />
+            </div>
+          </div>
 
           {/* Subscription Section */}
           <div>
@@ -178,21 +142,21 @@ export default function SubscriberDashboardPage() {
                 <Calendar className="mt-0.5 h-4 w-4 text-primary-600" />
                 <div>
                   <p className="text-sm font-semibold text-gray-900">Date</p>
-                  <p className="text-sm text-gray-600">{dashboardSummary.nextDate}</p>
+                  <p className="text-sm text-gray-600">24 Jan 2026</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <MapPin className="mt-0.5 h-4 w-4 text-primary-600" />
                 <div>
                   <p className="text-sm font-semibold text-gray-900">Primary pickup</p>
-                  <p className="text-sm text-gray-600">{dashboardSummary.nextPickup}</p>
+                  <p className="text-sm text-gray-600">Uttara Sector 10</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <Bus className="mt-0.5 h-4 w-4 text-primary-600" />
                 <div>
                   <p className="text-sm font-semibold text-gray-900">Vehicle</p>
-                  <p className="text-sm text-gray-600">{dashboardSummary.nextVehicle}</p>
+                  <p className="text-sm text-gray-600">NR-208 · 32 seats</p>
                 </div>
               </div>
             </CardContent>

@@ -15,6 +15,7 @@ import DashboardPage from './pages/dashboard/DashboardPage';
 import TODashboard from './pages/dashboard/TODashboard';
 import SubscriptionRequestsPage from './pages/dashboard/SubscriptionRequestsPage';
 import SubscriberDashboardPage from './pages/dashboard/SubscriberDashboardPage';
+import TOSubscriberDashboard from './pages/dashboard/TOSubscriberDashboard';
 import SeatAvailabilityPage from './pages/SeatAvailabilityPage';
 import TokenHistoryPage from './pages/TokenHistoryPage';
 import Transition, { DEFAULT_DURATION_MS } from './components/ui/Transition';
@@ -54,6 +55,7 @@ function AppRoutes() {
         </Route>
         <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/to-dashboard" element={<TODashboard />} />
+          <Route path="/to-subscriber-dashboard" element={<TOSubscriberDashboard />} />
           <Route path="/subscription-requests" element={<SubscriptionRequestsPage />} />
           <Route path="/subscriber" element={<SubscriberDashboardPage />} />
         <Route path="/seat-availability" element={<SeatAvailabilityPage />} />
