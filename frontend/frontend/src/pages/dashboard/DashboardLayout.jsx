@@ -54,7 +54,7 @@ export default function DashboardLayout({ children }) {
             Settings
           </Button>
 
-          <Button variant="secondary" className="w-full justify-start">
+          <Button variant="secondary" className="w-full justify-start" onClick={() => navigate('/profile')}>
             <User className="h-4 w-4 mr-2" />
             Profile
           </Button>
