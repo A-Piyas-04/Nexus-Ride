@@ -48,7 +48,7 @@ export default function DashboardPage() {
   }, [navigate, userEmail]);
 
   const handleSeatAvailability = () => navigate('/seat-availability');
-  const handleBuyToken = () => window.alert('Buy token');
+  const handleBuyToken = () => navigate('/buy-token');
   const handleCancelToken = () => window.alert('Cancel token');
   const handleTokenHistory = () => navigate('/token-history');
   const handleOpenSubscribe = () => setSubscribeOpen(true);
