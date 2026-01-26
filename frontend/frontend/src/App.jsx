@@ -18,6 +18,8 @@ import SubscriberDashboardPage from './pages/dashboard/SubscriberDashboardPage';
 import TOSubscriberDashboard from './pages/dashboard/TOSubscriberDashboard';
 import SeatAvailabilityPage from './pages/SeatAvailabilityPage';
 import TokenHistoryPage from './pages/TokenHistoryPage';
+import Profile from './pages/Profile';
+import BuyToken from './pages/BuyToken';
 import Transition, { DEFAULT_DURATION_MS } from './components/ui/Transition';
 
 function AppRoutes() {
@@ -60,6 +62,8 @@ function AppRoutes() {
           <Route path="/subscriber" element={<SubscriberDashboardPage />} />
         <Route path="/seat-availability" element={<SeatAvailabilityPage />} />
         <Route path="/token-history" element={<TokenHistoryPage />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/buy-token" element={<BuyToken />} />
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
