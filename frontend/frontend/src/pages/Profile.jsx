@@ -25,7 +25,7 @@ export default function Profile() {
             <p className="text-gray-600 text-sm">View and manage your user profile</p>
           </div>
           <Button variant="secondary" onClick={() => navigate('/dashboard')}>
-            Back to Dashboard
+            Dashboard
           </Button>
         </div>
 
