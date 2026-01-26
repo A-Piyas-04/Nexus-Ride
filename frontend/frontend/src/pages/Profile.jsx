@@ -3,8 +3,10 @@ import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Label } from '../components/ui/Label';
 import { Input } from '../components/ui/Input';
+import { useNavigate } from 'react-router-dom';
 
 export default function Profile() {
+  const navigate = useNavigate();
   const [preview, setPreview] = React.useState(null);
 
   const handleFileChange = (e) => {
@@ -17,9 +19,14 @@ export default function Profile() {
   return (
     <section className="w-full px-4 py-8 md:px-8 md:py-10">
       <div className="w-full max-w-4xl space-y-8">
-        <div className="space-y-2">
-          <h1 className="text-2xl font-bold">Profile</h1>
-          <p className="text-gray-600 text-sm">View and manage your user profile</p>
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold">Profile</h1>
+            <p className="text-gray-600 text-sm">View and manage your user profile</p>
+          </div>
+          <Button variant="secondary" onClick={() => navigate('/dashboard')}>
+            Back to Dashboard
+          </Button>
         </div>
 
         <Card>
