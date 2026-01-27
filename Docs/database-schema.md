@@ -75,6 +75,8 @@ This document describes the complete database schema for the NexusRide Universit
 |---|---|---|
 | `id` | INTEGER | PK |
 | `user_id` | UUID | FK → `user.id` (Unique) |
+| `email` | VARCHAR | FK → `user.email`, Nullable |
+| `mobile_number` | VARCHAR | FK → `user.mobile_number`, Nullable |
 | `license_number` | VARCHAR | |
 | `assigned_vehicle_id` | UUID | FK → `vehicle.id`, Nullable |
 

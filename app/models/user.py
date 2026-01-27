@@ -9,4 +9,5 @@ class User(SQLModel, table=True):
     password_hash: str
     full_name: str
     user_type: str   # STAFF / DRIVER
+    mobile_number: Optional[str] = Field(default=None, unique=True) # Bangladeshi mobile number
     last_login: Optional[datetime] = Field(default=None)

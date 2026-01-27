@@ -6,6 +6,8 @@ from typing import Optional
 class StaffProfileBase(SQLModel):
     staff_code: str
     department: str
+    email: Optional[str] = None
+    mobile_number: Optional[str] = None
     default_route_id: Optional[UUID] = None
     default_pickup_stop_id: Optional[UUID] = None
 
@@ -19,6 +21,8 @@ class StaffProfileRead(StaffProfileBase):
 # Driver Profile Schemas
 class DriverProfileBase(SQLModel):
     license_number: str
+    email: Optional[str] = None
+    mobile_number: Optional[str] = None
     assigned_vehicle_id: Optional[UUID] = None
 
 class DriverProfileCreate(DriverProfileBase):
