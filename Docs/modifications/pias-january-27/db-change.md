@@ -33,7 +33,16 @@ Similar to Staff Profile, ensuring drivers also have their contact details linke
   - **Type**: `VARCHAR`
   - **Constraint**: `Foreign Key` → `user.mobile_number`
 
-## 4. Seeds Update
+## 4. Token Model (`app/models/token.py`)
+
+Added `consumer_email` to allow specifying an email for the token holder, defaulting to the user's email but mutable.
+
+- **Added Field**: `consumer_email`
+  - **Type**: `VARCHAR`
+  - **Constraints**: `Nullable` (Optional)
+  - **Purpose**: Contact email for the token consumer.
+
+## 5. Seeds Update
 
 - **`app/seeds/drivers.py`**: Updated to seed drivers using `mobile_number` as a lookup identifier (if available) and ensuring both `email` and `mobile_number` are populated in the `DriverProfile`.
 
@@ -46,3 +55,4 @@ Similar to Staff Profile, ensuring drivers also have their contact details linke
 | `staff_profile` | `mobile_number` | `VARCHAR` | FK to `user.mobile_number` |
 | `driver_profile` | `email` | `VARCHAR` | FK to `user.email` |
 | `driver_profile` | `mobile_number` | `VARCHAR` | FK to `user.mobile_number` |
+| `token` | `consumer_email` | `VARCHAR` | Token holder email |

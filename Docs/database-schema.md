@@ -112,8 +112,9 @@ This document describes the complete database schema for the NexusRide Universit
 | `id` | INTEGER | PK |
 | `user_id` | UUID | FK → `user.id` |
 | `route_id` | UUID | FK → `route.id` |
-| `travel_date` | DATE | |
 | `pickup_stop_id` | UUID | FK → `route_stop.id` |
+| `consumer_email` | VARCHAR | Nullable |
+| `travel_date` | DATE | |
 | `status` | VARCHAR | `ACTIVE`, `CANCELLED`, `USED` |
 | `created_at` | TIMESTAMP | Default: `now()` |
 
