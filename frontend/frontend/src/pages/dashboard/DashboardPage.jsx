@@ -1,46 +1,55 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bus, Calendar, History, MapPin, Ticket, XCircle } from 'lucide-react';
+import { History, Ticket, XCircle, User } from 'lucide-react';
 
 import { Button } from '../../components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { ActionCard } from '../../components/ui/ActionCard';
 import { WelcomeBanner } from '../../components/ui/WelcomeBanner';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import SubscriptionModal from '../../modals/SubscriptionModal';
+import SubscriptionDetailsModal from '../../modals/SubscriptionDetailsModal';
 import { createSubscription, getSubscription } from '../../services/auth';
+import { Navbar } from '../../components/Navbar';
 import DashboardLayout from './DashboardLayout';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { userEmail } = useCurrentUser();
+  
   const [subscribeOpen, setSubscribeOpen] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
+  const [subscriptionDetails, setSubscriptionDetails] = useState(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+
+  const navLinks = [
+    { name: 'Overview', targetId: 'dashboard-welcome' },
+    { name: 'Subscription', targetId: 'dashboard-subscription' },
+    { name: 'Services', targetId: 'dashboard-services' },
+  ];
 
   // Redirect Transport Officer to their specific dashboard
-  React.useEffect(() => {
+  useEffect(() => {
     if (userEmail === 'transportofficer@iut-dhaka.edu') {
       navigate('/to-dashboard');
     }
   }, [userEmail, navigate]);
 
-  // Fetch subscription status and redirect if active
-  React.useEffect(() => {
-    if (userEmail === 'transportofficer@iut-dhaka.edu') return; // Skip for TO, handled by first effect
+  // Fetch subscription status
+  useEffect(() => {
+    if (userEmail === 'transportofficer@iut-dhaka.edu') return; 
 
     const fetchSubscription = async () => {
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       if (token) {
         try {
-          const sub = await getSubscription(token);
+          const sub = await getSubscription(token).catch(() => null);
           if (sub) {
             setSubscriptionStatus(sub.status);
-            if (sub.status === 'ACTIVE') {
-              navigate('/subscriber');
-            }
+            setSubscriptionDetails(sub);
           }
         } catch (error) {
-          // Ignore 404s or other errors, user might not have a subscription
+          console.error('Error fetching dashboard data:', error);
         }
       }
     };
@@ -51,8 +60,46 @@ export default function DashboardPage() {
   const handleBuyToken = () => navigate('/buy-token');
   const handleCancelToken = () => window.alert('Cancel token');
   const handleTokenHistory = () => navigate('/token-history');
+  
   const handleOpenSubscribe = () => setSubscribeOpen(true);
   const handleCloseSubscribe = () => setSubscribeOpen(false);
+
+  const checkSubscription = () => {
+    if (subscriptionStatus !== 'ACTIVE') {
+        window.alert('Subscribe to access these features.');
+        return false;
+    }
+    return true;
+  };
+
+  const handleTakeLeave = () => {
+    if (checkSubscription()) {
+        window.alert('Take leave for one or multiple days, releasing reserved seats');
+    }
+  };
+
+  const handleChangePickup = () => {
+    if (checkSubscription()) {
+        window.alert('Change pickup location for the current day');
+    }
+  };
+
+  const handleSubscriptionDetails = async () => {
+    if (!checkSubscription()) return;
+
+    if (detailsLoading) return;
+    setDetailsLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const subscription = await getSubscription(token);
+      setSubscriptionDetails(subscription);
+      setDetailsOpen(true);
+    } catch {
+      window.alert('Unable to load subscription details');
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
 
   const handleSubscribe = async ({ startMonth, endMonth, year, stopName }) => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -72,96 +119,123 @@ export default function DashboardPage() {
         token
       );
       setSubscribeOpen(false);
-      navigate('/subscriber');
+      
+      // Refresh status without redirecting
+      const sub = await getSubscription(token);
+      setSubscriptionStatus(sub.status);
+      setSubscriptionDetails(sub);
+      window.alert('Subscription request submitted successfully!');
     } catch (error) {
       const message = error.response?.data?.detail || 'Subscription failed';
       window.alert(message);
     }
   };
 
+  const isSubscribed = subscriptionStatus === 'ACTIVE';
+
   return (
     <DashboardLayout>
+      <Navbar links={navLinks} />
       <section className="w-full px-4 py-8 md:px-8 md:py-10">
         <div className="w-full max-w-6xl space-y-8">
-          <WelcomeBanner>
-            <div className="inline-block" title={subscriptionStatus === 'PENDING' ? "Subscription request pending" : ""}>
-              <Button onClick={handleOpenSubscribe} disabled={subscriptionStatus === 'PENDING'}>
-                Subscribe
-              </Button>
-            </div>
-          </WelcomeBanner>
-
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <ActionCard
-              icon={Ticket}
-              label="Seat availability"
-              description="Review today’s trips, capacity, and available seats."
-              iconClassName="text-primary-600"
-              onClick={handleSeatAvailability}
-            />
-
-            <ActionCard
-              icon={Ticket}
-              label="Buy token"
-              description="Purchase a token for a one-time ride."
-              iconClassName="text-primary-600"
-              onClick={handleBuyToken}
-            />
-
-            <ActionCard
-              icon={XCircle}
-              label="Cancel token"
-              description="Cancel an existing token and free the seat."
-              iconClassName="text-red-600"
-              onClick={handleCancelToken}
-            />
-
-            <ActionCard
-              icon={History}
-              label="Token history"
-              description="Track recent purchases, cancellations, and usage."
-              iconClassName="text-primary-600"
-              onClick={handleTokenHistory}
-            />
+          <div id="dashboard-welcome" className="scroll-mt-24">
+            <WelcomeBanner>
+              {subscriptionStatus !== 'ACTIVE' && (
+                  <div className="inline-block" title={subscriptionStatus === 'PENDING' ? "Subscription request pending" : ""}>
+                  <Button onClick={handleOpenSubscribe} disabled={subscriptionStatus === 'PENDING'}>
+                      {subscriptionStatus === 'PENDING' ? 'Pending Approval' : 'Subscribe'}
+                  </Button>
+                  </div>
+              )}
+            </WelcomeBanner>
           </div>
 
-          <Card className="border-gray-200">
-            <CardHeader className="flex flex-col gap-1">
-              <CardTitle className="text-lg text-gray-900">Today’s highlights</CardTitle>
-              <p className="text-sm text-gray-600">
-                Quick glance at routes and stops for the next departures.
-              </p>
-            </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-3">
-              <div className="flex items-start gap-3">
-                <Calendar className="mt-0.5 h-4 w-4 text-primary-600" />
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">Date</p>
-                  <p className="text-sm text-gray-600">24 Jan 2026</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <MapPin className="mt-0.5 h-4 w-4 text-primary-600" />
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">Primary pickup</p>
-                  <p className="text-sm text-gray-600">Uttara Sector 10</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <Bus className="mt-0.5 h-4 w-4 text-primary-600" />
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">Vehicle</p>
-                  <p className="text-sm text-gray-600">NR-208 · 32 seats</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Subscription Section */}
+          <div id="dashboard-subscription" className="scroll-mt-24">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Subscription</h2>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <ActionCard
+                icon={Ticket}
+                label="Take leave"
+                description="Release reserved seats for specific days."
+                iconClassName={isSubscribed ? "text-primary-600" : "text-gray-400"}
+                onClick={handleTakeLeave}
+                disabled={!isSubscribed}
+                title={!isSubscribed ? "Subscribe first" : ""}
+                />
+
+                <ActionCard
+                icon={Ticket}
+                label="Change pickup"
+                description="Update your pickup location."
+                iconClassName={isSubscribed ? "text-primary-600" : "text-gray-400"}
+                onClick={handleChangePickup}
+                disabled={!isSubscribed}
+                title={!isSubscribed ? "Subscribe first" : ""}
+                />
+
+                <ActionCard
+                icon={User}
+                label="Subscription details"
+                description="View your current plan and status."
+                iconClassName={isSubscribed ? "text-primary-600" : "text-gray-400"}
+                onClick={handleSubscriptionDetails}
+                disabled={!isSubscribed}
+                title={!isSubscribed ? "Subscribe first" : ""}
+                />
+            </div>
+          </div>
+
+          {/* Token & Other Services Section */}
+          <div id="dashboard-services" className="scroll-mt-24">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Services</h2>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <ActionCard
+                icon={Ticket}
+                label="Seat availability"
+                description="Review today’s trips, capacity, and available seats."
+                iconClassName="text-primary-600"
+                onClick={handleSeatAvailability}
+                />
+
+                <ActionCard
+                icon={Ticket}
+                label="Buy token"
+                description="Purchase a token for a one-time ride."
+                iconClassName="text-primary-600"
+                onClick={handleBuyToken}
+                />
+
+                <ActionCard
+                icon={XCircle}
+                label="Cancel token"
+                description="Cancel an existing token and free the seat."
+                iconClassName="text-red-600"
+                onClick={handleCancelToken}
+                />
+
+                <ActionCard
+                icon={History}
+                label="Token history"
+                description="Track recent purchases, cancellations, and usage."
+                iconClassName="text-primary-600"
+                onClick={handleTokenHistory}
+                />
+            </div>
+          </div>
         </div>
 
         <SubscriptionModal
           open={subscribeOpen}
           onClose={handleCloseSubscribe}
           onSubmit={handleSubscribe}
+        />
+        
+        <SubscriptionDetailsModal
+            open={detailsOpen}
+            onClose={() => setDetailsOpen(false)}
+            subscription={subscriptionDetails}
+            loading={detailsLoading}
         />
       </section>
     </DashboardLayout>

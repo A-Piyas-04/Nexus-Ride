@@ -43,6 +43,7 @@ TABLE_MAP = {
 }
 
 # Database connection
+# Note: This assumes the database is running via Docker and exposed on port 5433
 DATABASE_URL = "postgresql://postgres:postgres@localhost:5433/transport"
 engine = create_engine(DATABASE_URL)
 
@@ -207,7 +208,12 @@ class DBViewerApp:
 
         try:
             # Setup columns
-            columns = list(model.__fields__.keys())
+            # Check for Pydantic v2 (model_fields) or v1 (__fields__)
+            if hasattr(model, "model_fields"):
+                columns = list(model.model_fields.keys())
+            else:
+                columns = list(model.__fields__.keys())
+                
             self.current_columns = columns
             self.setup_columns(columns)
 
@@ -219,7 +225,12 @@ class DBViewerApp:
                 self.current_rows = []
                 if results:
                     for row in results:
-                        row_data = row.model_dump()
+                        # Handle Pydantic v1 vs v2
+                        if hasattr(row, "model_dump"):
+                            row_data = row.model_dump()
+                        else:
+                            row_data = row.dict()
+                            
                         # Convert all to string for display/search
                         values = [str(row_data.get(col, "")) for col in columns]
                         self.current_data.append(values)
@@ -340,8 +351,20 @@ class DBViewerApp:
 
             child_rows = session.exec(select(child_table).where(child_col == parent_value)).all()
             for child_row in child_rows:
-                row_mapping = child_row._mapping
-                child_row_data = {col.name: row_mapping[col] for col in child_table.columns}
+                # Handle SQLModel/Pydantic object vs raw SQLAlchemy row
+                if hasattr(child_row, "_mapping"):
+                    row_mapping = child_row._mapping
+                elif hasattr(child_row, "__dict__"):
+                    row_mapping = child_row.__dict__
+                else:
+                    # Fallback
+                    continue
+
+                child_row_data = {col.name: row_mapping.get(col.name) for col in child_table.columns if col.name in row_mapping}
+                if not child_row_data:
+                    # Try getting from model attributes if it's an object
+                    child_row_data = {col.name: getattr(child_row, col.name, None) for col in child_table.columns}
+                
                 self.delete_with_cascade(session, child_table, child_row_data, visited)
 
         filters = [table.c[col.name] == row_data.get(col.name) for col in table.primary_key.columns]

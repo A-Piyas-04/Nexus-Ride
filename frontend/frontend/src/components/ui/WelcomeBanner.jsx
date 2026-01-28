@@ -9,7 +9,7 @@ export function WelcomeBanner({ children }) {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="min-w-0">
           <p className="text-3xl font-extrabold tracking-tight text-gray-900">
-            Welcome back, <span className="font-extrabold">{welcomeName}</span>
+             Welcome, <span className="font-extrabold">{welcomeName}</span>
           </p>
           <p className="mt-2 text-sm md:text-base text-green-900/80 font-medium">
             Logged in as <span className="font-semibold">{userEmail}</span>

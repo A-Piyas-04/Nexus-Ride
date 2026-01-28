@@ -60,8 +60,8 @@ def get_trips_availability(
     response_data = []
     
     for trip, vehicle, route, driver_profile, driver_user in results:
-        # Count booked seats for this trip
-        # Note: In a high-traffic production app, we would optimize this N+1 query 
+        
+        # In a high-traffic production app, we would optimize this "N+1" query 
         # with a group_by on the main query or a separate batch count query.
         booked_count = session.exec(
             select(func.count(SeatAllocation.id))

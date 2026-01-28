@@ -19,7 +19,7 @@ def seed_drivers(session: Session):
             "vehicle_number": "NR-331",
         },
         {
-            "full_name": "Sabbir Ahmed",
+            "full_name": "Sakib Ahmed",
             "mobile_number": "01700000003",
             "license_number": "DL-1206",
             "vehicle_number": "NR-219",
