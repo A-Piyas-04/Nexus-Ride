@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Check, Clock, User, X } from 'lucide-react';
-import DashboardLayout from './DashboardLayout';
+import DashboardLayout from '../dashboard/DashboardLayout';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card';
 import { getSubscriptionRequests, approveSubscription, declineSubscription } from '../../services/auth';

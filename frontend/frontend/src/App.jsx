@@ -13,14 +13,14 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import DashboardPage from './pages/dashboard/DashboardPage';
 import TODashboard from './pages/dashboard/TODashboard';
-import SubscriptionRequestsPage from './pages/dashboard/SubscriptionRequestsPage';
+import SubscriptionRequestsPage from './pages/request/SubscriptionRequestsPage';
 import SeatAvailabilityPage from './pages/SeatAvailabilityPage';
 import TokenHistoryPage from './pages/TokenHistoryPage';
 import Profile from './pages/Profile';
 import BuyToken from './pages/BuyToken';
-import TransportRequestForm from './pages/dashboard/TransportRequestForm';
-import { FacultyRequestsList } from './pages/dashboard/FacultyRequests';
-import RequestDetailPage from './pages/dashboard/RequestDetailPage';
+import TransportRequestForm from './pages/request/TransportRequestForm';
+import { FacultyRequestsList } from './pages/request/FacultyRequests';
+import RequestDetailPage from './pages/request/RequestDetailPage';
 import Transition, { DEFAULT_DURATION_MS } from './components/ui/Transition';
 
 function AppRoutes() {

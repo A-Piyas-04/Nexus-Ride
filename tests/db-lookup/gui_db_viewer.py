@@ -22,6 +22,7 @@ from app.models.payment import Payment
 from app.models.notification import Notification
 from app.models.profile import StaffProfile, DriverProfile
 from app.models.token import Token
+from app.models.transport_request import TransportRequest, Guest, TransportRequestStatusLog
 
 # Map table names to model classes
 TABLE_MAP = {
@@ -39,7 +40,10 @@ TABLE_MAP = {
     "Notification": Notification,
     "StaffProfile": StaffProfile,
     "DriverProfile": DriverProfile,
-    "Token": Token
+    "Token": Token,
+    "TransportRequest": TransportRequest,
+    "Guest": Guest,
+    "TransportRequestStatusLog": TransportRequestStatusLog
 }
 
 # Database connection

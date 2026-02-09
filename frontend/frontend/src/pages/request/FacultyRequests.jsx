@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, User, Truck, MessageSquare } from 'lucide-react';
-import { Button } from '../components/ui/Button';
-import { Card } from '../components/ui/Card';
-import { getMyTransportRequests, getTransportRequestById } from '../services/transport';
+import { Button } from '../../components/ui/Button';
+import { Card } from '../../components/ui/Card';
+import { getMyTransportRequests, getTransportRequestById } from '../../services/transport';
 
 const StatusBadge = ({ status }) => {
   const styles = {

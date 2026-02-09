@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
-import { Label } from '../components/ui/Label';
-import { Card } from '../components/ui/Card';
-import { createTransportRequest } from '../services/transport';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { Label } from '../../components/ui/Label';
+import { Card } from '../../components/ui/Card';
+import { createTransportRequest } from '../../services/transport';
 
 export default function TransportRequestForm() {
   const navigate = useNavigate();

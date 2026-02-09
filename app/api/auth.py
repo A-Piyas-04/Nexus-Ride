@@ -6,6 +6,7 @@ from app.models.user import User
 from app.schemas.auth import SignupRequest, LoginRequest
 from app.utils.hashing import hash_password, verify_password
 from app.core.security import create_access_token, get_current_user
+from app.seeds.faculty import assign_faculty_role_if_applicable
 from datetime import datetime
 
 router = APIRouter(prefix="/auth")
@@ -34,6 +35,9 @@ def signup(data: SignupRequest, session: Session = Depends(get_session)):
         session.flush()
 
     session.add(UserRole(user_id=user.id, role_id=default_role.id))
+    
+    # Check and assign FACULTY role if applicable
+    assign_faculty_role_if_applicable(user, session)
 
     session.commit()
     return {"msg": "Signup successful"}
