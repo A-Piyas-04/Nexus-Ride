@@ -9,26 +9,32 @@ from app.core.security import get_current_user
 from app.models.user import User
 from app.models.role import Role, UserRole
 from app.models.transport_request import TransportRequest, Guest, TransportRequestStatusLog, RequestStatus
+from app.models.vehicle import Vehicle
+from app.models.profile import DriverProfile
 from app.schemas.transport_request import (
     TransportRequestCreate, 
     TransportRequestRead, 
     TransportRequestUpdateStatus, 
-    TransportRequestAssign
+    TransportRequestAssign,
+    VehicleOption,
+    DriverOption
 )
 
 router = APIRouter(prefix="/transport-requests", tags=["transport-requests"])
 
 # Helper to check role
 def has_role(user: User, role_name: str, session: Session) -> bool:
-    statement = select(Role).join(UserRole).where(UserRole.user_id == user.id).where(Role.name == role_name)
+    # Explicit join condition to avoid ambiguity
+    statement = select(Role).join(UserRole, Role.id == UserRole.role_id).where(UserRole.user_id == user.id).where(Role.name == role_name)
     result = session.exec(statement).first()
     return result is not None
 
 def require_role(user: User, role_name: str, session: Session):
     if not has_role(user, role_name, session):
+        # Include user info in error for debugging
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"User does not have the required role: {role_name}"
+            detail=f"User {user.email} (ID: {user.id}) does not have the required role: {role_name}"
         )
 
 # Faculty APIs
@@ -106,7 +112,7 @@ def get_request(
         raise HTTPException(status_code=404, detail="Request not found")
         
     is_faculty = has_role(current_user, "FACULTY", session)
-    is_to = has_role(current_user, "TRANSPORT_OFFICER", session)
+    is_to = has_role(current_user, "TO", session)
     
     if is_faculty and request.faculty_user_id != current_user.id:
         if not is_to: # Faculty can only see own, TO can see all
@@ -124,7 +130,7 @@ def get_all_requests(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    require_role(current_user, "TRANSPORT_OFFICER", session)
+    require_role(current_user, "TO", session)
     statement = select(TransportRequest).options(selectinload(TransportRequest.guests))
     if status_filter:
         statement = statement.where(TransportRequest.status == status_filter)
@@ -138,7 +144,7 @@ def update_status(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    require_role(current_user, "TRANSPORT_OFFICER", session)
+    require_role(current_user, "TO", session)
     statement = select(TransportRequest).where(TransportRequest.id == request_id).options(selectinload(TransportRequest.guests))
     request = session.exec(statement).first()
     
@@ -181,6 +187,41 @@ def update_status(
     session.refresh(request)
     return request
 
+@router.get("/vehicles", response_model=List[VehicleOption])
+def get_vehicles(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    require_role(current_user, "TO", session)
+    vehicles = session.exec(select(Vehicle)).all()
+    
+    return [VehicleOption(
+        id=v.id,
+        vehicle_number=v.vehicle_number,
+        type="Bus", # Hardcoded as Vehicle model currently lacks type field
+        capacity=v.capacity
+    ) for v in vehicles]
+
+@router.get("/drivers", response_model=List[DriverOption])
+def get_drivers(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    require_role(current_user, "TO", session)
+    results = session.exec(
+        select(DriverProfile, User)
+        .join(User, DriverProfile.user_id == User.id)
+    ).all()
+    
+    drivers = []
+    for profile, user in results:
+        drivers.append(DriverOption(
+            id=profile.id,
+            full_name=user.full_name,
+            license_number=profile.license_number
+        ))
+    return drivers
+
 @router.patch("/{request_id}/assign", response_model=TransportRequestRead)
 def assign_request(
     request_id: UUID,
@@ -188,7 +229,7 @@ def assign_request(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    require_role(current_user, "TRANSPORT_OFFICER", session)
+    require_role(current_user, "TO", session)
     statement = select(TransportRequest).where(TransportRequest.id == request_id).options(selectinload(TransportRequest.guests))
     request = session.exec(statement).first()
     

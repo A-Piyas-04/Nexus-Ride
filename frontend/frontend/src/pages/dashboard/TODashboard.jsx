@@ -56,6 +56,7 @@ export default function TODashboard() {
   const handleOpenSubscribe = () => setSubscribeOpen(true);
   const handleCloseSubscribe = () => setSubscribeOpen(false);
   const handleSubscriptionRequests = () => navigate('/subscription-requests');
+  const handleTransportRequests = () => navigate('/dashboard/transport-requests/manage');
 
 
 
@@ -168,6 +169,14 @@ export default function TODashboard() {
                     description="Review and manage pending subscription requests."
                     iconClassName="text-primary-600"
                     onClick={handleSubscriptionRequests}
+                />
+
+                <ActionCard
+                    icon={FileText}
+                    label="Transport Requests"
+                    description="Review and manage faculty transport requests."
+                    iconClassName="text-primary-600"
+                    onClick={handleTransportRequests}
                 />
 
                 <ActionCard

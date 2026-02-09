@@ -21,6 +21,8 @@ import BuyToken from './pages/BuyToken';
 import TransportRequestForm from './pages/request/TransportRequestForm';
 import { FacultyRequestsList } from './pages/request/FacultyRequests';
 import RequestDetailPage from './pages/request/RequestDetailPage';
+import TransportOfficerRequests from './pages/request/TransportOfficerRequests';
+import TransportOfficerRequestDetail from './pages/request/TransportOfficerRequestDetail';
 import Transition, { DEFAULT_DURATION_MS } from './components/ui/Transition';
 
 function AppRoutes() {
@@ -69,6 +71,10 @@ function AppRoutes() {
         <Route path="/dashboard/transport-requests/my" element={<FacultyRequestsList />} />
         <Route path="/dashboard/transport-requests/:id" element={<RequestDetailPage />} />
         
+        {/* Transport Officer Routes */}
+        <Route path="/dashboard/transport-requests/manage" element={<TransportOfficerRequests />} />
+        <Route path="/dashboard/transport-requests/:id/manage" element={<TransportOfficerRequestDetail />} />
+
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

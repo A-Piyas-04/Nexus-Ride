@@ -19,6 +19,72 @@ export const createTransportRequest = async (requestData) => {
   }
 };
 
+// TO: Get all requests
+export const getAllTransportRequests = async (status_filter = null) => {
+  try {
+    const params = status_filter ? { status_filter } : {};
+    const response = await axios.get(`${API_URL}/transport-requests`, {
+      headers: getAuthHeaders(),
+      params,
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// TO: Update request status
+export const updateTransportRequestStatus = async (id, status, note = null) => {
+  try {
+    const response = await axios.patch(
+      `${API_URL}/transport-requests/${id}/status`,
+      { status, note },
+      { headers: getAuthHeaders() }
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// TO: Assign vehicle/driver
+export const assignTransportRequest = async (id, assignmentData) => {
+  try {
+    const response = await axios.patch(
+      `${API_URL}/transport-requests/${id}/assign`,
+      assignmentData,
+      { headers: getAuthHeaders() }
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// TO: Get vehicles
+export const getVehicles = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/transport-requests/vehicles`, {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// TO: Get drivers
+export const getDrivers = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/transport-requests/drivers`, {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
 // Get all requests for the current faculty user
 export const getMyTransportRequests = async () => {
   try {

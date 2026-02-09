@@ -46,3 +46,14 @@ class TransportRequestAssign(BaseModel):
     assigned_vehicle_id: Optional[UUID] = None
     assigned_driver_profile_id: Optional[int] = None
     to_reply_message: Optional[str] = None
+
+class VehicleOption(BaseModel):
+    id: UUID
+    vehicle_number: str
+    type: str
+    capacity: int
+
+class DriverOption(BaseModel):
+    id: int
+    full_name: str
+    license_number: str
