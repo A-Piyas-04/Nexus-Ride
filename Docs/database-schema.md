@@ -29,6 +29,11 @@ This document describes the complete database schema for the NexusRide Universit
 - **`payment`**: Payment transaction records.
 - **`notification`**: System notifications for users.
 
+### Faculty Requests
+- **`transport_request`**: Faculty-initiated requests for guest transport.
+- **`guest`**: Guests associated with a transport request.
+- **`transport_request_status_log`**: Audit log for request status changes.
+
 ---
 
 ## 1. Identity & Access Management
@@ -198,6 +203,49 @@ This document describes the complete database schema for the NexusRide Universit
 
 ---
 
+## 5. Faculty & Transport Request
+
+### `transport_request`
+**Source**: `app/models/transport_request.py`
+| Column | Type | Notes |
+|---|---|---|
+| `id` | UUID | PK, default: `uuid4` |
+| `faculty_user_id` | UUID | FK → `user.id` |
+| `event_title` | VARCHAR | |
+| `event_date` | DATE | |
+| `status` | VARCHAR | `PENDING`, `APPROVED`, `DECLINED`, `ASSIGNED`, `COMPLETED` |
+| `to_reply_message` | VARCHAR | Nullable |
+| `assigned_vehicle_id` | UUID | FK → `vehicle.id`, Nullable |
+| `assigned_driver_profile_id` | INTEGER | FK → `driver_profile.id`, Nullable |
+| `assigned_by` | UUID | FK → `user.id` (TO), Nullable |
+| `assigned_at` | TIMESTAMP | Nullable |
+| `created_at` | TIMESTAMP | Default: `now()` |
+| `updated_at` | TIMESTAMP | Default: `now()` |
+
+### `guest`
+**Source**: `app/models/transport_request.py`
+| Column | Type | Notes |
+|---|---|---|
+| `id` | UUID | PK, default: `uuid4` |
+| `request_id` | UUID | FK → `transport_request.id` |
+| `name` | VARCHAR | |
+| `pickup_location` | VARCHAR | |
+| `notes` | VARCHAR | Nullable |
+
+### `transport_request_status_log`
+**Source**: `app/models/transport_request.py`
+| Column | Type | Notes |
+|---|---|---|
+| `id` | UUID | PK, default: `uuid4` |
+| `request_id` | UUID | FK → `transport_request.id` |
+| `previous_status` | VARCHAR | Nullable |
+| `new_status` | VARCHAR | |
+| `changed_by` | UUID | FK → `user.id` |
+| `note` | VARCHAR | Nullable |
+| `changed_at` | TIMESTAMP | Default: `now()` |
+
+---
+
 ## Relationship Summary
 
 ### Identity
@@ -216,3 +264,10 @@ This document describes the complete database schema for the NexusRide Universit
 - **Subscription ↔ RouteStop**: One-to-One (via `subscription.stop_name` ↔ `route_stop.stop_name`).
 - **User ↔ Token**: One-to-Many.
 - **Trip ↔ SeatAllocation**: One-to-Many (Tracks which user is on which trip).
+
+### Faculty Requests
+- **Faculty ↔ TransportRequest**: One-to-Many.
+- **TransportRequest ↔ Guest**: One-to-Many.
+- **TransportRequest ↔ Vehicle**: Many-to-One (Optional assignment).
+- **TransportRequest ↔ DriverProfile**: Many-to-One (Optional assignment).
+- **TransportRequest ↔ StatusLog**: One-to-Many.
