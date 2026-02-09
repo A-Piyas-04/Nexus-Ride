@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { History, Ticket, XCircle, User } from 'lucide-react';
+import { History, Ticket, XCircle, User, Briefcase } from 'lucide-react';
+import axios from 'axios';
 
 import { Button } from '../../components/ui/Button';
 import { ActionCard } from '../../components/ui/ActionCard';
@@ -15,6 +16,7 @@ import DashboardLayout from './DashboardLayout';
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { userEmail } = useCurrentUser();
+  const [userRole, setUserRole] = useState(null); // Add state for role
   
   const [subscribeOpen, setSubscribeOpen] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
@@ -35,14 +37,30 @@ export default function DashboardPage() {
     }
   }, [userEmail, navigate]);
 
-  // Fetch subscription status
+  // Fetch user role and subscription status
   useEffect(() => {
     if (userEmail === 'transportofficer@iut-dhaka.edu') return; 
 
-    const fetchSubscription = async () => {
+    const fetchDashboardData = async () => {
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       if (token) {
         try {
+          // Fetch user details to get role
+          const meResponse = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/auth/me`, {
+             headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          // Check roles from response (assuming backend returns roles list or user_type)
+          // Based on backend implementation: user might have roles in `roles` array or we check `user_type`
+          // For Faculty Feature, we specifically check for "FACULTY" role.
+          // Let's assume the /auth/me endpoint returns the full user object including roles.
+          // If not, we might need to rely on what's available.
+          // Standard /auth/me usually returns { id, email, full_name, user_type, roles: [...] }
+          
+          if (meResponse.data.roles && meResponse.data.roles.some(r => r.name === 'FACULTY')) {
+             setUserRole('FACULTY');
+          }
+
           const sub = await getSubscription(token).catch(() => null);
           if (sub) {
             setSubscriptionStatus(sub.status);
@@ -53,7 +71,7 @@ export default function DashboardPage() {
         }
       }
     };
-    fetchSubscription();
+    fetchDashboardData();
   }, [navigate, userEmail]);
 
   const handleSeatAvailability = () => navigate('/seat-availability');
@@ -100,6 +118,8 @@ export default function DashboardPage() {
       setDetailsLoading(false);
     }
   };
+
+  const handleFacultyRequest = () => navigate('/dashboard/transport-requests/my');
 
   const handleSubscribe = async ({ startMonth, endMonth, year, stopName }) => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -185,6 +205,22 @@ export default function DashboardPage() {
                 />
             </div>
           </div>
+
+          {/* Faculty Section - Only visible to FACULTY role */}
+          {userRole === 'FACULTY' && (
+            <div id="faculty-transport" className="scroll-mt-24">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Faculty Services</h2>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <ActionCard
+                icon={Briefcase}
+                label="Transport Requests"
+                description="Request vehicle for guests/events"
+                iconClassName="text-primary-600"
+                onClick={handleFacultyRequest}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Token & Other Services Section */}
           <div id="dashboard-services" className="scroll-mt-24">

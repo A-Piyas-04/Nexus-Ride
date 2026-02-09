@@ -18,6 +18,9 @@ import SeatAvailabilityPage from './pages/SeatAvailabilityPage';
 import TokenHistoryPage from './pages/TokenHistoryPage';
 import Profile from './pages/Profile';
 import BuyToken from './pages/BuyToken';
+import TransportRequestForm from './pages/dashboard/TransportRequestForm';
+import { FacultyRequestsList } from './pages/dashboard/FacultyRequests';
+import RequestDetailPage from './pages/dashboard/RequestDetailPage';
 import Transition, { DEFAULT_DURATION_MS } from './components/ui/Transition';
 
 function AppRoutes() {
@@ -60,6 +63,12 @@ function AppRoutes() {
         <Route path="/token-history" element={<TokenHistoryPage />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/buy-token" element={<BuyToken />} />
+        
+        {/* Faculty Transport Routes */}
+        <Route path="/dashboard/transport-requests/new" element={<TransportRequestForm />} />
+        <Route path="/dashboard/transport-requests/my" element={<FacultyRequestsList />} />
+        <Route path="/dashboard/transport-requests/:id" element={<RequestDetailPage />} />
+        
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
