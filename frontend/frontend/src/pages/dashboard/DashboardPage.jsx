@@ -16,7 +16,7 @@ import DashboardLayout from './DashboardLayout';
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { userEmail } = useCurrentUser();
-  const [userRole, setUserRole] = useState(null); // Add state for role
+  const [userRoles, setUserRoles] = useState([]); // Store all user roles
   
   const [subscribeOpen, setSubscribeOpen] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
@@ -50,15 +50,13 @@ export default function DashboardPage() {
              headers: { Authorization: `Bearer ${token}` }
           });
           
-          // Check roles from response (assuming backend returns roles list or user_type)
-          // Based on backend implementation: user might have roles in `roles` array or we check `user_type`
-          // For Faculty Feature, we specifically check for "FACULTY" role.
-          // Let's assume the /auth/me endpoint returns the full user object including roles.
-          // If not, we might need to rely on what's available.
-          // Standard /auth/me usually returns { id, email, full_name, user_type, roles: [...] }
-          
-          if (meResponse.data.roles && meResponse.data.roles.some(r => r.name === 'FACULTY')) {
-             setUserRole('FACULTY');
+          console.log('Dashboard: User data fetched:', meResponse.data);
+
+          if (meResponse.data.roles && Array.isArray(meResponse.data.roles)) {
+             setUserRoles(meResponse.data.roles);
+          } else {
+             // Fallback if roles not present or empty
+             setUserRoles([]);
           }
 
           const sub = await getSubscription(token).catch(() => null);
@@ -120,6 +118,7 @@ export default function DashboardPage() {
   };
 
   const handleFacultyRequest = () => navigate('/dashboard/transport-requests/my');
+  const handleGuestRequest = () => navigate('/dashboard/transport-requests/new');
 
   const handleSubscribe = async ({ startMonth, endMonth, year, stopName }) => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -152,6 +151,7 @@ export default function DashboardPage() {
   };
 
   const isSubscribed = subscriptionStatus === 'ACTIVE';
+  const isFaculty = userRoles.some(r => r.name === 'FACULTY');
 
   return (
     <DashboardLayout>
@@ -160,6 +160,16 @@ export default function DashboardPage() {
         <div className="w-full max-w-6xl space-y-8">
           <div id="dashboard-welcome" className="scroll-mt-24">
             <WelcomeBanner>
+              <div className="inline-block mr-2">
+                <Button 
+                  onClick={handleGuestRequest} 
+                  disabled={!isFaculty}
+                  className={`${isFaculty ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-400 text-gray-200 cursor-not-allowed'}`}
+                  title={isFaculty ? "Request transport for guests" : "Available only for Faculty members"}
+                >
+                  Guest Request
+                </Button>
+              </div>
               {subscriptionStatus !== 'ACTIVE' && (
                   <div className="inline-block" title={subscriptionStatus === 'PENDING' ? "Subscription request pending" : ""}>
                   <Button onClick={handleOpenSubscribe} disabled={subscriptionStatus === 'PENDING'}>
@@ -207,7 +217,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Faculty Section - Only visible to FACULTY role */}
-          {userRole === 'FACULTY' && (
+          {isFaculty && (
             <div id="faculty-transport" className="scroll-mt-24">
               <h2 className="text-xl font-bold text-gray-900 mb-4">Faculty Services</h2>
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">

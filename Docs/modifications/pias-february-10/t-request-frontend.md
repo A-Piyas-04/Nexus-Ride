@@ -41,15 +41,35 @@ The internal database viewer tool (`gui_db_viewer.py`) did not support the newly
 - Updated `tests/db-lookup/gui_db_viewer.py`.
 - Added `TransportRequest`, `Guest`, and `TransportRequestStatusLog` models to the viewer's `TABLE_MAP`.
 
+### 4. Role Fetching and Frontend Logic Fixes
+**Why?**
+Users with the `FACULTY` role reported that the "Guest Request" button remained unresponsive/disabled. Investigation revealed that the backend `/me` endpoint was not returning the user's role information, and the frontend logic for checking roles needed to be more robust to handle the relationship between users and roles.
+
+**Changes:**
+- **Backend (`app/api/auth.py`):**
+  - Updated the `/me` endpoint to explicitly join the `User` table with the `Role` table via `UserRole`.
+  - The API response now includes a `roles` array (e.g., `roles: [{id: 1, name: "FACULTY"}]`).
+- **Frontend (`DashboardPage.jsx`):**
+  - Refactored state management to store the full list of `userRoles` instead of a single string.
+  - Implemented robust `isFaculty` logic: `userRoles.some(r => r.name === 'FACULTY')`.
+  - Updated the "Guest Request" button:
+    - **Logic:** `disabled={!isFaculty}`
+    - **Visuals:** Dynamically applies `bg-blue-600` (enabled) or `bg-gray-400` (disabled) with appropriate cursor styles.
+    - **Feedback:** Added a tooltip title explaining why the button is disabled for non-faculty users.
+
 ---
 
 ## Feature Implementation Details
 
 ### 1. Dashboard Integration
 **File:** `frontend/src/pages/dashboard/DashboardPage.jsx`
-- **Role Detection:** Added logic to fetch user roles from `/auth/me` endpoint.
+- **Role Detection:** Added logic to fetch user roles from updated `/auth/me` endpoint.
 - **Conditional Rendering:** Added a "Faculty Services" section that only appears if the user has the `FACULTY` role.
 - **Action Card:** Introduced a "Transport Requests" card that navigates to the request list.
+- **Quick Access Button:** Added a "Guest Request" button in the Welcome Banner (beside the Subscribe button).
+  - **Visibility:** Always visible, but only clickable (enabled) for users with the `FACULTY` role.
+  - **Action:** Redirects to `/dashboard/transport-requests/new` for immediate request creation.
+  - **Styling:** Distinct bluish color (`bg-blue-600`) to differentiate from the primary action.
 
 ### 2. Service Layer
 **File:** `frontend/src/services/transport.js`
@@ -92,7 +112,7 @@ The internal database viewer tool (`gui_db_viewer.py`) did not support the newly
   - `/dashboard/transport-requests/:id`: View request details.
 
 ## Role-Based Access Control
-- The dashboard checks for the `FACULTY` role before rendering the entry point.
+- The dashboard checks for the `FACULTY` role before enabling the "Guest Request" button and rendering the "Faculty Services" section.
 - Backend APIs strictly enforce role permissions, ensuring security even if frontend checks are bypassed.
 
 ## Non-Functional Aspects

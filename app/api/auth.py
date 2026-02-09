@@ -61,10 +61,12 @@ def login(data: LoginRequest, session: Session = Depends(get_session)):
 
 
 @router.get("/me")
-def me(current_user: User = Depends(get_current_user)):
+def me(current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):
+    roles = session.exec(select(Role).join(UserRole).where(UserRole.user_id == current_user.id)).all()
     return {
         "id": str(current_user.id),
         "email": current_user.email,
         "full_name": current_user.full_name,
         "user_type": current_user.user_type,
+        "roles": [{"id": r.id, "name": r.name} for r in roles]
     }
