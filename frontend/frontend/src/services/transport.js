@@ -108,3 +108,49 @@ export const getTransportRequestById = async (id) => {
     throw error;
   }
 };
+
+// Route Management
+export const createRoute = async (routeData) => {
+  try {
+    const response = await axios.post(`${API_URL}/routes`, routeData, {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getRoutes = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/routes`, {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const updateRoute = async (id, routeData) => {
+  try {
+    const response = await axios.patch(`${API_URL}/routes/${id}`, routeData, {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const syncRouteStops = async (id, stopsData) => {
+  try {
+    const response = await axios.put(`${API_URL}/routes/${id}/stops`, stopsData, {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+

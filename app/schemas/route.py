@@ -38,8 +38,3 @@ class RouteRead(RouteBase):
 
 class RouteWithStopsRead(RouteRead):
     stops: List[RouteStopRead] = []
-
-
-class RouteStopUpdate(SQLModel):
-    stop_name: Optional[str] = None
-    sequence_number: Optional[int] = None

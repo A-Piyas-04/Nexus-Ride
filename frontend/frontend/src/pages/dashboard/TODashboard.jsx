@@ -10,9 +10,11 @@ import SubscriptionDetailsModal from '../../modals/SubscriptionDetailsModal';
 import { createSubscription, getSubscription } from '../../services/auth';
 import { Navbar } from '../../components/Navbar';
 import DashboardLayout from './DashboardLayout';
+import { useAuth } from '../../context/auth-context';
 
 export default function TODashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   const [subscribeOpen, setSubscribeOpen] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
@@ -64,7 +66,15 @@ export default function TODashboard() {
   const handleNotifyUsers = () => window.alert('Notify users about important updates.');
 
   // Manage Handlers
-  const handleManageRoutes = () => navigate('/dashboard/routes/add');
+  const isTO = user?.roles?.some(role => [1, 3].includes(role.id));
+
+  const handleManageRoutes = () => {
+    if (isTO) {
+      navigate('/to-pages/to-add/routeAdd');
+    } else {
+      window.alert('Unauthorized: Only Transport Officers can manage routes.');
+    }
+  };
   const handleManageVehicles = () => window.alert('Manage Vehicles');
   const handleManageDrivers = () => window.alert('Manage Drivers');
 
@@ -191,15 +201,17 @@ export default function TODashboard() {
 
           {/* Manage */}
           <div id="to-manage" className="scroll-mt-24">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Manage</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Manage <span className="text-sm font-bold text-red-600">(Coming Soon)</span></h2>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <ActionCard
-                icon={MapPin}
-                label="Routes"
-                description="Manage your routes and stops."
-                iconClassName="text-primary-600"
-                onClick={handleManageRoutes}
-                />
+                {isTO && (
+                  <ActionCard
+                    icon={MapPin}
+                    label="Routes"
+                    description="Manage your routes and stops."
+                    iconClassName="text-gray-400"
+                    onClick={handleManageRoutes}
+                  />
+                )}
 
                 <ActionCard
                 icon={Bus}

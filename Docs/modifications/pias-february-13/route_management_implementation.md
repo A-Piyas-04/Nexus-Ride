@@ -21,27 +21,19 @@ Implemented a dynamic Route and Route Stop management system that allows authori
 - **Rationale:** Provides a clear structure for creating and reading routes with their associated stops in a single request.
 
 ### 3. API Endpoints
-**File:** [routes.py](file:///e%3A/Projects/NexusRide/app/api/routes.py)
+**File:** [routes.py](file:///e%3A/Projects/NexusRide/app/api/routes.py) (New File)
 - **Features:**
     - `POST /routes`: Create a new route with stops (Transport Officer only).
     - `GET /routes`: List all routes with stops.
     - `GET /routes/{route_id}`: Get a specific route with stops.
-    - `PATCH /routes/{route_id}`: Update route details (e.g., `is_active`).
-    - `PUT /routes/{route_id}/stops/sync`: Synchronize stops for a route (add/remove/reorder in bulk).
-    - `PATCH /routes/stops/{stop_id}`: Update a specific stop.
-    - `DELETE /routes/{route_id}`: Delete a route and its stops.
-- **Security:** Enhanced `require_transport_officer` helper to enforce RBAC. Access is restricted to users who possess **both** the `NORMAL_STAFF` (ID 1) and `TO` (ID 3) roles, as verified against the `UserRole` table.
+    - `POST /routes/{route_id}/stops`: Add a single stop to an existing route (Transport Officer only).
+- **Security:** Implemented `require_transport_officer` helper to enforce Role-Based Access Control (RBAC).
 
-### 4. Frontend Implementation
-**Location:** `frontend/frontend/src/pages/to-pages/to-add/`
-- **Components:**
-    - [routeAdd.jsx](file:///e%3A/Projects/NexusRide/frontend/frontend/src/pages/to-pages/to-add/routeAdd.jsx): Form for creating new routes with dynamic stoppage addition.
-    - [routeList.jsx](file:///e%3A/Projects/NexusRide/frontend/frontend/src/pages/to-pages/to-add/routeList.jsx): Dashboard for viewing routes, toggling active status, and opening management modal.
-    - [RouteDetailsModal.jsx](file:///e%3A/Projects/NexusRide/frontend/frontend/src/pages/to-pages/to-add/RouteDetailsModal.jsx): Modal for bulk editing stoppages (reordering, adding, deleting).
-- **Service:** [routeService.js](file:///e%3A/Projects/NexusRide/frontend/frontend/src/services/routeService.js) handles all API communication.
-- **Integration:** 
-    - Linked from [TODashboard.jsx](file:///e%3A/Projects/NexusRide/frontend/frontend/src/pages/dashboard/TODashboard.jsx) under "Manage" section.
-    - Routes registered in [App.jsx](file:///e%3A/Projects/NexusRide/frontend/frontend/src/App.jsx).
+### 4. Application Integration
+**File:** [main.py](file:///e%3A/Projects/NexusRide/app/main.py)
+- **Modifications:**
+    - Registered the new `routes_router` in the FastAPI application.
+- **Rationale:** Exposes the new endpoints to the API.
 
 ## Verification
 - **Test Script:** [test_routes_api.py](file:///e%3A/Projects/NexusRide/test_routes_api.py) (New File)

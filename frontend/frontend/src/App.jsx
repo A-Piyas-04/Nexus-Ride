@@ -26,6 +26,7 @@ import TransportOfficerRequestDetail from './pages/request/TransportOfficerReque
 import RouteAdd from './pages/to-pages/to-add/routeAdd';
 import RouteList from './pages/to-pages/to-add/routeList';
 import Transition, { DEFAULT_DURATION_MS } from './components/ui/Transition';
+import { ProtectedRoute } from './components/ProtectedRoute';
 
 function AppRoutes() {
   const location = useLocation();
@@ -76,8 +77,24 @@ function AppRoutes() {
         {/* Transport Officer Routes */}
         <Route path="/dashboard/transport-requests/manage" element={<TransportOfficerRequests />} />
         <Route path="/dashboard/transport-requests/:id/manage" element={<TransportOfficerRequestDetail />} />
-        <Route path="/dashboard/routes/add" element={<RouteAdd />} />
-        <Route path="/dashboard/routes/list" element={<RouteList />} />
+
+        {/* Route Management */}
+        <Route 
+          path="/to-pages/to-add/routeAdd" 
+          element={
+            <ProtectedRoute requiredRoles={[1, 3]}>
+              <RouteAdd />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/to-pages/to-add/routeList" 
+          element={
+            <ProtectedRoute requiredRoles={[1, 3]}>
+              <RouteList />
+            </ProtectedRoute>
+          } 
+        />
 
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/login" replace />} />

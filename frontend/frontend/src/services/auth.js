@@ -9,6 +9,26 @@ const api = axios.create({
   },
 });
 
+// Interceptor to handle 401 errors globally
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      console.warn('Unauthorized request detected. Clearing session...');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user_email');
+      localStorage.removeItem('full_name');
+      // We can't use useNavigate here as it's not a React component
+      // but we can redirect using window.location if needed, 
+      // or let the components handle it via AuthContext state changes.
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const login = async (credentials) => {
   const response = await api.post('/auth/login', credentials);
   return response.data;
