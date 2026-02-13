@@ -30,33 +30,28 @@ export default function DashboardPage() {
     { name: 'Services', targetId: 'dashboard-services' },
   ];
 
-  // Redirect Transport Officer to their specific dashboard
-  useEffect(() => {
-    if (userEmail === 'transportofficer@iut-dhaka.edu') {
-      navigate('/to-dashboard');
-    }
-  }, [userEmail, navigate]);
-
   // Fetch user role and subscription status
   useEffect(() => {
-    if (userEmail === 'transportofficer@iut-dhaka.edu') return; 
-
     const fetchDashboardData = async () => {
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       if (token) {
         try {
-          // Fetch user details to get role
+          // Fetch user details to get roles
           const meResponse = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/auth/me`, {
              headers: { Authorization: `Bearer ${token}` }
           });
           
           console.log('Dashboard: User data fetched:', meResponse.data);
 
-          if (meResponse.data.roles && Array.isArray(meResponse.data.roles)) {
-             setUserRoles(meResponse.data.roles);
-          } else {
-             // Fallback if roles not present or empty
-             setUserRoles([]);
+          const roles = meResponse.data.roles || [];
+          setUserRoles(roles);
+
+          // Redirect Transport Officer to their specific dashboard
+          // A user who has both roles (1 and 3) can access the route managing feature
+          const roleIds = roles.map(r => r.id);
+          if (roleIds.includes(1) && roleIds.includes(3)) {
+            navigate('/to-dashboard');
+            return;
           }
 
           const sub = await getSubscription(token).catch(() => null);
@@ -70,7 +65,7 @@ export default function DashboardPage() {
       }
     };
     fetchDashboardData();
-  }, [navigate, userEmail]);
+  }, [navigate]);
 
   const handleSeatAvailability = () => navigate('/seat-availability');
   const handleBuyToken = () => navigate('/buy-token');

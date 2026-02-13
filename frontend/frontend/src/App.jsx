@@ -23,6 +23,8 @@ import { FacultyRequestsList } from './pages/request/FacultyRequests';
 import RequestDetailPage from './pages/request/RequestDetailPage';
 import TransportOfficerRequests from './pages/request/TransportOfficerRequests';
 import TransportOfficerRequestDetail from './pages/request/TransportOfficerRequestDetail';
+import RouteAdd from './pages/to-pages/to-add/routeAdd';
+import RouteList from './pages/to-pages/to-add/routeList';
 import Transition, { DEFAULT_DURATION_MS } from './components/ui/Transition';
 
 function AppRoutes() {
@@ -74,6 +76,8 @@ function AppRoutes() {
         {/* Transport Officer Routes */}
         <Route path="/dashboard/transport-requests/manage" element={<TransportOfficerRequests />} />
         <Route path="/dashboard/transport-requests/:id/manage" element={<TransportOfficerRequestDetail />} />
+        <Route path="/dashboard/routes/add" element={<RouteAdd />} />
+        <Route path="/dashboard/routes/list" element={<RouteList />} />
 
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/login" replace />} />

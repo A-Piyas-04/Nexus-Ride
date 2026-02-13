@@ -27,9 +27,19 @@ class RouteCreate(RouteBase):
     stops: List[RouteStopCreate] = []
 
 
+class RouteUpdate(SQLModel):
+    route_name: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
 class RouteRead(RouteBase):
     id: UUID
 
 
 class RouteWithStopsRead(RouteRead):
     stops: List[RouteStopRead] = []
+
+
+class RouteStopUpdate(SQLModel):
+    stop_name: Optional[str] = None
+    sequence_number: Optional[int] = None

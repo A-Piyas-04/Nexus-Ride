@@ -64,7 +64,7 @@ export default function TODashboard() {
   const handleNotifyUsers = () => window.alert('Notify users about important updates.');
 
   // Manage Handlers
-  const handleManageRoutes = () => window.alert('Manage Routes');
+  const handleManageRoutes = () => navigate('/dashboard/routes/add');
   const handleManageVehicles = () => window.alert('Manage Vehicles');
   const handleManageDrivers = () => window.alert('Manage Drivers');
 
@@ -191,13 +191,13 @@ export default function TODashboard() {
 
           {/* Manage */}
           <div id="to-manage" className="scroll-mt-24">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Manage <span className="text-sm font-bold text-red-600">(Coming Soon)</span></h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Manage</h2>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <ActionCard
                 icon={MapPin}
                 label="Routes"
                 description="Manage your routes and stops."
-                iconClassName="text-gray-400"
+                iconClassName="text-primary-600"
                 onClick={handleManageRoutes}
                 />
 
