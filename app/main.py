@@ -12,6 +12,7 @@ from app.api.auth import router as auth_router
 from app.api.subscription import router as subscription_router
 from app.api.trips import router as trips_router
 from app.api.transport_requests import router as transport_requests_router
+from app.api.routes import router as routes_router
 from app.models.notification import Notification
 from app.models.payment import Payment
 from app.models.profile import DriverProfile, StaffProfile
@@ -61,3 +62,4 @@ app.include_router(auth_router)
 app.include_router(subscription_router)
 app.include_router(trips_router, prefix="/trips", tags=["trips"])
 app.include_router(transport_requests_router)
+app.include_router(routes_router)

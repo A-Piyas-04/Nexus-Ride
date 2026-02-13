@@ -2,13 +2,15 @@ from sqlmodel import SQLModel
 from uuid import UUID
 
 
+from typing import List, Optional
+
 class RouteStopBase(SQLModel):
     stop_name: str
     sequence_number: int
 
 
 class RouteStopCreate(RouteStopBase):
-    route_id: UUID
+    pass
 
 
 class RouteStopRead(RouteStopBase):
@@ -22,8 +24,12 @@ class RouteBase(SQLModel):
 
 
 class RouteCreate(RouteBase):
-    pass
+    stops: List[RouteStopCreate] = []
 
 
 class RouteRead(RouteBase):
     id: UUID
+
+
+class RouteWithStopsRead(RouteRead):
+    stops: List[RouteStopRead] = []
