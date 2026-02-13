@@ -80,6 +80,9 @@ export default function DashboardPage() {
   const handleOpenSubscribe = () => setSubscribeOpen(true);
   const handleCloseSubscribe = () => setSubscribeOpen(false);
 
+  // const handleFacultyRequest = () => navigate('/dashboard/transport-requests/my');
+  const handleGuestRequest = () => navigate('/dashboard/transport-requests/new');     
+
   const checkSubscription = () => {
     if (subscriptionStatus !== 'ACTIVE') {
         window.alert('Subscribe to access these features.');
@@ -117,8 +120,7 @@ export default function DashboardPage() {
     }
   };
 
-  const handleFacultyRequest = () => navigate('/dashboard/transport-requests/my');
-  const handleGuestRequest = () => navigate('/dashboard/transport-requests/new');
+
 
   const handleSubscribe = async ({ startMonth, endMonth, year, stopName }) => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -217,20 +219,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Faculty Section - Only visible to FACULTY role */}
-          {isFaculty && (
-            <div id="faculty-transport" className="scroll-mt-24">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Faculty Services</h2>
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <ActionCard
-                icon={Briefcase}
-                label="Transport Requests"
-                description="Request vehicle for guests/events"
-                iconClassName="text-primary-600"
-                onClick={handleFacultyRequest}
-                />
-              </div>
-            </div>
-          )}
+
 
           {/* Token & Other Services Section */}
           <div id="dashboard-services" className="scroll-mt-24">
