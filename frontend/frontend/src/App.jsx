@@ -23,8 +23,8 @@ import { FacultyRequestsList } from './pages/request/FacultyRequests';
 import RequestDetailPage from './pages/request/RequestDetailPage';
 import TransportOfficerRequests from './pages/request/TransportOfficerRequests';
 import TransportOfficerRequestDetail from './pages/request/TransportOfficerRequestDetail';
-import RouteAdd from './pages/to-pages/to-add/routeAdd';
-import RouteList from './pages/to-pages/to-add/routeList';
+import RouteAdd from './pages/to-pages/route-manage/routeAdd';
+import RouteList from './pages/to-pages/route-manage/routeList';
 import Transition, { DEFAULT_DURATION_MS } from './components/ui/Transition';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
