@@ -52,7 +52,7 @@ export default function VehicleList() {
   const statusButton = (vehicle, status, label, activeClasses, inactiveClasses) => {
     const active = vehicle.status === status;
     const base =
-      'px-3 py-1.5 text-xs font-medium rounded-md border transition-colors';
+      'px-3 py-1.5 text-xs md:text-xs font-medium rounded-md border transition-colors';
     const cls = active ? activeClasses : inactiveClasses;
     return (
       <button
@@ -148,14 +148,14 @@ export default function VehicleList() {
     <DashboardLayout>
       <section className="w-full px-4 py-8 md:px-8 md:py-10">
         <div className="w-full max-w-6xl space-y-6">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Vehicles</h1>
               <p className="text-sm text-gray-600">Overview of registered vehicles.</p>
             </div>
             <button
               onClick={() => navigate('/to-pages/vehicle-manage/vehicleAdd')}
-              className="px-4 py-2 rounded-md bg-primary-600 text-white hover:bg-primary-700"
+              className="w-full md:w-auto px-4 py-2 rounded-md bg-primary-600 text-white hover:bg-primary-700"
             >
               Add Vehicle
             </button>
@@ -177,61 +177,117 @@ export default function VehicleList() {
               No vehicles found.
             </div>
           ) : (
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200 text-sm text-gray-600">
-                    <th className="px-6 py-4 font-semibold">Vehicle Number</th>
-                    <th className="px-6 py-4 font-semibold">Capacity</th>
-                    <th className="px-6 py-4 font-semibold">Status</th>
-                    <th className="px-6 py-4 font-semibold text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 text-gray-700">
-                  {vehicles.map((vehicle) => (
-                    <tr key={vehicle.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 font-semibold text-gray-900">
-                        {vehicle.vehicle_number}
-                      </td>
-                      <td className="px-6 py-4">{vehicle.capacity}</td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          {statusButton(
-                            vehicle,
-                            'AVAILABLE',
-                            'AVAILABLE',
-                            'bg-green-100 text-green-700 border-green-300',
-                            'bg-white text-gray-700 border-gray-200 hover:bg-green-50'
-                          )}
-                          {statusButton(
-                            vehicle,
-                            'IN_SERVICE',
-                            'IN SERVICE',
-                            'bg-amber-100 text-amber-700 border-amber-300',
-                            'bg-white text-gray-700 border-gray-200 hover:bg-amber-50'
-                          )}
-                          {statusButton(
-                            vehicle,
-                            'UNDER_REPAIR',
-                            'UNDER REPAIR',
-                            'bg-red-100 text-red-700 border-red-300',
-                            'bg-white text-gray-700 border-gray-200 hover:bg-red-50'
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => openEditModal(vehicle)}
-                          className="px-3 py-1.5 text-sm rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
-                        >
-                          Edit
-                        </button>
-                      </td>
+            <>
+              {/* Desktop table */}
+              <div className="hidden md:block bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200 text-sm text-gray-600">
+                      <th className="px-6 py-4 font-semibold">Vehicle Number</th>
+                      <th className="px-6 py-4 font-semibold">Capacity</th>
+                      <th className="px-6 py-4 font-semibold">Status</th>
+                      <th className="px-6 py-4 font-semibold text-right">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 text-gray-700">
+                    {vehicles.map((vehicle) => (
+                      <tr key={vehicle.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4 font-semibold text-gray-900">
+                          {vehicle.vehicle_number}
+                        </td>
+                        <td className="px-6 py-4">{vehicle.capacity}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            {statusButton(
+                              vehicle,
+                              'AVAILABLE',
+                              'AVAILABLE',
+                              'bg-green-100 text-green-700 border-green-300',
+                              'bg-white text-gray-700 border-gray-200 hover:bg-green-50'
+                            )}
+                            {statusButton(
+                              vehicle,
+                              'IN_SERVICE',
+                              'IN SERVICE',
+                              'bg-amber-100 text-amber-700 border-amber-300',
+                              'bg-white text-gray-700 border-gray-200 hover:bg-amber-50'
+                            )}
+                            {statusButton(
+                              vehicle,
+                              'UNDER_REPAIR',
+                              'UNDER REPAIR',
+                              'bg-red-100 text-red-700 border-red-300',
+                              'bg-white text-gray-700 border-gray-200 hover:bg-red-50'
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button
+                            onClick={() => openEditModal(vehicle)}
+                            className="px-3 py-1.5 text-sm rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+                          >
+                            Edit
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile cards */}
+              <div className="md:hidden space-y-3">
+                {vehicles.map((vehicle) => (
+                  <div
+                    key={vehicle.id}
+                    className="bg-white rounded-xl border border-gray-200 p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="text-xs uppercase text-gray-500">Vehicle Number</div>
+                        <div className="text-lg font-semibold text-gray-900">{vehicle.vehicle_number}</div>
+                      </div>
+                      <button
+                        onClick={() => openEditModal(vehicle)}
+                        className="px-3 py-2 text-sm rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                    <div className="mt-3">
+                      <div className="text-xs uppercase text-gray-500">Capacity</div>
+                      <div className="text-gray-900">{vehicle.capacity}</div>
+                    </div>
+                    <div className="mt-3">
+                      <div className="text-xs uppercase text-gray-500 mb-2">Status</div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {statusButton(
+                          vehicle,
+                          'AVAILABLE',
+                          'AVAILABLE',
+                          'bg-green-100 text-green-700 border-green-300',
+                          'bg-white text-gray-700 border-gray-200 hover:bg-green-50'
+                        )}
+                        {statusButton(
+                          vehicle,
+                          'IN_SERVICE',
+                          'IN SERVICE',
+                          'bg-amber-100 text-amber-700 border-amber-300',
+                          'bg-white text-gray-700 border-gray-200 hover:bg-amber-50'
+                        )}
+                        {statusButton(
+                          vehicle,
+                          'UNDER_REPAIR',
+                          'UNDER REPAIR',
+                          'bg-red-100 text-red-700 border-red-300',
+                          'bg-white text-gray-700 border-gray-200 hover:bg-red-50'
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </section>
