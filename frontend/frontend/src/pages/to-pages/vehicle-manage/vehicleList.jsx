@@ -1,12 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import DashboardLayout from '../../dashboard/DashboardLayout';
-import { getAllVehicles, updateVehicleStatus } from '../../../services/transport';
+import { useNavigate } from 'react-router-dom';
+import { getAllVehicles, updateVehicleStatus, updateVehicle } from '../../../services/transport';
 
 export default function VehicleList() {
+  const navigate = useNavigate();
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [updatingId, setUpdatingId] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editingVehicle, setEditingVehicle] = useState(null);
+  const [form, setForm] = useState({ vehicle_number: '', capacity: '' });
+  const [formError, setFormError] = useState('');
 
   const fetchVehicles = async () => {
     try {
@@ -57,13 +65,100 @@ export default function VehicleList() {
     );
   };
 
+  const openEditModal = (vehicle) => {
+    setEditingVehicle(vehicle);
+    setForm({
+      vehicle_number: vehicle.vehicle_number || '',
+      capacity: String(vehicle.capacity ?? ''),
+    });
+    setFormError('');
+    setIsModalOpen(true);
+  };
+
+  const closeEditModal = () => {
+    if (saving) return;
+    setIsModalOpen(false);
+    setConfirmOpen(false);
+    setEditingVehicle(null);
+    setForm({ vehicle_number: '', capacity: '' });
+    setFormError('');
+  };
+
+  const onFormChange = (e) => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const validateForm = () => {
+    if (!form.vehicle_number || !form.vehicle_number.trim()) {
+      setFormError('Vehicle number is required.');
+      return false;
+    }
+    const cap = Number(form.capacity);
+    if (!Number.isFinite(cap) || cap <= 0) {
+      setFormError('Capacity must be a positive number.');
+      return false;
+    }
+    setFormError('');
+    return true;
+  };
+
+  const handleSaveClick = () => {
+    if (!validateForm()) return;
+    setConfirmOpen(true);
+  };
+
+  const confirmUpdate = async () => {
+    if (!editingVehicle) return;
+    setSaving(true);
+    setFormError('');
+    try {
+      const payload = {};
+      if (form.vehicle_number !== editingVehicle.vehicle_number) {
+        payload.vehicle_number = form.vehicle_number.trim();
+      }
+      const capNum = Number(form.capacity);
+      if (capNum !== editingVehicle.capacity) {
+        payload.capacity = capNum;
+      }
+      if (Object.keys(payload).length === 0) {
+        setConfirmOpen(false);
+        setSaving(false);
+        setIsModalOpen(false);
+        return;
+      }
+      const updated = await updateVehicle(editingVehicle.id, payload);
+      setVehicles(prev =>
+        prev.map(v => (v.id === editingVehicle.id ? { ...v, ...updated } : v))
+      );
+      setConfirmOpen(false);
+      setIsModalOpen(false);
+    } catch (e) {
+      const msg =
+        e?.response?.data?.detail ||
+        'Failed to update vehicle.';
+      setFormError(msg);
+      setConfirmOpen(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <DashboardLayout>
       <section className="w-full px-4 py-8 md:px-8 md:py-10">
         <div className="w-full max-w-6xl space-y-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Vehicles</h1>
-            <p className="text-sm text-gray-600">Overview of registered vehicles.</p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Vehicles</h1>
+              <p className="text-sm text-gray-600">Overview of registered vehicles.</p>
+            </div>
+            <button
+              onClick={() => navigate('/to-pages/vehicle-manage/vehicleAdd')}
+              className="px-4 py-2 rounded-md bg-primary-600 text-white hover:bg-primary-700"
+            >
+              Add Vehicle
+            </button>
           </div>
 
           {error && (
@@ -124,7 +219,14 @@ export default function VehicleList() {
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-right text-gray-400">—</td>
+                      <td className="px-6 py-4 text-right">
+                        <button
+                          onClick={() => openEditModal(vehicle)}
+                          className="px-3 py-1.5 text-sm rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+                        >
+                          Edit
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -133,6 +235,88 @@ export default function VehicleList() {
           )}
         </div>
       </section>
+        {isModalOpen && editingVehicle && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/40" onClick={closeEditModal}></div>
+            <div className="relative z-10 w-full max-w-md bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Edit Vehicle</h3>
+              {formError && (
+                <div className="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {formError}
+                </div>
+              )}
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-medium text-gray-700">Vehicle Number</label>
+                  <input
+                    type="text"
+                    name="vehicle_number"
+                    value={form.vehicle_number}
+                    onChange={onFormChange}
+                    className="w-full p-2 border rounded-md"
+                    disabled={saving}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-medium text-gray-700">Capacity</label>
+                  <input
+                    type="number"
+                    name="capacity"
+                    value={form.capacity}
+                    onChange={onFormChange}
+                    className="w-full p-2 border rounded-md"
+                    min="1"
+                    disabled={saving}
+                  />
+                </div>
+              </div>
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  onClick={closeEditModal}
+                  className="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  disabled={saving}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveClick}
+                  className="px-4 py-2 rounded-md bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-60"
+                  disabled={saving}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {confirmOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/40"></div>
+            <div className="relative z-10 w-full max-w-sm bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+              <p className="text-gray-900 font-medium">
+                Are you sure you want to update this vehicle?
+              </p>
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  onClick={() => setConfirmOpen(false)}
+                  className="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  disabled={saving}
+                >
+                  No
+                </button>
+                <button
+                  onClick={confirmUpdate}
+                  className="px-4 py-2 rounded-md bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-60"
+                  disabled={saving}
+                >
+                  Yes
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
     </DashboardLayout>
   );
 }

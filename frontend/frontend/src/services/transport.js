@@ -77,6 +77,20 @@ export const updateVehicleStatus = async (id, status) => {
   return response.data;
 };
 
+export const updateVehicle = async (id, data) => {
+  const response = await axios.patch(`${API_URL}/vehicles/${id}`, data, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
+};
+
+export const createVehicle = async (data) => {
+  const response = await axios.post(`${API_URL}/vehicles`, data, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
+};
+
 // Get all requests for the current faculty user
 export const getMyTransportRequests = async () => {
   const response = await axios.get(`${API_URL}/transport-requests/my`, {

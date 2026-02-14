@@ -28,6 +28,7 @@ import RouteList from './pages/to-pages/route-manage/routeList';
 import Transition, { DEFAULT_DURATION_MS } from './components/ui/Transition';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import VehicleList from './pages/to-pages/vehicle-manage/vehicleList';
+import VehicleAdd from './pages/to-pages/vehicle-manage/vehicleAdd';
 
 
 
@@ -103,6 +104,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute requiredRoles={[1, 3]}>
               <VehicleList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/to-pages/vehicle-manage/vehicleAdd"
+          element={
+            <ProtectedRoute requiredRoles={[1, 3]}>
+              <VehicleAdd />
             </ProtectedRoute>
           }
         />
