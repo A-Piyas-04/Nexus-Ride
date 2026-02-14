@@ -157,3 +157,235 @@ This document outlines the available API endpoints for the NexusRide University 
     }
   ]
   ```
+
+---
+
+## Security Overview
+- Authentication: JWT Bearer tokens via `/auth/login`; send `Authorization: Bearer <token>`.
+- User types: `STAFF` and `DRIVER`. Most endpoints below expect authenticated `STAFF`.
+- Roles used:
+  - `NORMAL_STAFF` (default at signup)
+  - `FACULTY` (Faculty features)
+  - `TO` (Transport Officer, administrative)
+- Common status codes: 400, 401, 403, 404, 409, 500.
+
+---
+
+## 4. Routes (`/routes`)
+- Audience: Transport Officer (TO) for create/update; listing/get for any authenticated user.
+- Schemas: [route.py](file:///e:/Projects/NexusRide/app/schemas/route.py)
+
+### 4.1 Create Route
+- Method: `POST`
+- Path: `/routes`
+- Roles: TO required
+- Request Body (RouteCreate):
+  ```json
+  {
+    "route_name": "Route-1",
+    "is_active": true,
+    "stops": [
+      {"stop_name": "Banani", "sequence_number": 1},
+      {"stop_name": "Tongi Station Road", "sequence_number": 2}
+    ]
+  }
+  ```
+- Response: `RouteWithStopsRead`
+- Notes:
+  - `route_name` must be unique.
+  - Each `stop_name` must be globally unique across all routes.
+
+### 4.2 List Routes
+- Method: `GET`
+- Path: `/routes`
+- Response: `List<RouteWithStopsRead>`
+
+### 4.3 Get Route By ID
+- Method: `GET`
+- Path: `/routes/{route_id}`
+- Response: `RouteWithStopsRead`
+- Errors: `404` if not found.
+
+### 4.4 Add Stop to Route
+- Method: `POST`
+- Path: `/routes/{route_id}/stops`
+- Roles: TO required
+- Request Body:
+  ```json
+  {"stop_name": "Airport", "sequence_number": 3}
+  ```
+- Response: Updated `RouteWithStopsRead`
+- Errors: `400` if stop name already exists globally; `404` if route missing.
+
+### 4.5 Update Route Metadata
+- Method: `PATCH`
+- Path: `/routes/{route_id}`
+- Roles: TO required
+- Request Body (partial):
+  ```json
+  {"route_name": "Route-A", "is_active": false}
+  ```
+- Response: `RouteWithStopsRead`
+
+### 4.6 Sync Route Stops (Replace All)
+- Method: `PUT`
+- Path: `/routes/{route_id}/stops`
+- Roles: TO required
+- Request Body: `List<RouteStopCreate>`
+- Behavior: Deletes existing stops and creates provided ones. Validates stop names do not exist in other routes.
+- Response: `RouteWithStopsRead`
+
+---
+
+## 5. Vehicles (`/vehicles`)
+- Audience: TO for create/update/delete; list/get for any authenticated user.
+- Schemas: [vehicle.py](file:///e:/Projects/NexusRide/app/schemas/vehicle.py)
+
+### 5.1 List Vehicles
+- Method: `GET`
+- Path: `/vehicles`
+- Response: `List<VehicleRead>`
+
+### 5.2 Get Vehicle
+- Method: `GET`
+- Path: `/vehicles/{vehicle_id}`
+- Response: `VehicleRead`
+- Errors: `404` if not found.
+
+### 5.3 Create Vehicle
+- Method: `POST`
+- Path: `/vehicles`
+- Roles: TO required
+- Request Body:
+  ```json
+  {"vehicle_number": "NR-208", "capacity": 32}
+  ```
+- Response: `VehicleRead` (with `status` default `AVAILABLE`)
+- Errors: `400` if `vehicle_number` already exists.
+
+### 5.4 Update Vehicle Status
+- Method: `PATCH`
+- Path: `/vehicles/{vehicle_id}/status`
+- Roles: TO required
+- Request Body:
+  ```json
+  {"status": "AVAILABLE"}  // AVAILABLE | IN_SERVICE | UNDER_REPAIR
+  ```
+- Response: `VehicleRead`
+
+### 5.5 Update Vehicle (Partial)
+- Method: `PATCH`
+- Path: `/vehicles/{vehicle_id}`
+- Roles: TO required
+- Request Body (partial):
+  ```json
+  {"vehicle_number": "NR-300", "capacity": 40}
+  ```
+- Response: `VehicleRead`
+- Errors: `400` if new `vehicle_number` duplicates existing one.
+
+### 5.6 Delete Vehicle
+- Method: `DELETE`
+- Path: `/vehicles/{vehicle_id}`
+- Roles: TO required
+- Response: `204 No Content`
+- Errors:
+  - `409` if vehicle is assigned to an active trip (`SCHEDULED`/`STARTED`)
+  - `409` if vehicle is assigned to a driver
+
+---
+
+## 6. Faculty Transport Requests (`/transport-requests`)
+- Audience:
+  - Faculty: create and view own requests.
+  - TO: view all, update status, assign vehicles/drivers, and list options.
+- Schemas: [transport_request.py](file:///e:/Projects/NexusRide/app/schemas/transport_request.py)
+
+### 6.1 Create Request (Faculty)
+- Method: `POST`
+- Path: `/transport-requests`
+- Roles: FACULTY required
+- Request Body:
+  ```json
+  {
+    "event_title": "Guest Lecture",
+    "event_date": "2026-03-15",
+    "guests": [
+      {"name": "Dr. A", "pickup_location": "Airport", "notes": "VIP"},
+      {"name": "Ms. B", "pickup_location": "Hotel Plaza"}
+    ]
+  }
+  ```
+- Response: `TransportRequestRead`
+
+### 6.2 Get My Requests (Faculty)
+- Method: `GET`
+- Path: `/transport-requests/my`
+- Roles: FACULTY required
+- Response: `List<TransportRequestRead>` ordered by `created_at` desc.
+
+### 6.3 Get Request by ID
+- Method: `GET`
+- Path: `/transport-requests/{request_id}`
+- Roles: FACULTY (own only) or TO
+- Response: `TransportRequestRead`
+- Errors: `404` if not found, `403` if not authorized.
+
+### 6.4 List All Requests (TO)
+- Method: `GET`
+- Path: `/transport-requests`
+- Roles: TO required
+- Query: `status_filter` optional: `PENDING|APPROVED|DECLINED|ASSIGNED|COMPLETED`
+- Response: `List<TransportRequestRead>`
+
+### 6.5 Update Status (TO)
+- Method: `PATCH`
+- Path: `/transport-requests/{request_id}/status`
+- Roles: TO required
+- Request Body:
+  ```json
+  {"status": "APPROVED", "note": "Approved for logistics"}
+  ```
+- Response: `TransportRequestRead`
+- Transition Rules:
+  - `PENDING` → `APPROVED` | `DECLINED`
+  - `APPROVED` → `ASSIGNED`
+  - `ASSIGNED` → `COMPLETED`
+  - `DECLINED`, `COMPLETED` are terminal.
+
+### 6.6 Vehicle Options (TO)
+- Method: `GET`
+- Path: `/transport-requests/vehicles`
+- Roles: TO required
+- Response: `List<VehicleOption>`
+
+### 6.7 Driver Options (TO)
+- Method: `GET`
+- Path: `/transport-requests/drivers`
+- Roles: TO required
+- Response: `List<DriverOption>`
+
+### 6.8 Assign Vehicle/Driver (TO)
+- Method: `PATCH`
+- Path: `/transport-requests/{request_id}/assign`
+- Roles: TO required
+- Request Body:
+  ```json
+  {
+    "assigned_vehicle_id": "uuid",
+    "assigned_driver_profile_id": 123,
+    "to_reply_message": "Pickup at 8:30 AM"
+  }
+  ```
+- Response: `TransportRequestRead` (auto-transitions to `ASSIGNED`)
+
+---
+
+## Code References
+- Users: [user.py](file:///e:/Projects/NexusRide/app/models/user.py)
+- Roles: [role.py](file:///e:/Projects/NexusRide/app/models/role.py)
+- Subscriptions: [subscription.py](file:///e:/Projects/NexusRide/app/models/subscription.py)
+- Route Schemas: [route.py](file:///e:/Projects/NexusRide/app/schemas/route.py)
+- Vehicle Schemas: [vehicle.py](file:///e:/Projects/NexusRide/app/schemas/vehicle.py)
+- Trip Schemas: [trip.py](file:///e:/Projects/NexusRide/app/schemas/trip.py)
+- Transport Request Schemas: [transport_request.py](file:///e:/Projects/NexusRide/app/schemas/transport_request.py)
