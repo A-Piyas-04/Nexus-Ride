@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, User, Filter } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
@@ -27,11 +27,7 @@ export default function TransportOfficerRequests() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('PENDING');
 
-  useEffect(() => {
-    fetchRequests();
-  }, [filter]);
-
-  const fetchRequests = async () => {
+  const fetchRequests = useCallback(async () => {
     try {
       setLoading(true);
       const data = await getAllTransportRequests(filter || null);
@@ -41,7 +37,11 @@ export default function TransportOfficerRequests() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter]);
+
+  useEffect(() => {
+    fetchRequests();
+  }, [fetchRequests]);
 
   const handleFilterChange = (status) => {
     setFilter(status === filter ? '' : status);

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, User, Truck, MessageSquare } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
-import { getMyTransportRequests, getTransportRequestById } from '../../services/transport';
+import { getMyTransportRequests } from '../../services/transport';
 
 const StatusBadge = ({ status }) => {
   const styles = {
@@ -92,16 +92,3 @@ export const FacultyRequestsList = () => {
   );
 };
 
-export const TransportRequestDetail = ({ requestId }) => {
-  const navigate = useNavigate();
-  // If requestId is passed as prop, use it (for modal/inline), else grab from URL params logic in parent wrapper
-  // But for now, we'll assume this is a page component and we might need to parse URL if not passed.
-  // Ideally, let's make this a page component that uses useParams.
-  // However, since I'm writing multiple components in one file for now or need to split, I'll assume standard page usage.
-  
-  // Note: Since I cannot easily import useParams here without splitting or assuming, I will implement a wrapper in the main export or expect the ID from a prop if used directly.
-  // For the router, we will use a wrapper.
-  
-  // Let's rewrite this component to be a standalone page that uses useParams
-  return null; 
-};

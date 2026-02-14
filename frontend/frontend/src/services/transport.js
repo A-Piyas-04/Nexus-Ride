@@ -9,148 +9,116 @@ const getAuthHeaders = () => {
 
 // Create a new transport request
 export const createTransportRequest = async (requestData) => {
-  try {
-    const response = await axios.post(`${API_URL}/transport-requests`, requestData, {
-      headers: getAuthHeaders(),
-    });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  const response = await axios.post(`${API_URL}/transport-requests`, requestData, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
 };
 
 // TO: Get all requests
 export const getAllTransportRequests = async (status_filter = null) => {
-  try {
-    const params = status_filter ? { status_filter } : {};
-    const response = await axios.get(`${API_URL}/transport-requests`, {
-      headers: getAuthHeaders(),
-      params,
-    });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  const params = status_filter ? { status_filter } : {};
+  const response = await axios.get(`${API_URL}/transport-requests`, {
+    headers: getAuthHeaders(),
+    params,
+  });
+  return response.data;
 };
 
 // TO: Update request status
 export const updateTransportRequestStatus = async (id, status, note = null) => {
-  try {
-    const response = await axios.patch(
-      `${API_URL}/transport-requests/${id}/status`,
-      { status, note },
-      { headers: getAuthHeaders() }
-    );
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  const response = await axios.patch(
+    `${API_URL}/transport-requests/${id}/status`,
+    { status, note },
+    { headers: getAuthHeaders() }
+  );
+  return response.data;
 };
 
 // TO: Assign vehicle/driver
 export const assignTransportRequest = async (id, assignmentData) => {
-  try {
-    const response = await axios.patch(
-      `${API_URL}/transport-requests/${id}/assign`,
-      assignmentData,
-      { headers: getAuthHeaders() }
-    );
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  const response = await axios.patch(
+    `${API_URL}/transport-requests/${id}/assign`,
+    assignmentData,
+    { headers: getAuthHeaders() }
+  );
+  return response.data;
 };
 
 // TO: Get vehicles
 export const getVehicles = async () => {
-  try {
-    const response = await axios.get(`${API_URL}/transport-requests/vehicles`, {
-      headers: getAuthHeaders(),
-    });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  const response = await axios.get(`${API_URL}/transport-requests/vehicles`, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
 };
 
 // TO: Get drivers
 export const getDrivers = async () => {
-  try {
-    const response = await axios.get(`${API_URL}/transport-requests/drivers`, {
-      headers: getAuthHeaders(),
-    });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  const response = await axios.get(`${API_URL}/transport-requests/drivers`, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
+};
+
+export const getAllVehicles = async () => {
+  const response = await axios.get(`${API_URL}/vehicles`, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
+};
+
+export const updateVehicleStatus = async (id, status) => {
+  const response = await axios.patch(
+    `${API_URL}/vehicles/${id}/status`,
+    { status },
+    { headers: getAuthHeaders() }
+  );
+  return response.data;
 };
 
 // Get all requests for the current faculty user
 export const getMyTransportRequests = async () => {
-  try {
-    const response = await axios.get(`${API_URL}/transport-requests/my`, {
-      headers: getAuthHeaders(),
-    });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  const response = await axios.get(`${API_URL}/transport-requests/my`, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
 };
 
 // Get a single request by ID
 export const getTransportRequestById = async (id) => {
-  try {
-    const response = await axios.get(`${API_URL}/transport-requests/${id}`, {
-      headers: getAuthHeaders(),
-    });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  const response = await axios.get(`${API_URL}/transport-requests/${id}`, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
 };
 
 // Route Management
 export const createRoute = async (routeData) => {
-  try {
-    const response = await axios.post(`${API_URL}/routes`, routeData, {
-      headers: getAuthHeaders(),
-    });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  const response = await axios.post(`${API_URL}/routes`, routeData, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
 };
 
 export const getRoutes = async () => {
-  try {
-    const response = await axios.get(`${API_URL}/routes`, {
-      headers: getAuthHeaders(),
-    });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  const response = await axios.get(`${API_URL}/routes`, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
 };
 
 export const updateRoute = async (id, routeData) => {
-  try {
-    const response = await axios.patch(`${API_URL}/routes/${id}`, routeData, {
-      headers: getAuthHeaders(),
-    });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  const response = await axios.patch(`${API_URL}/routes/${id}`, routeData, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
 };
 
 export const syncRouteStops = async (id, stopsData) => {
-  try {
-    const response = await axios.put(`${API_URL}/routes/${id}/stops`, stopsData, {
-      headers: getAuthHeaders(),
-    });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  const response = await axios.put(`${API_URL}/routes/${id}/stops`, stopsData, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
 };
 

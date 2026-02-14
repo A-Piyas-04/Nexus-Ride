@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, User, MapPin, Truck, MessageSquare, Check, X, Shield } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
@@ -44,11 +44,7 @@ export default function TransportOfficerRequestDetail() {
   const [selectedDriver, setSelectedDriver] = useState('');
   const [assignNote, setAssignNote] = useState('');
 
-  useEffect(() => {
-    fetchData();
-  }, [id]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       // Fetch request details first
@@ -68,12 +64,16 @@ export default function TransportOfficerRequestDetail() {
           console.warn("Could not fetch vehicles/drivers", e);
       }
 
-    } catch (err) {
+    } catch {
       setError('Failed to load request details.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleStatusUpdate = async (newStatus) => {
     if (!window.confirm(`Are you sure you want to ${newStatus} this request?`)) return;
@@ -82,7 +82,7 @@ export default function TransportOfficerRequestDetail() {
       setRequest(updated);
       alert(`Request ${newStatus} successfully.`);
       setActionNote('');
-    } catch (err) {
+    } catch {
       alert('Failed to update status.');
     }
   };
@@ -101,7 +101,7 @@ export default function TransportOfficerRequestDetail() {
       const updated = await assignTransportRequest(id, assignmentData);
       setRequest(updated);
       alert('Vehicle and driver assigned successfully.');
-    } catch (err) {
+    } catch {
       alert('Failed to assign.');
     }
   };

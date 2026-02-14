@@ -75,7 +75,7 @@ export default function TODashboard() {
       window.alert('Unauthorized: Only Transport Officers can manage routes.');
     }
   };
-  const handleManageVehicles = () => window.alert('Manage Vehicles');
+  const handleManageVehicles = () => navigate('/to-pages/vehicle-manage/vehicleList');
   const handleManageDrivers = () => window.alert('Manage Drivers');
 
   // Analytics Handlers

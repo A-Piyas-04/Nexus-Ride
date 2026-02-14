@@ -33,7 +33,7 @@ export default function RequestDetailPage() {
       try {
         const data = await getTransportRequestById(id);
         setRequest(data);
-      } catch (err) {
+      } catch {
         setError('Failed to load request details.');
       } finally {
         setLoading(false);
