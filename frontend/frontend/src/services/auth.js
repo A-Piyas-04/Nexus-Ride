@@ -82,4 +82,41 @@ export const getTripsAvailability = async (token) => {
   return response.data;
 };
 
+export const driverSignup = async (data) => {
+  const response = await api.post('/drivers/signup', data);
+  return response.data;
+};
+
+export const driverLogin = async (data) => {
+  const response = await api.post('/drivers/login', data);
+  return response.data;
+};
+
+export const getDriverRequests = async (token) => {
+  const response = await api.get('/drivers/requests', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
+export const approveDriver = async (id, token) => {
+  const response = await api.put(`/drivers/${id}/approve`, {}, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
+export const getMyDriverProfile = async (token) => {
+  const response = await api.get('/drivers/me', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
 export default api;

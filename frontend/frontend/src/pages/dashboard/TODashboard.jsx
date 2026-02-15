@@ -65,7 +65,7 @@ export default function TODashboard() {
   // Manage Handlers
   const handleManageRoutes = () => window.alert('Manage Routes');
   const handleManageVehicles = () => window.alert('Manage Vehicles');
-  const handleManageDrivers = () => window.alert('Manage Drivers');
+  const handleManageDrivers = () => navigate('/driver-list');
 
   // Analytics Handlers
   const handleAnalyticsPayments = () => window.alert('Analytics Payments');
