@@ -128,7 +128,7 @@ export default function Profile() {
           defaultRoute: initial.defaultRoute,
           defaultPickupStop: initial.defaultPickupStop,
         });
-      } catch (e) {
+      } catch {
         setError('Unable to load profile information');
       } finally {
         setLoading(false);
@@ -150,7 +150,7 @@ export default function Profile() {
     if (!hasChanges) return;
     if (!isFormComplete) {
       setError('Please fill all fields. Phone must be 11 digits and start with 01.');
-      try { window.alert('Please fill all fields. Phone must be 11 digits and start with 01.'); } catch {}
+      try { window.alert('Please fill all fields. Phone must be 11 digits and start with 01.'); } catch (err) { void err; }
       return;
     }
 
@@ -189,7 +189,9 @@ export default function Profile() {
       setError(detail);
       try {
         window.alert(detail);
-      } catch {}
+      } catch (err) {
+        void err;
+      }
     } finally {
       setSaving(false);
     }

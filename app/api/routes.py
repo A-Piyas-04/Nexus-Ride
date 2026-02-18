@@ -31,9 +31,19 @@ def require_transport_officer(user: User, session: Session):
         )
 
 
-@router.get("/", response_model=list[RouteRead])
-def get_routes(session: Session = Depends(get_session)):
-    return session.exec(select(Route).where(Route.is_active == True)).all()
+# @router.get("/", response_model=list[RouteRead])
+# def get_routes(session: Session = Depends(get_session)):
+#     return session.exec(select(Route).where(Route.is_active == True)).all()
+
+
+
+@router.get("", response_model=List[RouteWithStopsRead])
+def get_routes(
+    session: Session = Depends(get_session)
+):
+    statement = select(Route).options(selectinload(Route.stops))
+    return session.exec(statement).all()
+
 
 
 @router.post("", response_model=RouteWithStopsRead)
@@ -87,12 +97,7 @@ def create_route(
     statement = select(Route).where(Route.id == db_route.id).options(selectinload(Route.stops))
     return session.exec(statement).one()
 
-@router.get("", response_model=List[RouteWithStopsRead])
-def get_routes(
-    session: Session = Depends(get_session)
-):
-    statement = select(Route).options(selectinload(Route.stops))
-    return session.exec(statement).all()
+
 
 @router.get("/{route_id}", response_model=RouteWithStopsRead)
 def get_route(

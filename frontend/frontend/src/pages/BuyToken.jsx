@@ -16,7 +16,7 @@ export default function BuyToken() {
   const [routes, setRoutes] = useState([]);
   const [stops, setStops] = useState([]);
 
-  const [direction, setDirection] = useState("to_iut");
+  const [direction, setDirection] = useState("TO_IUT");
   const [consumerEmail, setConsumerEmail] = useState("");
 
   const [formData, setFormData] = useState({
@@ -31,16 +31,16 @@ export default function BuyToken() {
     axios.get(`${apiUrl}/routes`)
       .then(res => setRoutes(res.data))
       .catch(() => alert("Failed to load routes"));
-  }, []);
+  }, [apiUrl]);
 
   // ================= LOAD STOPS =================
   useEffect(() => {
     if (!formData.route_id) return;
 
-    axios.get(`${apiUrl}/routes/${formData.route_id}/stops`)
+    axios.get(`${apiUrl}/stops/${formData.route_id}/stops`)
       .then(res => setStops(res.data))
       .catch(() => alert("Failed to load stops"));
-  }, [formData.route_id]);
+  }, [formData.route_id, apiUrl]);
 
   const handleChange = (e) => {
     setFormData(prev => ({

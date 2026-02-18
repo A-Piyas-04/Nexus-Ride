@@ -101,7 +101,7 @@ export const getMyTransportRequests = async () => {
 
 // Get a single request by ID
 export const getTransportRequestById = async (id) => {
-  const response = await axios.get(`${API_URL}/transport-requests/${id}`, {
+  const response = await axios.get(`${API_URL}/transport-requests/by-id/${id}`, {
     headers: getAuthHeaders(),
   });
   return response.data;

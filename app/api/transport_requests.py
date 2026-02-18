@@ -99,7 +99,7 @@ def get_my_requests(
     results = session.exec(statement).all()
     return results
 
-@router.get("/{request_id}", response_model=TransportRequestRead)
+@router.get("/by-id/{request_id}", response_model=TransportRequestRead)
 def get_request(
     request_id: UUID,
     session: Session = Depends(get_session),
