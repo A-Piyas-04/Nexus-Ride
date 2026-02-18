@@ -76,7 +76,7 @@ export default function TODashboard() {
     }
   };
   const handleManageVehicles = () => navigate('/to-pages/vehicle-manage/vehicleList');
-  const handleManageDrivers = () => window.alert('Manage Drivers');
+  const handleManageDrivers = () => navigate('/driver-list');
 
   // Analytics Handlers
   const handleAnalyticsPayments = () => window.alert('Analytics Payments');

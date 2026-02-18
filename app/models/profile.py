@@ -23,3 +23,6 @@ class DriverProfile(SQLModel, table=True):
     mobile_number: Optional[str] = Field(default=None, foreign_key="user.mobile_number")
     license_number: str
     assigned_vehicle_id: Optional[UUID] = Field(default=None, foreign_key="vehicle.id")
+    driver_status: int = Field(default=0)
+
+

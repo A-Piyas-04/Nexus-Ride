@@ -3,6 +3,7 @@ from sqlmodel import Session, select
 from app.db.session import get_session
 from app.models.role import Role, UserRole
 from app.models.user import User
+from app.models.profile import StaffProfile
 from app.schemas.auth import SignupRequest, LoginRequest
 from app.utils.hashing import hash_password, verify_password
 from app.core.security import create_access_token, get_current_user
@@ -38,6 +39,19 @@ def signup(data: SignupRequest, session: Session = Depends(get_session)):
     
     # Check and assign FACULTY role if applicable
     assign_faculty_role_if_applicable(user, session)
+
+    # Create a StaffProfile row at signup with a generated unique staff_code
+    staff_code = f"STAFF-{str(user.id)[:8]}"
+    profile = StaffProfile(
+        user_id=user.id,
+        email=user.email,
+        mobile_number=user.mobile_number,
+        staff_code=staff_code,
+        department="",
+        default_route_id=None,
+        default_pickup_stop_id=None
+    )
+    session.add(profile)
 
     session.commit()
     return {"msg": "Signup successful"}
