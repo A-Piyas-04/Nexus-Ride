@@ -16,69 +16,48 @@ from app.models.user import User
 
 router = APIRouter()
 
-@router.get("/availability", response_model=List[TripAvailabilityRead])
+@router.get("/availability", response_model=list[TripAvailabilityRead])
 def get_trips_availability(
-    *,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
-    date_from: Optional[date] = Query(None, description="Filter trips from this date"),
-    date_to: Optional[date] = Query(None, description="Filter trips up to this date"),
-    route_id: Optional[UUID] = Query(None, description="Filter by specific route"),
 ):
-    """
-    Get real-time seat availability for trips.
-    Accessible by authenticated users (Staff).
-    """
-    
-    # Base query: Trip + Vehicle + Route
-    query = (
-        select(Trip, Vehicle, Route, DriverProfile, User)
-        .join(Vehicle, Trip.vehicle_id == Vehicle.id)
+    stmt = (
+        select(
+            Trip,
+            Route.route_name,
+            Vehicle.vehicle_number,
+            Vehicle.capacity,
+            User.full_name,
+            func.count(SeatAllocation.id).label("booked")
+        )
         .join(Route, Trip.route_id == Route.id)
+        .join(Vehicle, Trip.vehicle_id == Vehicle.id)
         .join(DriverProfile, Trip.driver_profile_id == DriverProfile.id)
         .join(User, DriverProfile.user_id == User.id)
+        .outerjoin(SeatAllocation, SeatAllocation.trip_id == Trip.id)
+        .where(Trip.trip_date >= date.today())
+        .group_by(
+            Trip.id,
+            Route.route_name,
+            Vehicle.vehicle_number,
+            Vehicle.capacity,
+            User.full_name
+        )
+        .order_by(Trip.trip_date, Trip.start_time)
     )
 
-    # Apply filters
-    if date_from:
-        query = query.where(Trip.trip_date >= date_from)
-    else:
-        # Default to showing future trips including today if no date specified
-        query = query.where(Trip.trip_date >= date.today())
-        
-    if date_to:
-        query = query.where(Trip.trip_date <= date_to)
-        
-    if route_id:
-        query = query.where(Trip.route_id == route_id)
+    rows = session.exec(stmt).all()
 
-    # Order by date and time
-    query = query.order_by(Trip.trip_date, Trip.start_time)
-    
-    results = session.exec(query).all()
-    
-    response_data = []
-    
-    for trip, vehicle, route, driver_profile, driver_user in results:
-        
-        # In a high-traffic production app, we would optimize this "N+1" query 
-        # with a group_by on the main query or a separate batch count query.
-        booked_count = session.exec(
-            select(func.count(SeatAllocation.id))
-            .where(SeatAllocation.trip_id == trip.id)
-        ).one()
-        
-        available_seats = vehicle.capacity - booked_count
-        
-        trip_data = TripAvailabilityRead(
+    return [
+        TripAvailabilityRead(
             **trip.dict(),
-            route_name=route.route_name,
-            vehicle_number=vehicle.vehicle_number,
-            driver_name=driver_user.full_name,
-            total_capacity=vehicle.capacity,
-            booked_seats=booked_count,
-            available_seats=available_seats
+            route_name=route,
+            vehicle_number=vehicle,
+            driver_name=driver,
+            total_capacity=cap,
+            booked_seats=booked,
+            available_seats=cap - booked
         )
-        response_data.append(trip_data)
-        
-    return response_data
+        for trip, route, vehicle, cap, driver, booked in rows
+    ]
+

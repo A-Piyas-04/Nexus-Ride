@@ -8,6 +8,7 @@ class Token(SQLModel, table=True):
     user_id: UUID = Field(foreign_key="user.id")
     route_id: UUID = Field(foreign_key="route.id")
     pickup_stop_id: UUID = Field(foreign_key="route_stop.id")
+    trip_id: UUID = Field(foreign_key="trip.id")
     consumer_email: Optional[str] = None # Defaults to user's email if not provided
     travel_date: date
     status: str # ACTIVE / CANCELLED / USED
