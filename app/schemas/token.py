@@ -3,18 +3,20 @@ from uuid import UUID
 from datetime import datetime, date
 from typing import Optional
 
-class TokenBase(SQLModel):
+class TokenCreate(SQLModel):
     route_id: UUID
-    travel_date: date
     pickup_stop_id: UUID
-    status: str
+    travel_date: date
     consumer_email: Optional[str] = None
+    direction: str
 
-class TokenCreate(TokenBase):
-    user_id: UUID
 
-class TokenRead(TokenBase):
+class TokenRead(SQLModel):
     id: int
     user_id: UUID
+    route_id: UUID
+    pickup_stop_id: UUID
+    travel_date: date
+    status: str
+    consumer_email: Optional[str]
     created_at: datetime
-    consumer_email: Optional[str] = None

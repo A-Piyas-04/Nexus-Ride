@@ -30,6 +30,12 @@ def require_transport_officer(user: User, session: Session):
             detail="Only Transport Officers (STAFF with TO role) can perform this action."
         )
 
+
+@router.get("/", response_model=list[RouteRead])
+def get_routes(session: Session = Depends(get_session)):
+    return session.exec(select(Route).where(Route.is_active == True)).all()
+
+
 @router.post("", response_model=RouteWithStopsRead)
 def create_route(
     route_data: RouteCreate,

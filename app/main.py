@@ -27,6 +27,10 @@ from app.models.token import Token
 from app.models.trip import Trip
 from app.models.user import User
 from app.models.vehicle import Vehicle
+from app.api.routes import router as routes_router
+from app.api.stops import router as stops_router
+from app.api.token import router as token_router
+
 
 # Import seeds
 from app.seeds.roles import seed_roles_and_to
@@ -75,5 +79,6 @@ app.include_router(trips_router, prefix="/trips", tags=["trips"])
 app.include_router(drivers_router)
 app.include_router(staff_router)
 app.include_router(transport_requests_router)
-app.include_router(routes_router)
-app.include_router(vehicles_router)
+app.include_router(routes_router, prefix="/routes", tags=["routes"])
+app.include_router(stops_router, prefix="/stops", tags=["stops"])
+app.include_router(token_router, prefix="/token", tags=["token"])

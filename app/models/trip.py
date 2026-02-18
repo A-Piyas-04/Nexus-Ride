@@ -8,6 +8,7 @@ class Trip(SQLModel, table=True):
     vehicle_id: UUID = Field(foreign_key="vehicle.id")
     driver_profile_id: int = Field(foreign_key="driver_profile.id")
     route_id: UUID = Field(foreign_key="route.id")
+    direction: str
     trip_date: date
     start_time: time
     status: str # SCHEDULED / STARTED / COMPLETED
