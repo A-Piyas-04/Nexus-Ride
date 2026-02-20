@@ -88,7 +88,7 @@ function AppRoutes() {
 
         {/* Route Management */}
         <Route 
-          path="/to-pages/to-add/routeAdd" 
+          path="/to-pages/route-manage/routeAdd" 
           element={
             <ProtectedRoute requiredRoles={[1, 3]}>
               <RouteAdd />
@@ -96,7 +96,7 @@ function AppRoutes() {
           } 
         />
         <Route 
-          path="/to-pages/to-add/routeList" 
+          path="/to-pages/route-manage/routeList" 
           element={
             <ProtectedRoute requiredRoles={[1, 3]}>
               <RouteList />

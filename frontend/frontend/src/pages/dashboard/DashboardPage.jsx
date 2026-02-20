@@ -184,8 +184,10 @@ export default function DashboardPage() {
 
           {/* Subscription Section */}
           <div id="dashboard-subscription" className="scroll-mt-24">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Subscription</h2>
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="space-y-3">
+              <h2 className="text-xl font-bold text-gray-900">Subscription</h2>
+              <div className="rounded-2xl border border-gray-200 bg-white/80 px-4 py-4">
+                <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(120px,150px))] justify-start">
                 <ActionCard
                 icon={Ticket}
                 label="Take leave"
@@ -215,6 +217,8 @@ export default function DashboardPage() {
                 disabled={!isSubscribed}
                 title={!isSubscribed ? "Subscribe first" : ""}
                 />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -223,8 +227,10 @@ export default function DashboardPage() {
 
           {/* Token & Other Services Section */}
           <div id="dashboard-services" className="scroll-mt-24">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Services</h2>
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="space-y-3">
+              <h2 className="text-xl font-bold text-gray-900">Services</h2>
+              <div className="rounded-2xl border border-gray-200 bg-white/80 px-4 py-4">
+                <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(120px,150px))] justify-start">
                 <ActionCard
                 icon={Ticket}
                 label="Seat availability"
@@ -256,6 +262,8 @@ export default function DashboardPage() {
                 iconClassName="text-primary-600"
                 onClick={handleTokenHistory}
                 />
+                </div>
+              </div>
             </div>
           </div>
         </div>

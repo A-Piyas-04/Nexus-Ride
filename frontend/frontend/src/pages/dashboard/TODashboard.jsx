@@ -70,7 +70,7 @@ export default function TODashboard() {
 
   const handleManageRoutes = () => {
     if (isTO) {
-      navigate('/to-pages/to-add/routeAdd');
+      navigate('/to-pages/route-manage/routeList');
     } else {
       window.alert('Unauthorized: Only Transport Officers can manage routes.');
     }
@@ -170,8 +170,10 @@ export default function TODashboard() {
           </div>
           
           <div id="to-review" className="scroll-mt-24">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Review & Notify</h2> 
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="space-y-3">
+              <h2 className="text-xl font-bold text-gray-900">Review & Notify</h2> 
+              <div className="rounded-2xl border border-gray-200 bg-white/80 px-4 py-4">
+                <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(120px,150px))] justify-start">
                 {/* Requests Section - Specific to TO */}
                 <ActionCard
                     icon={FileText}
@@ -196,13 +198,17 @@ export default function TODashboard() {
                     iconClassName="text-primary-600"
                     onClick={handleNotifyUsers}
                 />
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Manage */}
           <div id="to-manage" className="scroll-mt-24">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Manage <span className="text-sm font-bold text-red-600">(Coming Soon)</span></h2>
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="space-y-3">
+              <h2 className="text-xl font-bold text-gray-900">Manage <span className="text-sm font-bold text-red-600">(Coming Soon)</span></h2>
+              <div className="rounded-2xl border border-gray-200 bg-white/80 px-4 py-4">
+                <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(120px,150px))] justify-start">
                 {isTO && (
                   <ActionCard
                     icon={MapPin}
@@ -228,13 +234,17 @@ export default function TODashboard() {
                 iconClassName="text-gray-400"
                 onClick={handleManageDrivers}
                 />
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Token & Services Section */}
           <div id="to-services" className="scroll-mt-24">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Token & Services</h2>
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="space-y-3">
+              <h2 className="text-xl font-bold text-gray-900">Token & Services</h2>
+              <div className="rounded-2xl border border-gray-200 bg-white/80 px-4 py-4">
+                <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(120px,150px))] justify-start">
                 <ActionCard
                 icon={Ticket}
                 label="Seat availability"
@@ -266,14 +276,18 @@ export default function TODashboard() {
                 iconClassName="text-primary-600"
                 onClick={handleTokenHistory}
                 />
+                </div>
+              </div>
             </div>
           </div>          
 
 
              {/* Subscription Section */}
           <div id="to-subscription" className="scroll-mt-24">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Subscription</h2>
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="space-y-3">
+              <h2 className="text-xl font-bold text-gray-900">Subscription</h2>
+              <div className="rounded-2xl border border-gray-200 bg-white/80 px-4 py-4">
+                <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(120px,150px))] justify-start">
                 <ActionCard
                 icon={Ticket}
                 label="Take leave"
@@ -303,14 +317,18 @@ export default function TODashboard() {
                 disabled={!isSubscribed}
                 title={!isSubscribed ? "Subscribe first" : ""}
                 />
+                </div>
+              </div>
             </div>
           </div>
 
 
                     {/* Analytics Section */}
           <div id="to-analytics" className="scroll-mt-24">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Analytics <span className="text-sm font-bold text-red-600">(Coming Soon)</span></h2>
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="space-y-3">
+              <h2 className="text-xl font-bold text-gray-900">Analytics <span className="text-sm font-bold text-red-600">(Coming Soon)</span></h2>
+              <div className="rounded-2xl border border-gray-200 bg-white/80 px-4 py-4">
+                <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(120px,150px))] justify-start">
                 <ActionCard
                 icon={CreditCard}
                 label="Payments"
@@ -342,6 +360,8 @@ export default function TODashboard() {
                 iconClassName="text-gray-400"
                 onClick={handleAnalyticsTrips}
                 />
+                </div>
+              </div>
             </div>
           </div>
 

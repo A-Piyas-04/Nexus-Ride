@@ -46,34 +46,39 @@ export default function DriverDashboard() {
           {loading ? (
             <div className="text-sm text-gray-600">Loading...</div>
           ) : (
-            <div className="grid grid-cols-1 gap-6">
-              <ActionCard
-                icon={Bus}
-                label="SEE ASSIGNED VEHICLES"
-                description="View vehicles assigned to you."
-                iconClassName={disabled ? 'text-gray-400' : 'text-primary-600'}
-                onClick={() => window.alert('Assigned vehicles')}
-                disabled={disabled}
-                title={disabled ? 'Pending approval' : ''}
-              />
-              <ActionCard
-                icon={Users}
-                label="SEE PASSENGER LIST"
-                description="See passengers on your upcoming trips."
-                iconClassName={disabled ? 'text-gray-400' : 'text-primary-600'}
-                onClick={() => window.alert('Passenger list')}
-                disabled={disabled}
-                title={disabled ? 'Pending approval' : ''}
-              />
-              <ActionCard
-                icon={CalendarDays}
-                label="TAKE LEAVE"
-                description="Request leave for specific days."
-                iconClassName={disabled ? 'text-gray-400' : 'text-primary-600'}
-                onClick={() => window.alert('Take leave')}
-                disabled={disabled}
-                title={disabled ? 'Pending approval' : ''}
-              />
+            <div className="space-y-3">
+              <h2 className="text-xl font-bold text-gray-900">Driver actions</h2>
+              <div className="rounded-2xl border border-gray-200 bg-white/80 px-4 py-4">
+                <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(120px,150px))] justify-start">
+                  <ActionCard
+                    icon={Bus}
+                    label="SEE ASSIGNED VEHICLES"
+                    description="View vehicles assigned to you."
+                    iconClassName={disabled ? 'text-gray-400' : 'text-primary-600'}
+                    onClick={() => window.alert('Assigned vehicles')}
+                    disabled={disabled}
+                    title={disabled ? 'Pending approval' : ''}
+                  />
+                  <ActionCard
+                    icon={Users}
+                    label="SEE PASSENGER LIST"
+                    description="See passengers on your upcoming trips."
+                    iconClassName={disabled ? 'text-gray-400' : 'text-primary-600'}
+                    onClick={() => window.alert('Passenger list')}
+                    disabled={disabled}
+                    title={disabled ? 'Pending approval' : ''}
+                  />
+                  <ActionCard
+                    icon={CalendarDays}
+                    label="TAKE LEAVE"
+                    description="Request leave for specific days."
+                    iconClassName={disabled ? 'text-gray-400' : 'text-primary-600'}
+                    onClick={() => window.alert('Take leave')}
+                    disabled={disabled}
+                    title={disabled ? 'Pending approval' : ''}
+                  />
+                </div>
+              </div>
             </div>
           )}
 

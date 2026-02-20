@@ -67,7 +67,7 @@ export default function RouteList() {
             <p className="text-gray-600">View and manage all available transport routes</p>
           </div>
           <Button 
-            onClick={() => navigate('/to-pages/to-add/routeAdd')}
+            onClick={() => navigate('/to-pages/route-manage/routeAdd')}
             className="flex items-center gap-2"
           >
             <Plus className="h-4 w-4" />

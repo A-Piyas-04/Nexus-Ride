@@ -101,7 +101,7 @@ export default function RouteAdd() {
           </div>
           <Button 
             variant="outline" 
-            onClick={() => navigate('/to-pages/to-add/routeList')}
+            onClick={() => navigate('/to-pages/route-manage/routeList')}
             className="flex items-center gap-2"
           >
             <List className="h-4 w-4" />
