@@ -60,10 +60,6 @@ export default function SeatAvailabilityPage() {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [trips]);
 
-  const totalCapacity = trips.reduce((sum, trip) => sum + trip.total_capacity, 0);
-  const totalBooked = trips.reduce((sum, trip) => sum + trip.booked_seats, 0);
-  const totalAvailable = trips.reduce((sum, trip) => sum + trip.available_seats, 0);
-
   return (
     <DashboardLayout>
       <section className="w-full px-4 py-8 md:px-8 md:py-10">
@@ -76,38 +72,19 @@ export default function SeatAvailabilityPage() {
                   Back
                 </span>
               </Button>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Seat availability</h1>
-                <p className="text-sm text-gray-600">
-                  Snapshot of trips, capacity, and seat allocations for today.
-                </p>
-              </div>
             </div>
             <Button variant="secondary" onClick={loadAvailability} disabled={loading}>
               Refresh
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <StatCard
-              icon={Users}
-              label="Available seats"
-              value={totalAvailable}
-              helper="Across active trips"
-            />
-            <StatCard
-              icon={Ticket}
-              label="Booked seats"
-              value={totalBooked}
-              helper="Allocated for students"
-            />
-            <StatCard
-              icon={Bus}
-              label="Total capacity"
-              value={totalCapacity}
-              helper="Fleet for today"
-            />
-          </div>
+          <div>
+                <h1 className="text-3xl font-bold text-gray-900">Seat availability</h1>
+                <p className="text-sm text-gray-600">
+                  Snapshot of trips, capacity, and seat allocations for today.
+                </p>
+              </div>
+
 
           {error && (
             <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -125,7 +102,7 @@ export default function SeatAvailabilityPage() {
                 <Card key={route.name} className="border-primary-100">
                   <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                     <div>
-                      <CardTitle className="text-lg text-gray-900">{route.name}</CardTitle>
+                      <CardTitle className="text-xl font-bold text-gray-900">{route.name}</CardTitle>
                       <p className="text-sm text-gray-600">Trips assigned to this route</p>
                     </div>
                     <div className="text-sm font-semibold text-gray-700">

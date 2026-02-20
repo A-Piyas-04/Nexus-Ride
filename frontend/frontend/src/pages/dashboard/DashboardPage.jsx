@@ -158,6 +158,7 @@ export default function DashboardPage() {
   return (
     <DashboardLayout>
       <Navbar links={navLinks} />
+      <div className="pl-4 md:pl-32">
       <section className="w-full px-4 py-8 md:px-8 md:py-10">
         <div className="w-full max-w-6xl space-y-8">
           <div id="dashboard-welcome" className="scroll-mt-24">
@@ -281,6 +282,7 @@ export default function DashboardPage() {
             loading={detailsLoading}
         />
       </section>
+      </div>
     </DashboardLayout>
   );
 }

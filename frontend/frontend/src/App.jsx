@@ -19,7 +19,7 @@ import TokenHistoryPage from './pages/TokenHistoryPage';
 import Profile from './pages/Profile';
 import BuyToken from './pages/BuyToken';
 import DriverListPage from './pages/DriverListPage';
-import DriverDashboard from './pages/DriverDashboard';
+import DriverDashboard from './pages/dashboard/DriverDashboard';
 import TransportRequestForm from './pages/request/TransportRequestForm';
 import { FacultyRequestsList } from './pages/request/FacultyRequests';
 import RequestDetailPage from './pages/request/RequestDetailPage';

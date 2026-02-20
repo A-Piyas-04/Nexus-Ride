@@ -155,6 +155,7 @@ export default function TODashboard() {
   return (
     <DashboardLayout>
       <Navbar links={navLinks} />
+      <div className="pl-4 md:pl-32">
       <section className="w-full px-4 py-8 md:px-8 md:py-10">
         <div className="w-full max-w-6xl space-y-8">
           <div id="to-welcome" className="scroll-mt-24">
@@ -206,7 +207,7 @@ export default function TODashboard() {
           {/* Manage */}
           <div id="to-manage" className="scroll-mt-24">
             <div className="space-y-3">
-              <h2 className="text-xl font-bold text-gray-900">Manage <span className="text-sm font-bold text-red-600">(Coming Soon)</span></h2>
+              <h2 className="text-xl font-bold text-gray-900">Manage </h2>
               <div className="rounded-2xl border border-gray-200 bg-white/80 px-4 py-4">
                 <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(120px,150px))] justify-start">
                 {isTO && (
@@ -381,6 +382,7 @@ export default function TODashboard() {
             loading={detailsLoading}
         />
       </section>
+      </div>
     </DashboardLayout>
   );
 }
