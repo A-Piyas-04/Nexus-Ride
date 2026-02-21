@@ -80,6 +80,7 @@ export default function TODashboard() {
     }
   };
   const handleManageVehicles = () => navigate('/to-pages/vehicle-manage/vehicleList');
+  const handleManageDrivers = () => navigate('/to-pages/driver-manage/driverList');
 
   // Analytics Handlers
   const handleAnalyticsPayments = () => window.alert('Analytics Payments');
@@ -195,14 +196,6 @@ export default function TODashboard() {
                     onClick={handleTransportRequests}
                 />
 
-                <ActionCard
-                    icon={FileText}
-                    label="Notify Users"
-                    description="Notify users about important updates."
-                    iconClassName="text-primary-600"
-                    onClick={handleNotifyUsers}
-                />
-
 
                 <ActionCard
                     icon={FileText}
@@ -211,6 +204,16 @@ export default function TODashboard() {
                     iconClassName="text-primary-600"
                     onClick={handleDriverRequests}
                 />
+
+
+                <ActionCard
+                    icon={FileText}
+                    label="Notify Users"
+                    description="Notify users about important updates."
+                    iconClassName="text-primary-600"
+                    onClick={handleNotifyUsers}
+                />
+
                 </div>
               </div>
             </div>
@@ -245,7 +248,7 @@ export default function TODashboard() {
                 label="Drivers"
                 description="Manage your drivers."
                 iconClassName="text-gray-400"
-                onClick={handleDriverRequests}
+                onClick={handleManageDrivers}
                 />
                 </div>
               </div>

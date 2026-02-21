@@ -53,9 +53,17 @@ export const getVehicles = async () => {
   return response.data;
 };
 
-// TO: Get drivers
+// TO: Get drivers (for assignment dropdowns)
 export const getDrivers = async () => {
   const response = await axios.get(`${API_URL}/transport-requests/drivers`, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
+};
+
+// Driver management: list all driver profiles
+export const getAllDrivers = async () => {
+  const response = await axios.get(`${API_URL}/drivers`, {
     headers: getAuthHeaders(),
   });
   return response.data;

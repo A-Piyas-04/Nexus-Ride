@@ -1,16 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, constr
 from sqlmodel import Session, select
+from datetime import datetime
+
 from app.db.session import get_session
 from app.models.role import Role, UserRole
 from app.models.user import User
-from app.models.profile import StaffProfile
+from app.models.profile import StaffProfile, DriverProfile
 from app.schemas.auth import SignupRequest, LoginRequest
 from app.utils.hashing import hash_password, verify_password
 from app.core.security import create_access_token, get_current_user
 from app.seeds.faculty import assign_faculty_role_if_applicable
-from datetime import datetime
+from app.api.drivers import router as drivers_router
+
 
 router = APIRouter(prefix="/auth")
+
 
 @router.post("/signup")
 def signup(data: SignupRequest, session: Session = Depends(get_session)):
@@ -24,7 +29,7 @@ def signup(data: SignupRequest, session: Session = Depends(get_session)):
         email=email,
         password_hash=hash_password(data.password),
         full_name=data.full_name,
-        user_type="STAFF"
+        user_type="STAFF",
     )
     session.add(user)
     session.flush()
@@ -36,11 +41,9 @@ def signup(data: SignupRequest, session: Session = Depends(get_session)):
         session.flush()
 
     session.add(UserRole(user_id=user.id, role_id=default_role.id))
-    
-    # Check and assign FACULTY role if applicable
+
     assign_faculty_role_if_applicable(user, session)
 
-    # Create a StaffProfile row at signup with a generated unique staff_code
     staff_code = f"STAFF-{str(user.id)[:8]}"
     profile = StaffProfile(
         user_id=user.id,
@@ -49,19 +52,18 @@ def signup(data: SignupRequest, session: Session = Depends(get_session)):
         staff_code=staff_code,
         department="",
         default_route_id=None,
-        default_pickup_stop_id=None
+        default_pickup_stop_id=None,
     )
     session.add(profile)
 
     session.commit()
     return {"msg": "Signup successful"}
 
+
 @router.post("/login")
 def login(data: LoginRequest, session: Session = Depends(get_session)):
     email = data.email
-    user = session.exec(
-        select(User).where(User.email == email)
-    ).first()
+    user = session.exec(select(User).where(User.email == email)).first()
 
     if not user or not verify_password(data.password, user.password_hash):
         raise HTTPException(status_code=401)
@@ -82,5 +84,66 @@ def me(current_user: User = Depends(get_current_user), session: Session = Depend
         "email": current_user.email,
         "full_name": current_user.full_name,
         "user_type": current_user.user_type,
-        "roles": [{"id": r.id, "name": r.name} for r in roles]
+        "roles": [{"id": r.id, "name": r.name} for r in roles],
     }
+
+
+class DriverSignupRequest(BaseModel):
+    full_name: constr(min_length=1, max_length=100)
+    mobile_number: constr(min_length=11, max_length=11)
+    password: constr(min_length=8, max_length=128)
+    license_number: constr(min_length=1, max_length=64)
+
+
+class DriverLoginRequest(BaseModel):
+    mobile_number: constr(min_length=11, max_length=11)
+    password: constr(min_length=8, max_length=128)
+
+
+def validate_bd_mobile(number: str) -> str:
+    n = (number or "").strip()
+    if len(n) != 11 or not n.isdigit() or not n.startswith("01"):
+        raise HTTPException(status_code=400, detail="Invalid phone number")
+    return n
+
+
+@drivers_router.post("/signup")
+def driver_signup(data: DriverSignupRequest, session: Session = Depends(get_session)):
+    mobile = validate_bd_mobile(data.mobile_number)
+
+    existing_user = session.exec(select(User).where(User.mobile_number == mobile)).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="number has been already used")
+
+    user = User(
+        mobile_number=mobile,
+        password_hash=hash_password(data.password),
+        full_name=data.full_name,
+        user_type="DRIVER",
+    )
+    session.add(user)
+    session.flush()
+
+    profile = DriverProfile(
+        user_id=user.id,
+        mobile_number=mobile,
+        license_number=data.license_number,
+        driver_status=0,
+    )
+    session.add(profile)
+    session.commit()
+    return {"msg": "Signup successful"}
+
+
+@drivers_router.post("/login")
+def driver_login(data: DriverLoginRequest, session: Session = Depends(get_session)):
+    mobile = validate_bd_mobile(data.mobile_number)
+    user = session.exec(select(User).where(User.mobile_number == mobile)).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Phone number is not signed up yet")
+    if user.user_type != "DRIVER":
+        raise HTTPException(status_code=400, detail="Invalid user type")
+    if not verify_password(data.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="incorrect password")
+    token = create_access_token({"sub": str(user.id)})
+    return {"access_token": token}
