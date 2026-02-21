@@ -101,7 +101,7 @@ export function Navbar({ links = [] }) {
             <Button
               variant="outline"
               onClick={handleProfileClick}
-              className="bg-green-800/90 text-white hover:bg-green-700"
+              className="bg-green-700/100 text-white hover:bg-green-700"
             >
               Profile
             </Button>

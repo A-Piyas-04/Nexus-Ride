@@ -81,31 +81,72 @@ export default function TransportOfficerRequests() {
           No transport requests found matching current filter.
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {requests.map((req) => (
-            <Card 
-              key={req.id} 
-              className="p-4 cursor-pointer hover:shadow-md transition-shadow border-l-4 border-l-transparent hover:border-l-primary-600"
-              onClick={() => navigate(`/dashboard/transport-requests/${req.id}/manage`)}
-            >
-              <div className="flex justify-between items-start mb-2">
-                <StatusBadge status={req.status} />
-                <span className="text-xs text-gray-500">
-                  {new Date(req.created_at).toLocaleDateString()}
-                </span>
-              </div>
-              <h3 className="font-semibold text-lg mb-1 truncate" title={req.event_title}>{req.event_title}</h3>
-              <div className="flex items-center text-sm text-gray-600 mb-2">
-                <Calendar className="h-4 w-4 mr-2" />
-                {req.event_date}
-              </div>
-              <div className="flex items-center text-sm text-gray-600">
-                <User className="h-4 w-4 mr-2" />
-                {req.guests.length} Guest{req.guests.length !== 1 ? 's' : ''}
-              </div>
-            </Card>
-          ))}
-        </div>
+        <>
+          <div className="space-y-3 md:hidden">
+            {requests.map((req) => (
+              <Card
+                key={req.id}
+                className="p-4 cursor-pointer hover:shadow-md transition-shadow border-l-4 border-l-transparent hover:border-l-primary-600"
+                onClick={() => navigate(`/dashboard/transport-requests/${req.id}/manage`)}
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-semibold text-gray-900 truncate" title={req.event_title}>
+                        {req.event_title}
+                      </div>
+                      <StatusBadge status={req.status} />
+                    </div>
+                    <div className="mt-1 text-xs text-gray-500 flex items-center">
+                      <Calendar className="h-3 w-3 mr-1" />
+                      <span>{req.event_date}</span>
+                    </div>
+                    <div className="mt-0.5 text-xs text-gray-500 flex items-center">
+                      <User className="h-3 w-3 mr-1" />
+                      <span>
+                        {req.guests.length} Guest{req.guests.length !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0 text-[11px] text-gray-500">
+                    {new Date(req.created_at).toLocaleDateString()}
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {requests.map((req) => (
+              <Card
+                key={req.id}
+                className="p-4 cursor-pointer hover:shadow-md transition-shadow border-l-4 border-l-transparent hover:border-l-primary-600"
+                onClick={() => navigate(`/dashboard/transport-requests/${req.id}/manage`)}
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <StatusBadge status={req.status} />
+                  <span className="text-xs text-gray-500">
+                    {new Date(req.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+                <h3
+                  className="font-semibold text-lg mb-1 truncate"
+                  title={req.event_title}
+                >
+                  {req.event_title}
+                </h3>
+                <div className="flex items-center text-sm text-gray-600 mb-2">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  {req.event_date}
+                </div>
+                <div className="flex items-center text-sm text-gray-600">
+                  <User className="h-4 w-4 mr-2" />
+                  {req.guests.length} Guest{req.guests.length !== 1 ? 's' : ''}
+                </div>
+              </Card>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

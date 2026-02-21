@@ -100,50 +100,115 @@ export default function SubscriptionRequestsPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {requests.map((request) => (
-              <Card key={request.id} className="overflow-hidden border-t-4 border-t-primary-500 hover:shadow-lg transition-shadow">
-                <CardHeader className="bg-white pb-4 border-b border-gray-50">
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-primary-50 p-2.5 rounded-full border border-primary-100">
-                        <User className="h-5 w-5 text-primary-600" />
+          <>
+            <div className="space-y-3 md:hidden">
+              {requests.map((request) => (
+                <Card key={request.id} className="p-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-gray-900 truncate">
+                        {request.user_name || 'Unknown User'}
                       </div>
-                      <div>
-                        <CardTitle className="text-lg font-bold text-gray-900">{request.user_name || 'Unknown User'}</CardTitle>
-                        <CardDescription className="text-xs font-medium text-gray-500 mt-0.5">
-                           Requested on: {request.start_date ? new Date(request.start_date).toLocaleDateString() : 'N/A'}
-                        </CardDescription>
+                      <div className="mt-1 text-xs text-gray-500">
+                        Route:{' '}
+                        <span className="font-medium text-gray-900">
+                          {request.route_name || 'N/A'}
+                        </span>
+                      </div>
+                      <div className="mt-0.5 text-xs text-gray-500">
+                        Pickup:{' '}
+                        <span className="font-medium text-gray-900">
+                          {request.stop_name}
+                        </span>
+                      </div>
+                      <div className="mt-0.5 text-xs text-gray-500">
+                        Duration:{' '}
+                        <span className="font-medium text-gray-900">
+                          {request.start_date} - {request.end_date}
+                        </span>
                       </div>
                     </div>
-                    <div className="bg-amber-50 text-amber-700 text-xs px-2.5 py-1 rounded-full flex items-center gap-1.5 font-semibold border border-amber-100">
-                      <Clock className="h-3 w-3" />
-                      Pending
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-5 space-y-5">
-                  <div className="space-y-3 text-sm bg-gray-50 p-3 rounded-lg border border-gray-100">
-                    <div className="flex justify-between py-1 border-b border-gray-200 border-dashed pb-2">
-                      <span className="text-gray-500 font-medium">Route</span>
-                      <span className="font-semibold text-gray-900">{request.route_name || 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between py-1 border-b border-gray-200 border-dashed pb-2">
-                      <span className="text-gray-500 font-medium">Pickup Stop</span>
-                      <span className="font-semibold text-gray-900">{request.stop_name}</span>
-                    </div>
-                    <div className="flex justify-between py-1">
-                      <span className="text-gray-500 font-medium">Duration</span>
-                      <span className="font-semibold text-gray-900">
-                        {request.start_date} - {request.end_date}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-3">
-                      <Button 
+                    <div className="flex flex-col gap-2 flex-shrink-0">
+                      <Button
                         variant="destructive"
-                        className="flex-1 bg-red-50 text-red-600 hover:bg-red-100 border-red-200 border" 
+                        size="sm"
+                        className="bg-red-50 text-red-600 hover:bg-red-100 border-red-200 border"
+                        onClick={() => handleDecline(request.id)}
+                        isLoading={processingId === request.id}
+                        disabled={processingId !== null && processingId !== request.id}
+                      >
+                        <X className="mr-1 h-4 w-4" />
+                        Decline
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleApprove(request.id)}
+                        isLoading={processingId === request.id}
+                        disabled={processingId !== null && processingId !== request.id}
+                      >
+                        <Check className="mr-1 h-4 w-4" />
+                        Approve
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+
+            <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {requests.map((request) => (
+                <Card
+                  key={request.id}
+                  className="overflow-hidden border-t-4 border-t-primary-500 hover:shadow-lg transition-shadow"
+                >
+                  <CardHeader className="bg-white pb-4 border-b border-gray-50">
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-primary-50 p-2.5 rounded-full border border-primary-100">
+                          <User className="h-5 w-5 text-primary-600" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg font-bold text-gray-900">
+                            {request.user_name || 'Unknown User'}
+                          </CardTitle>
+                          <CardDescription className="text-xs font-medium text-gray-500 mt-0.5">
+                            Requested on:{' '}
+                            {request.start_date
+                              ? new Date(request.start_date).toLocaleDateString()
+                              : 'N/A'}
+                          </CardDescription>
+                        </div>
+                      </div>
+                      <div className="bg-amber-50 text-amber-700 text-xs px-2.5 py-1 rounded-full flex items-center gap-1.5 font-semibold border border-amber-100">
+                        <Clock className="h-3 w-3" />
+                        Pending
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-5 space-y-5">
+                    <div className="space-y-3 text-sm bg-gray-50 p-3 rounded-lg border border-gray-100">
+                      <div className="flex justify-between py-1 border-b border-gray-200 border-dashed pb-2">
+                        <span className="text-gray-500 font-medium">Route</span>
+                        <span className="font-semibold text-gray-900">
+                          {request.route_name || 'N/A'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-1 border-b border-gray-200 border-dashed pb-2">
+                        <span className="text-gray-500 font-medium">Pickup Stop</span>
+                        <span className="font-semibold text-gray-900">{request.stop_name}</span>
+                      </div>
+                      <div className="flex justify-between py-1">
+                        <span className="text-gray-500 font-medium">Duration</span>
+                        <span className="font-semibold text-gray-900">
+                          {request.start_date} - {request.end_date}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <Button
+                        variant="destructive"
+                        className="flex-1 bg-red-50 text-red-600 hover:bg-red-100 border-red-200 border"
                         onClick={() => handleDecline(request.id)}
                         isLoading={processingId === request.id}
                         disabled={processingId !== null && processingId !== request.id}
@@ -151,8 +216,8 @@ export default function SubscriptionRequestsPage() {
                         <X className="mr-2 h-4 w-4" />
                         Decline
                       </Button>
-                      <Button 
-                        className="flex-1" 
+                      <Button
+                        className="flex-1"
                         onClick={() => handleApprove(request.id)}
                         isLoading={processingId === request.id}
                         disabled={processingId !== null && processingId !== request.id}
@@ -160,11 +225,12 @@ export default function SubscriptionRequestsPage() {
                         <Check className="mr-2 h-4 w-4" />
                         Approve
                       </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </DashboardLayout>

@@ -57,8 +57,12 @@ export default function TODashboard() {
   
   const handleOpenSubscribe = () => setSubscribeOpen(true);
   const handleCloseSubscribe = () => setSubscribeOpen(false);
+
+
+
   const handleSubscriptionRequests = () => navigate('/subscription-requests');
   const handleTransportRequests = () => navigate('/dashboard/transport-requests/manage');
+  const handleDriverRequests = () => navigate('/dashboard/driver-requests/manage');
 
 
 
@@ -76,7 +80,6 @@ export default function TODashboard() {
     }
   };
   const handleManageVehicles = () => navigate('/to-pages/vehicle-manage/vehicleList');
-  const handleManageDrivers = () => navigate('/driver-list');
 
   // Analytics Handlers
   const handleAnalyticsPayments = () => window.alert('Analytics Payments');
@@ -199,6 +202,15 @@ export default function TODashboard() {
                     iconClassName="text-primary-600"
                     onClick={handleNotifyUsers}
                 />
+
+
+                <ActionCard
+                    icon={FileText}
+                    label="Driver Requests"
+                    description="Review and manage driver requests."
+                    iconClassName="text-primary-600"
+                    onClick={handleDriverRequests}
+                />
                 </div>
               </div>
             </div>
@@ -233,7 +245,7 @@ export default function TODashboard() {
                 label="Drivers"
                 description="Manage your drivers."
                 iconClassName="text-gray-400"
-                onClick={handleManageDrivers}
+                onClick={handleDriverRequests}
                 />
                 </div>
               </div>

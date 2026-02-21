@@ -18,7 +18,7 @@ import SeatAvailabilityPage from './pages/SeatAvailabilityPage';
 import TokenHistoryPage from './pages/TokenHistoryPage';
 import Profile from './pages/Profile';
 import BuyToken from './pages/BuyToken';
-import DriverListPage from './pages/DriverListPage';
+import DriverRequestsPage from './pages/request/driverRequests';
 import DriverDashboard from './pages/dashboard/DriverDashboard';
 import TransportRequestForm from './pages/request/TransportRequestForm';
 import { FacultyRequestsList } from './pages/request/FacultyRequests';
@@ -67,10 +67,10 @@ function AppRoutes() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
         </Route>
-        <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/to-dashboard" element={<TODashboard />} />
           <Route path="/subscription-requests" element={<SubscriptionRequestsPage />} />
-          <Route path="/driver-list" element={<DriverListPage />} />
+          <Route path="/driver-list" element={<DriverRequestsPage />} />
           <Route path="/driver-dashboard" element={<DriverDashboard />} />
         <Route path="/seat-availability" element={<SeatAvailabilityPage />} />
         <Route path="/token-history" element={<TokenHistoryPage />} />
@@ -85,6 +85,7 @@ function AppRoutes() {
         {/* Transport Officer Routes */}
         <Route path="/dashboard/transport-requests/manage" element={<TransportOfficerRequests />} />
         <Route path="/dashboard/transport-requests/:id/manage" element={<TransportOfficerRequestDetail />} />
+        <Route path="/dashboard/driver-requests/manage" element={<DriverRequestsPage />} />
 
         {/* Route Management */}
         <Route 
