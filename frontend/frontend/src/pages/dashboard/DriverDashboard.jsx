@@ -35,6 +35,34 @@ export default function DriverDashboard() {
     fetchStatus();
   }, []);
 
+  useEffect(() => {
+    let intervalId;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const checkApproval = async () => {
+      if (!token) return;
+      try {
+        const profile = await getMyDriverProfile(token);
+        const s = profile?.driver_status || 0;
+        setStatus(s);
+        if (s === 1 && intervalId) {
+          clearInterval(intervalId);
+          intervalId = null;
+        }
+      } catch {}
+    };
+    if (status !== 1) {
+      intervalId = window.setInterval(checkApproval, 5000);
+    }
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') checkApproval();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [status]);
+
   const disabled = status !== 1;
 
   return (
