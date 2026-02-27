@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getMe as getMeApi, login as loginApi, signup as signupApi } from '../services/auth';
+import { getMe as getMeApi, login as loginApi, signup as signupApi, driverLogin as driverLoginApi } from '../services/auth';
 import { AuthContext } from './auth-context';
 
 const IUT_EMAIL_DOMAIN = '@iut-dhaka.edu';
@@ -99,6 +99,30 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const driverLogin = async (mobile, password) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await driverLoginApi({ mobile_number: mobile, password });
+      localStorage.setItem('token', data.access_token);
+      
+      try {
+        const me = await getMeApi(data.access_token);
+        setUser(me);
+        if (me?.email) localStorage.setItem('user_email', me.email);
+        if (me?.full_name) localStorage.setItem('full_name', me.full_name);
+      } catch {
+        localStorage.removeItem('full_name');
+      }
+      return data;
+    } catch (err) {
+      setError(getErrorMessage(err, 'Driver login failed'));
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const signup = async (full_name, email, password) => {
     setLoading(true);
     setError(null);
@@ -131,7 +155,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, error, login, signup, logout, clearError }}>
+    <AuthContext.Provider value={{ user, loading, error, login, signup, logout, clearError, driverLogin }}>
       {children}
     </AuthContext.Provider>
   );

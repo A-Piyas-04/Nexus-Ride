@@ -7,7 +7,6 @@ import { Label } from '../components/ui/Label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/Card';
 import { AlertCircle } from 'lucide-react';
 import { getSubscription } from '../services/auth';
-import { driverLogin } from '../services/auth';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -16,7 +15,7 @@ export default function LoginPage() {
   const [mobile, setMobile] = useState('');
   const [mobileValid, setMobileValid] = useState(true);
   const [localError, setLocalError] = useState(null);
-  const { login, loading, error, clearError } = useAuth();
+  const { login, driverLogin, loading, error, clearError } = useAuth();
   const navigate = useNavigate();
 
   React.useEffect(() => {
@@ -45,15 +44,12 @@ export default function LoginPage() {
         }
         let data;
         try {
-          data = await driverLogin({ mobile_number: mm, password });
+          data = await driverLogin(mm, password);
         } catch (err) {
-          const detail = err?.response?.data?.detail || 'Login failed';
-          window.alert(detail);
-          setLocalError(detail);
+          // The error is already handled in AuthContext but we catch here to stop navigation
           return;
         }
         token = data?.access_token;
-        if (token) localStorage.setItem('token', token);
       }
 
       if (email === 'transportofficer@iut-dhaka.edu') {

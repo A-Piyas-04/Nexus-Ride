@@ -139,4 +139,14 @@ export const getMyDriverProfile = async (token) => {
   return response.data;
 };
 
+export const updateDriverProfile = async (data) => {
+  const token = localStorage.getItem('token');
+  const response = await api.put('/drivers/profile', data, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
 export default api;

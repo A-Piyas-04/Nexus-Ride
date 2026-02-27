@@ -9,7 +9,7 @@ export function Navbar({ links = [] }) {
   const [activeSection, setActiveSection] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
 
   const scrollToSection = (e, id) => {
     e.preventDefault();
@@ -55,7 +55,11 @@ export function Navbar({ links = [] }) {
   };
 
   const handleProfileClick = () => {
-    navigate('/profile');
+    if (user?.user_type === 'DRIVER') {
+      navigate('/driver-profile');
+    } else {
+      navigate('/profile');
+    }
   };
 
   const handleLogout = () => {

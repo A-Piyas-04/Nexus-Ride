@@ -17,6 +17,7 @@ import SubscriptionRequestsPage from './pages/request/SubscriptionRequestsPage';
 import SeatAvailabilityPage from './pages/SeatAvailabilityPage';
 import TokenHistoryPage from './pages/TokenHistoryPage';
 import Staff_Profile from './pages/profiles/Staff_Profile';
+import DriverProfile from './pages/profiles/driver_profile';
 import BuyToken from './pages/BuyToken';
 import DriverRequestsPage from './pages/request/driverRequests';
 import DriverDashboard from './pages/dashboard/DriverDashboard';
@@ -76,6 +77,7 @@ function AppRoutes() {
         <Route path="/seat-availability" element={<SeatAvailabilityPage />} />
         <Route path="/token-history" element={<TokenHistoryPage />} />
         <Route path="/profile" element={<Staff_Profile />} />
+        <Route path="/driver-profile" element={<DriverProfile />} />
         <Route path="/buy-token" element={<BuyToken />} />
         
         {/* Faculty Transport Routes */}

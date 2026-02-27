@@ -75,14 +75,83 @@ def me(current_user: User = Depends(get_current_user), session: Session = Depend
     profile = session.exec(select(DriverProfile).where(DriverProfile.user_id == current_user.id)).first()
     if not profile:
         raise HTTPException(status_code=404, detail="Not found")
+    
+    # We might need vehicle details if assigned
+    assigned_vehicle = None
+    if profile.assigned_vehicle_id:
+        from app.models.vehicle import Vehicle
+        assigned_vehicle = session.get(Vehicle, profile.assigned_vehicle_id)
+
     return {
         "id": profile.id,
         "user_id": str(profile.user_id),
+        "full_name": current_user.full_name,
+        "email": current_user.email,
         "mobile_number": profile.mobile_number,
         "license_number": profile.license_number,
         "driver_status": profile.driver_status,
         "assigned_vehicle_id": str(profile.assigned_vehicle_id) if profile.assigned_vehicle_id else None,
+        "assigned_vehicle_number": assigned_vehicle.number if assigned_vehicle else None,
     }
+
+
+class UpdateDriverProfileRequest(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+    mobile_number: Optional[str] = None
+    # License number removed as it should not be updatable
+
+
+@router.put("/profile")
+def update_driver_profile(
+    data: UpdateDriverProfileRequest,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    try:
+        profile = session.exec(select(DriverProfile).where(DriverProfile.user_id == current_user.id)).first()
+        if not profile:
+            raise HTTPException(status_code=404, detail="Driver profile not found")
+
+        if data.full_name is not None:
+            current_user.full_name = data.full_name
+            session.add(current_user)
+
+        if data.email is not None:
+            if data.email:
+                existing_email = session.exec(
+                    select(User).where(User.email == data.email).where(User.id != current_user.id)
+                ).first()
+                if existing_email:
+                    raise HTTPException(status_code=400, detail="Email already in use")
+            current_user.email = data.email
+            session.add(current_user)
+            session.flush() # Flush User update first for email FK
+            profile.email = data.email
+
+        if data.mobile_number is not None:
+            mobile_val = data.mobile_number.strip() if data.mobile_number else None
+            if mobile_val:
+                existing_mobile = session.exec(
+                    select(User).where(User.mobile_number == mobile_val).where(User.id != current_user.id)
+                ).first()
+                if existing_mobile:
+                    raise HTTPException(status_code=400, detail="Mobile number already in use")
+            
+            current_user.mobile_number = mobile_val
+            session.add(current_user)
+            session.flush() # Flush User update first for mobile FK
+            
+            profile.mobile_number = mobile_val
+
+        session.add(profile)
+        session.commit()
+        return {"msg": "Updated successfully"}
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 
 @router.get("/{driver_id}", response_model=DriverSummary)
