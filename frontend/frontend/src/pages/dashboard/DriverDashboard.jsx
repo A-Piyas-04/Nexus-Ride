@@ -48,7 +48,9 @@ export default function DriverDashboard() {
           clearInterval(intervalId);
           intervalId = null;
         }
-      } catch {}
+      } catch (error) {
+        console.error('Failed to check approval status:', error);
+      }
     };
     if (status !== 1) {
       intervalId = window.setInterval(checkApproval, 5000);
