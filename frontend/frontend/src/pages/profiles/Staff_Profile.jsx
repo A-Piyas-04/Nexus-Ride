@@ -1,13 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { User, Mail, Phone, Briefcase, MapPin, Bus, Edit2, Save, X, Building, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  User, Mail, Phone, Briefcase, MapPin, Bus, Edit2, Save, X, 
+  Building, Loader2, Camera, ChevronDown, CheckCircle2, AlertCircle 
+} from 'lucide-react';
 import DashboardLayout from '../dashboard/DashboardLayout';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Label } from '../../components/ui/Label';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../../components/ui/Card';
 import { getStaffProfile, updateStaffProfile } from '../../services/staff';
 import { getRoutes } from '../../services/transport';
 import { getMe } from '../../services/auth';
+import { cn } from '../../utils/cn';
+import defaultProfile from '../../assets/profile.png';
 
 const Staff_Profile = () => {
   const [profile, setProfile] = useState(null);
@@ -25,6 +29,8 @@ const Staff_Profile = () => {
   });
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     fetchData();
@@ -78,6 +84,8 @@ const Staff_Profile = () => {
     setIsEditing(false);
     setError(null);
     setSuccessMessage(null);
+    // Reset avatar preview if canceled
+    setAvatarPreview(null);
   };
 
   const handleChange = (e) => {
@@ -97,6 +105,25 @@ const Staff_Profile = () => {
     }));
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload an image file');
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) { // 2MB
+      setError('Image size must be less than 2MB');
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    setAvatarPreview(objectUrl);
+    setError(null);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -104,10 +131,6 @@ const Staff_Profile = () => {
     setSuccessMessage(null);
 
     try {
-      // Filter out empty strings if they shouldn't be sent?
-      // The backend handles None, but empty strings might be treated as values.
-      // department and mobile_number are strings.
-      
       const payload = {
         department: formData.department,
         mobile_number: formData.mobile_number,
@@ -115,7 +138,6 @@ const Staff_Profile = () => {
         default_pickup_stop_name: formData.default_pickup_stop_name || null,
       };
       
-      // Only include full_name if it's provided (since we might not have pre-filled it)
       if (formData.full_name.trim()) {
         payload.full_name = formData.full_name;
       }
@@ -127,6 +149,7 @@ const Staff_Profile = () => {
       
       setSuccessMessage('Profile updated successfully');
       setIsEditing(false);
+      // Keep avatar preview or clear it depending on logic (here we keep it as if saved)
     } catch (err) {
       console.error('Error updating profile:', err);
       setError(err.response?.data?.detail || 'Failed to update profile');
@@ -144,8 +167,8 @@ const Staff_Profile = () => {
   if (loading && !profile) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-full min-h-[400px]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
+        <div className="flex items-center justify-center h-[calc(100vh-64px)]">
+          <Loader2 className="h-10 w-10 animate-spin text-primary-600" />
         </div>
       </DashboardLayout>
     );
@@ -153,243 +176,302 @@ const Staff_Profile = () => {
 
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
-            <p className="text-gray-500 mt-1">Manage your personal information and transport preferences</p>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-500">
+        
+        {/* Header Section */}
+        <div className="relative overflow-hidden bg-white rounded-2xl shadow-sm border border-gray-100">
+          <div className="h-32 bg-gradient-to-r from-green-800 to-green-300" />
+          <div className="px-8 pb-8">
+            <div className="relative flex flex-col md:flex-row items-start md:items-end -mt-12 mb-4 gap-6">
+              
+              {/* Avatar */}
+              <div className="relative group">
+                <div className="h-28 w-28 rounded-full border-4 border-white bg-gray-200 shadow-md overflow-hidden flex items-center justify-center">
+                  <img 
+                    src={avatarPreview || defaultProfile} 
+                    alt="Profile" 
+                    className="h-full w-full object-cover" 
+                  />
+                </div>
+
+                {/* Image Upload Overlay (Only visible locally for now as requested) */}
+                <button 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer border-4 border-transparent"
+                >
+                  <Camera className="h-8 w-8 text-white" />
+                </button>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  className="hidden" 
+                  accept="image/*"
+                  onChange={handleFileChange}
+                />
+              </div>
+
+              {/* Header Info */}
+              <div className="flex-1 min-w-0 pb-2">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <h1 className="text-4xl font-bold text-gray-900 truncate">
+                      {user?.full_name || 'Staff Member'}
+                    </h1>
+                  </div>
+                  
+                  {!isEditing && (
+                    <Button 
+                      onClick={handleEditClick} 
+                      className="bg-primary-600 hover:bg-primary-700 text-white shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      <Edit2 className="h-4 w-4 mr-2" />
+                      Edit Profile
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
-          {!isEditing && (
-            <Button onClick={handleEditClick} className="flex items-center gap-2">
-              <Edit2 className="h-4 w-4" />
-              Edit Profile
-            </Button>
+        </div>
+
+        {/* Alerts */}
+        <div className="space-y-4">
+          {error && (
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-red-50 border border-red-100 text-red-700 animate-in slide-in-from-top-2">
+              <AlertCircle className="h-5 w-5 flex-shrink-0" />
+              <p className="text-sm font-medium">{error}</p>
+              <button onClick={() => setError(null)} className="ml-auto hover:bg-red-100 p-1 rounded-full transition-colors">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+
+          {successMessage && (
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-green-50 border border-green-100 text-green-700 animate-in slide-in-from-top-2">
+              <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
+              <p className="text-sm font-medium">{successMessage}</p>
+              <button onClick={() => setSuccessMessage(null)} className="ml-auto hover:bg-green-100 p-1 rounded-full transition-colors">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
           )}
         </div>
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-center gap-2">
-            <X className="h-4 w-4" />
-            {error}
-          </div>
-        )}
-
-        {successMessage && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md flex items-center gap-2">
-            <Save className="h-4 w-4" />
-            {successMessage}
-          </div>
-        )}
-
+        {/* Content Section */}
         {isEditing ? (
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5 text-primary-600" />
-                  Personal Information
-                </CardTitle>
-                <CardDescription>Update your basic personal details</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div className="p-6 md:p-8 border-b border-gray-100">
+              <h2 className="text-xl font-semibold text-gray-900 mb-1">Edit Profile</h2>
+              <p className="text-sm text-gray-500">Update your personal information and preferences.</p>
+            </div>
+            
+            <div className="p-6 md:p-8 space-y-8">
+              {/* Personal Section */}
+              <div className="space-y-6">
+                <h3 className="text-sm font-medium text-gray-900 uppercase tracking-wider border-b border-gray-100 pb-2">Personal Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="full_name">Full Name</Label>
+                    <Label htmlFor="full_name" className="text-gray-700">Full Name</Label>
                     <Input
                       id="full_name"
                       name="full_name"
-                      placeholder="Enter your full name"
+                      placeholder="e.g. John Doe"
                       value={formData.full_name}
                       onChange={handleChange}
+                      className="h-11 border-gray-200 focus:border-primary-500 focus:ring-primary-500/20 rounded-lg transition-all"
                     />
-                    <p className="text-xs text-gray-500">Leave empty to keep current name</p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="department">Department</Label>
+                    <Label htmlFor="department" className="text-gray-700">Department</Label>
                     <Input
                       id="department"
                       name="department"
-                      placeholder="e.g. CSE, EEE"
+                      placeholder="e.g. Engineering"
                       value={formData.department}
                       onChange={handleChange}
+                      className="h-11 border-gray-200 focus:border-primary-500 focus:ring-primary-500/20 rounded-lg transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="mobile_number" className="text-gray-700">Mobile Number</Label>
+                    <Input
+                      id="mobile_number"
+                      name="mobile_number"
+                      placeholder="01XXXXXXXXX"
+                      value={formData.mobile_number}
+                      onChange={handleChange}
+                      className="h-11 border-gray-200 focus:border-primary-500 focus:ring-primary-500/20 rounded-lg transition-all"
                     />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Phone className="h-5 w-5 text-primary-600" />
-                  Contact Information
-                </CardTitle>
-                <CardDescription>How we can reach you</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="mobile_number">Mobile Number</Label>
-                  <Input
-                    id="mobile_number"
-                    name="mobile_number"
-                    placeholder="01XXXXXXXXX"
-                    value={formData.mobile_number}
-                    onChange={handleChange}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bus className="h-5 w-5 text-primary-600" />
-                  Transport Preferences
-                </CardTitle>
-                <CardDescription>Set your default route and pickup point</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Transport Section */}
+              <div className="space-y-6">
+                <h3 className="text-sm font-medium text-gray-900 uppercase tracking-wider border-b border-gray-100 pb-2">Transport Preferences</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="default_route_name">Default Route</Label>
-                    <select
-                      id="default_route_name"
-                      name="default_route_name"
-                      value={formData.default_route_name}
-                      onChange={handleRouteChange}
-                      className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    >
-                      <option value="">Select a route</option>
-                      {routes.map(route => (
-                        <option key={route.id} value={route.route_name}>
-                          {route.route_name}
-                        </option>
-                      ))}
-                    </select>
+                    <Label htmlFor="default_route_name" className="text-gray-700">Default Route</Label>
+                    <div className="relative">
+                      <select
+                        id="default_route_name"
+                        name="default_route_name"
+                        value={formData.default_route_name}
+                        onChange={handleRouteChange}
+                        className="w-full h-11 pl-4 pr-10 bg-white border border-gray-200 rounded-lg appearance-none focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all text-sm"
+                      >
+                        <option value="">Select a route</option>
+                        {routes.map(route => (
+                          <option key={route.id} value={route.route_name}>
+                            {route.route_name}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="default_pickup_stop_name">Default Pickup Stop</Label>
-                    <select
-                      id="default_pickup_stop_name"
-                      name="default_pickup_stop_name"
-                      value={formData.default_pickup_stop_name}
-                      onChange={handleChange}
-                      disabled={!formData.default_route_name}
-                      className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    >
-                      <option value="">Select a stop</option>
-                      {getStopsForSelectedRoute().map(stop => (
-                        <option key={stop.id} value={stop.stop_name}>
-                          {stop.stop_name}
-                        </option>
-                      ))}
-                    </select>
+                    <Label htmlFor="default_pickup_stop_name" className="text-gray-700">Default Pickup Stop</Label>
+                    <div className="relative">
+                      <select
+                        id="default_pickup_stop_name"
+                        name="default_pickup_stop_name"
+                        value={formData.default_pickup_stop_name}
+                        onChange={handleChange}
+                        disabled={!formData.default_route_name}
+                        className="w-full h-11 pl-4 pr-10 bg-white border border-gray-200 rounded-lg appearance-none focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all text-sm disabled:bg-gray-50 disabled:text-gray-400 cursor-pointer disabled:cursor-not-allowed"
+                      >
+                        <option value="">Select a stop</option>
+                        {getStopsForSelectedRoute().map(stop => (
+                          <option key={stop.id} value={stop.stop_name}>
+                            {stop.stop_name}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                    </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            <div className="flex justify-end gap-3 pt-4">
-              <Button type="button" variant="ghost" onClick={handleCancel} disabled={saving}>
+            <div className="bg-gray-50 px-6 py-5 flex items-center justify-end gap-3 border-t border-gray-100">
+              <Button 
+                type="button" 
+                variant="ghost" 
+                onClick={handleCancel} 
+                disabled={saving}
+                className="text-gray-600 hover:text-gray-900 hover:bg-gray-200/50"
+              >
                 Cancel
               </Button>
-              <Button type="submit" disabled={saving} className="flex items-center gap-2">
-                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-                Save Changes
+              <Button 
+                type="submit" 
+                disabled={saving} 
+                className="bg-primary-600 hover:bg-primary-700 text-white shadow-sm min-w-[140px]"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Changes
+                  </>
+                )}
               </Button>
             </div>
           </form>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5 text-primary-600" />
-                  Personal Details
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="bg-primary-50 p-2 rounded-full">
-                    <User className="h-5 w-5 text-primary-600" />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* Left Column - Personal Info */}
+            <div className="lg:col-span-7 space-y-6">
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 h-full">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2.5 bg-primary-50 rounded-xl text-primary-600">
+                    <User className="h-6 w-6" />
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Full Name</p>
-                    <p className="text-base font-semibold text-gray-900">{user?.full_name || 'N/A'}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="bg-primary-50 p-2 rounded-full">
-                    <Briefcase className="h-5 w-5 text-primary-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Staff Code</p>
-                    <p className="text-base font-semibold text-gray-900">{profile?.staff_code || 'N/A'}</p>
-                  </div>
+                  <h2 className="text-xl font-semibold text-gray-900">Personal Details</h2>
                 </div>
                 
-                <div className="flex items-start gap-3">
-                  <div className="bg-primary-50 p-2 rounded-full">
-                    <Building className="h-5 w-5 text-primary-600" />
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                      <label className="text-sm font-medium text-gray-400 uppercase tracking-wide">Full Name</label>
+                      <p className="mt-1 text-lg font-medium text-gray-900">{user?.full_name || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-400 uppercase tracking-wide">Staff Code</label>
+                      <p className="mt-1 text-lg font-medium text-gray-900 font-mono">{profile?.staff_code || 'N/A'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Department</p>
-                    <p className="text-base font-semibold text-gray-900">{profile?.department || 'Not set'}</p>
+
+                  <div className="h-px bg-gray-50" />
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                      <label className="text-sm font-medium text-gray-400 uppercase tracking-wide">Email Address</label>
+                      <div className="mt-1 flex items-center gap-2 text-gray-900">
+                        <Mail className="h-4 w-4 text-gray-400" />
+                        <span className="text-lg font-medium">{profile?.email || 'N/A'}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-400 uppercase tracking-wide">Department</label>
+                      <div className="mt-1 flex items-center gap-2 text-gray-900">
+                        <Building className="h-4 w-4 text-gray-400" />
+                        <span className="text-lg font-medium">{profile?.department || 'Not set'}</span>
+                      </div>
+                    </div>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column - Contact & Transport */}
+            <div className="lg:col-span-5 space-y-6">
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 h-full">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2.5 bg-indigo-50 rounded-xl text-indigo-600">
+                    <Bus className="h-6 w-6" />
+                  </div>
+                  <h2 className="text-xl font-semibold text-gray-900">Transport & Contact</h2>
                 </div>
 
-                <div className="flex items-start gap-3">
-                  <div className="bg-primary-50 p-2 rounded-full">
-                    <Mail className="h-5 w-5 text-primary-600" />
-                  </div>
+                <div className="space-y-6">
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Email Address</p>
-                    <p className="text-base font-semibold text-gray-900">{profile?.email || 'N/A'}</p>
+                    <label className="text-sm font-medium text-gray-400 uppercase tracking-wide">Mobile Number</label>
+                    <div className="mt-2 flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                      <Phone className="h-5 w-5 text-gray-500" />
+                      <span className="text-lg font-medium text-gray-900">{profile?.mobile_number || 'Not set'}</span>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Phone className="h-5 w-5 text-primary-600" />
-                  Contact & Transport
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="bg-primary-50 p-2 rounded-full">
-                    <Phone className="h-5 w-5 text-primary-600" />
-                  </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Mobile Number</p>
-                    <p className="text-base font-semibold text-gray-900">{profile?.mobile_number || 'Not set'}</p>
+                    <label className="text-sm font-medium text-gray-400 uppercase tracking-wide">Default Route</label>
+                    <div className="mt-2 flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                      <MapPin className="h-5 w-5 text-gray-500" />
+                      <div>
+                        <p className="text-lg font-medium text-gray-900">{profile?.default_route_name || 'No route selected'}</p>
+                        {profile?.default_route_name && (
+                          <p className="text-xs text-gray-500 mt-0.5">Regular Commute</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex items-start gap-3">
-                  <div className="bg-primary-50 p-2 rounded-full">
-                    <Bus className="h-5 w-5 text-primary-600" />
-                  </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Default Route</p>
-                    <p className="text-base font-semibold text-gray-900">{profile?.default_route_name || 'Not selected'}</p>
+                    <label className="text-sm font-medium text-gray-400 uppercase tracking-wide">Pickup Stop</label>
+                    <div className="mt-2 flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                      <div className="h-2 w-2 rounded-full bg-primary-500 ml-1.5 mr-1.5" />
+                      <span className="text-lg font-medium text-gray-900">{profile?.default_pickup_stop_name || 'No stop selected'}</span>
+                    </div>
                   </div>
                 </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="bg-primary-50 p-2 rounded-full">
-                    <MapPin className="h-5 w-5 text-primary-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Default Pickup Stop</p>
-                    <p className="text-base font-semibold text-gray-900">{profile?.default_pickup_stop_name || 'Not selected'}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
         )}
       </div>
