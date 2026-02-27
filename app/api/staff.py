@@ -107,21 +107,28 @@ def update_staff_profile(
             profile.department = data.department
 
         if data.mobile_number is not None:
-            # Handle empty string as None to avoid unique constraint issues if multiple users have empty string
+        # Handle empty string as None to avoid unique constraint issues if multiple users have empty string
             mobile_val = data.mobile_number.strip() if data.mobile_number else None
-            
-            if mobile_val:
-                existing_user = session.exec(
-                    select(User).where(User.mobile_number == mobile_val).where(User.id != current_user.id)
-                ).first()
-                if existing_user:
-                    raise HTTPException(status_code=400, detail="Mobile number already in use")
-            
-            current_user.mobile_number = mobile_val
-            profile.mobile_number = mobile_val
-            session.add(current_user)
-            # Flush to update user mobile number so foreign key check passes
-            session.flush()
+        
+        if mobile_val:
+            existing_user = session.exec(
+                select(User).where(User.mobile_number == mobile_val).where(User.id != current_user.id)
+            ).first()
+            if existing_user:
+                raise HTTPException(status_code=400, detail="Mobile number already in use")
+        
+        # We need to be careful with updating mobile_number as it's a foreign key in StaffProfile
+        # Update User first
+        current_user.mobile_number = mobile_val
+        session.add(current_user)
+        session.flush() # Flush to update User table
+
+        # Now update Profile
+        # We need to refresh the profile or manually set it, but since it's a FK, 
+        # just setting it should be fine as long as the parent (User) is updated.
+        # However, if we change the User's mobile number, the Profile's mobile number 
+        # (which is a FK to User.mobile_number) must match the new value.
+        profile.mobile_number = mobile_val
 
         if data.default_route_name is not None:
             if not data.default_route_name:
