@@ -2,6 +2,7 @@ from sqlmodel import SQLModel
 from uuid import UUID
 from datetime import datetime, date
 from typing import Optional
+from app.models.payment import PaymentMethod
 
 class TokenCreate(SQLModel):
     route_id: UUID
@@ -9,7 +10,7 @@ class TokenCreate(SQLModel):
     travel_date: date
     consumer_email: Optional[str] = None
     direction: str
-
+    payment_method: PaymentMethod # Added payment method
 
 class TokenRead(SQLModel):
     id: int

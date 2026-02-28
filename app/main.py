@@ -87,3 +87,6 @@ app.include_router(routes_router)
 app.include_router(vehicles_router)
 app.include_router(stops_router, prefix="/stops", tags=["stops"])
 app.include_router(token_router, prefix="/token", tags=["token"])
+
+from app.api.payment import router as payment_router
+app.include_router(payment_router)

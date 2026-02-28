@@ -105,18 +105,16 @@ SubscriptionLeave:
   - Manage vehicles (create, update status/metadata, delete with guardrails).
   - Oversee Faculty Transport Requests (list, filter, update status, assign).
 
-## Data Integrity and Validation Highlights
-- Email domain policy enforced by auth schemas; addresses normalized to lowercase.
-- Unique constraints:
-  - Users: email, mobile_number.
-  - Roles: name.
-  - RouteStop: stop_name (global uniqueness).
-  - Subscription: stop_name (global uniqueness as defined; see note above).
-- Date computation for subscriptions uses calendar month boundaries.
+## Data Integrity Highlights
+- **Email/Mobile**: Normalized and unique constraints.
+- **Validation**:
+  - Email domain enforcement (@iut-dhaka.edu for staff).
+  - Mobile number validation (Bangladeshi format).
+- **Status Workflows**: Strict transitions for transport requests (e.g., cannot assign before approval).
 
 ## References
-- Users: [user.py](file:///e:/Projects/NexusRide/app/models/user.py)
-- Roles: [role.py](file:///e:/Projects/NexusRide/app/models/role.py)
-- Subscriptions: [subscription.py](file:///e:/Projects/NexusRide/app/models/subscription.py)
-- Auth Schemas: [auth.py](file:///e:/Projects/NexusRide/app/schemas/auth.py)
-- Subscription Schemas: [subscription.py](file:///e:/Projects/NexusRide/app/schemas/subscription.py)
+- [user.py](file:///e:/Projects/NexusRide/app/models/user.py)
+- [role.py](file:///e:/Projects/NexusRide/app/models/role.py)
+- [subscription.py](file:///e:/Projects/NexusRide/app/models/subscription.py)
+- [token.py](file:///e:/Projects/NexusRide/app/models/token.py)
+- [transport_request.py](file:///e:/Projects/NexusRide/app/models/transport_request.py)

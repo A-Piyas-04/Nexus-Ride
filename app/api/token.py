@@ -4,6 +4,7 @@ from sqlmodel import func
 
 from uuid import UUID
 from datetime import date
+from decimal import Decimal
 from app.db.session import get_session
 from app.models.token import Token
 from app.models.seat_allocation import SeatAllocation
@@ -11,15 +12,17 @@ from app.models.trip import Trip
 from app.models.vehicle import Vehicle
 from app.models.route import Route
 from app.models.user import User
+from app.models.payment import Payment, PaymentStatus, PaymentType
 from app.schemas.token import TokenCreate, TokenRead
 from app.schemas.seat_allocation import SeatAllocationCreate, SeatAllocationRead
+from app.schemas.payment import PaymentRead
 from app.api.auth import get_current_user
 
 
 
 router = APIRouter()
 
-@router.post("/buy", response_model=TokenRead)
+@router.post("/buy", response_model=PaymentRead)
 def buy_token(
     data: TokenCreate,
     session: Session = Depends(get_session),
@@ -47,36 +50,38 @@ def buy_token(
 
     if booked >= vehicle.capacity:
         raise HTTPException(status_code=400, detail="No seats available")
+        
+    # Calculate amount (TODO: Implement real pricing logic)
+    amount = Decimal("50.00")
 
-    # Create token
-    token = Token(
+    # Create Payment Record
+    payment = Payment(
         user_id=current_user.id,
-        route_id=data.route_id,
-        pickup_stop_id=data.pickup_stop_id,
-        trip_id=trip.id, 
-        travel_date=data.travel_date,
-        consumer_email=data.consumer_email,
-        direction=data.direction,
-        status="ACTIVE"
+        amount=amount,
+        payment_type=PaymentType.TOKEN,
+        payment_method=data.payment_method,
+        reference_type=PaymentType.TOKEN,
+        reference_id=None, # Will be updated after token creation
+        status=PaymentStatus.INITIATED,
+        payment_metadata={
+            "route_id": str(data.route_id),
+            "pickup_stop_id": str(data.pickup_stop_id),
+            "travel_date": data.travel_date.isoformat(),
+            "direction": data.direction,
+            "consumer_email": data.consumer_email,
+            "trip_id": str(trip.id) # Storing trip_id to avoid re-querying
+        }
     )
 
-    session.add(token)
-    session.flush()  # get token.id without commit
-
-    seat = SeatAllocation(
-        trip_id=trip.id,
-        user_id=current_user.id,
-        seat_type="TOKEN",
-        pickup_stop_id=data.pickup_stop_id
-    )
-
-    session.add(seat)
-
+    session.add(payment)
     session.commit()
+    session.refresh(payment)
+    
+    # Construct response
+    payment_response = PaymentRead.from_orm(payment)
+    payment_response.payment_url = f"https://mock-gateway.com/pay/{payment.id}"
 
-    session.refresh(token)
-
-    return token
+    return payment_response
 
 
 @router.get("/my-tokens", response_model=list[TokenRead])

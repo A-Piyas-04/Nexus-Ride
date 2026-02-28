@@ -33,6 +33,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import VehicleList from './pages/to-pages/vehicle-manage/vehicleList';
 import VehicleAdd from './pages/to-pages/vehicle-manage/vehicleAdd';
 import DriverList from './pages/to-pages/driver-manage/driverList';
+import { NavigationControls } from './components/ui/NavigationControls';
 
 
 
@@ -58,15 +59,16 @@ function AppRoutes() {
     direction === 'backward' ? 'opacity-0 -translate-y-4' : 'opacity-0 translate-y-4';
 
   return (
-    <Transition
-      open={open}
-      enterClassName="opacity-100 translate-y-0"
-      exitClassName={exitClassName}
-      className="min-h-screen"
-    >
-      <Routes location={displayLocation}>
-        <Route element={<AuthLayout />}>
-          <Route path="/login" element={<LoginPage />} />
+    <>
+      <Transition
+        open={open}
+        enterClassName="opacity-100 translate-y-0"
+        exitClassName={exitClassName}
+        className="min-h-screen"
+      >
+        <Routes location={displayLocation}>
+          <Route element={<AuthLayout />}>
+            <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
         </Route>
           <Route path="/dashboard" element={<DashboardPage />} />
@@ -134,8 +136,10 @@ function AppRoutes() {
 
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    </Transition>
+        </Routes>
+      </Transition>
+      <NavigationControls />
+    </>
   );
 }
 

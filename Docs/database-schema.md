@@ -47,6 +47,7 @@ This document describes the complete database schema for the NexusRide Universit
 | `password_hash` | VARCHAR | |
 | `full_name` | VARCHAR | |
 | `user_type` | VARCHAR | `STAFF` / `DRIVER` |
+| `mobile_number` | VARCHAR | Unique, Nullable (Bangladeshi mobile number) |
 | `last_login` | TIMESTAMP | Nullable |
 
 ### `role`
@@ -73,6 +74,8 @@ This document describes the complete database schema for the NexusRide Universit
 | `department` | VARCHAR | |
 | `default_route_id` | UUID | FK → `route.id`, Nullable |
 | `default_pickup_stop_id` | UUID | FK → `route_stop.id`, Nullable |
+| `email` | VARCHAR | FK → `user.email`, Nullable |
+| `mobile_number` | VARCHAR | FK → `user.mobile_number`, Nullable |
 
 ### `driver_profile`
 **Source**: `app/models/profile.py`
@@ -84,6 +87,7 @@ This document describes the complete database schema for the NexusRide Universit
 | `mobile_number` | VARCHAR | FK → `user.mobile_number`, Nullable |
 | `license_number` | VARCHAR | |
 | `assigned_vehicle_id` | UUID | FK → `vehicle.id`, Nullable |
+| `driver_status` | INTEGER | Default: `0` (0: Pending, 1: Approved) |
 
 ---
 
@@ -118,6 +122,7 @@ This document describes the complete database schema for the NexusRide Universit
 | `user_id` | UUID | FK → `user.id` |
 | `route_id` | UUID | FK → `route.id` |
 | `pickup_stop_id` | UUID | FK → `route_stop.id` |
+| `trip_id` | UUID | FK → `trip.id` |
 | `consumer_email` | VARCHAR | Nullable |
 | `travel_date` | DATE | |
 | `status` | VARCHAR | `ACTIVE`, `CANCELLED`, `USED` |
@@ -162,6 +167,7 @@ This document describes the complete database schema for the NexusRide Universit
 | `vehicle_id` | UUID | FK → `vehicle.id` |
 | `driver_profile_id` | INTEGER | FK → `driver_profile.id` |
 | `route_id` | UUID | FK → `route.id` |
+| `direction` | VARCHAR | e.g., `UP` / `DOWN` |
 | `trip_date` | DATE | |
 | `start_time` | TIME | |
 | `status` | VARCHAR | `SCHEDULED`, `STARTED`, `COMPLETED` |

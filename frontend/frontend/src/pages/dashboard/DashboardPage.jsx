@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { History, Ticket, XCircle, User, Briefcase } from 'lucide-react';
+import { History, Ticket, XCircle, User, Briefcase, Car } from 'lucide-react';
 import axios from 'axios';
 
 import { Button } from '../../components/ui/Button';
@@ -163,16 +163,6 @@ export default function DashboardPage() {
         <div className="w-full max-w-6xl space-y-8">
           <div id="dashboard-welcome" className="scroll-mt-24">
             <WelcomeBanner>
-              <div className="inline-block mr-2">
-                <Button 
-                  onClick={handleGuestRequest} 
-                  disabled={!isFaculty}
-                  className={`${isFaculty ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-400 text-gray-200 cursor-not-allowed'}`}
-                  title={isFaculty ? "Request transport for guests" : "Available only for Faculty members"}
-                >
-                  Guest Request
-                </Button>
-              </div>
               {subscriptionStatus !== 'ACTIVE' && (
                   <div className="inline-block" title={subscriptionStatus === 'PENDING' ? "Subscription request pending" : ""}>
                   <Button onClick={handleOpenSubscribe} disabled={subscriptionStatus === 'PENDING'}>
@@ -232,6 +222,16 @@ export default function DashboardPage() {
               <h2 className="text-xl font-bold text-gray-900">Services</h2>
               <div className="rounded-2xl border border-gray-200 bg-white/80 px-4 py-4">
                 <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(120px,150px))] justify-start">
+                <ActionCard
+                  icon={Car}
+                  label="Transport request"
+                  description="Request transport for guests."
+                  iconClassName={isFaculty ? "text-primary-600" : "text-gray-400"}
+                  onClick={handleGuestRequest}
+                  disabled={!isFaculty}
+                  title={!isFaculty ? "Available only for Faculty members" : ""}
+                />
+
                 <ActionCard
                 icon={Ticket}
                 label="Seat availability"
