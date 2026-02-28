@@ -18,23 +18,46 @@ export default function PaymentStatusScreen({ payment, variant, message }) {
     navigate('/dashboard', { replace: true });
   };
 
+  if (isSuccess) {
+    const isSubscription = referenceType === 'SUBSCRIPTION';
+    return (
+      <Card className="w-full max-w-md mx-auto text-center">
+        <CardHeader>
+          <div className="mx-auto bg-green-100 p-3 rounded-full mb-4 w-fit">
+            <CheckCircle2 className="h-12 w-12 text-green-600" />
+          </div>
+          <CardTitle className="text-2xl text-green-700">Payment Successful!</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <p className="text-gray-600">
+            {isSubscription 
+              ? 'Your subscription request has been sent for approval. You will be notified once the Transport Officer activates it.'
+              : 'Your payment has been processed successfully and your token is ready.'}
+          </p>
+          
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <p className="text-sm text-gray-500 mb-1">Transaction ID</p>
+            <p className="font-mono font-medium">{payment?.id || 'N/A'}</p>
+          </div>
+
+          <Button onClick={handleContinue} className="w-full">
+            {isSubscription ? 'Go to Dashboard' : 'View My Tokens'}
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{isSuccess ? 'Payment Successful' : 'Payment Failed'}</CardTitle>
+        <CardTitle>Payment Failed</CardTitle>
       </CardHeader>
       <CardContent className="grid gap-4">
         <div className="flex items-start gap-3">
-          {isSuccess ? (
-            <CheckCircle2 className="h-6 w-6 text-green-600" />
-          ) : (
-            <XCircle className="h-6 w-6 text-red-600" />
-          )}
+          <XCircle className="h-6 w-6 text-red-600" />
           <div className="text-sm text-gray-700">
-            {message ||
-              (isSuccess
-                ? 'Your payment has been confirmed. The backend will provision your service automatically.'
-                : 'We could not confirm your payment. Please try again.')}
+            {message || 'We could not confirm your payment. Please try again.'}
           </div>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">

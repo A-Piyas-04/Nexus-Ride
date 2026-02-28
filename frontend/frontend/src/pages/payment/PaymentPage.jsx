@@ -135,7 +135,7 @@ export default function PaymentPage() {
               </div>
 
               <div className="text-xs text-gray-500">
-                After SUCCESS, NexusRide will {referenceType === 'TOKEN' ? 'create your token' : 'activate your subscription'} automatically.
+                After SUCCESS, NexusRide will {referenceType === 'TOKEN' ? 'create your token automatically' : 'send your subscription request for approval'}.
               </div>
             </>
           )}

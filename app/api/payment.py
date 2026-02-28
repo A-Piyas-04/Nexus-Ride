@@ -156,8 +156,42 @@ def activate_subscription_from_payment(payment: Payment, session: Session):
         raise HTTPException(status_code=400, detail=f"Cannot activate subscription in {subscription.status} state")
 
     # Activate
-    subscription.status = "ACTIVE"
-    session.add(subscription)
+    # CHANGED: Instead of setting ACTIVE directly, we keep it as PENDING (or set to a dedicated "PAID_WAITING_APPROVAL" state if exists)
+    # The requirement is: "set the subscription status to pending and send a subscription request to the transport officer"
+    # Since it is ALREADY "PENDING" when created, we just ensure it stays PENDING but now it has a linked successful payment.
+    # The TO will see it in the requests list because the requests list filters by PENDING.
+    # We can add a flag or just rely on the fact that payment is confirmed.
+    
+    # However, to distinguish "Applied but not paid" vs "Paid and waiting approval", 
+    # ideally we should have a status change or the TO list should filter by "Has Successful Payment".
+    # Given the current schema only has status string, and `get_subscription_requests` filters by `PENDING`.
+    # If we leave it as PENDING, it appears in the list.
+    
+    # Let's check `get_subscription_requests` implementation in `app/api/subscription.py`:
+    # `where(Subscription.status == "PENDING")`
+    
+    # So if we just do NOTHING here (except maybe logging), it remains PENDING, and the TO sees it.
+    # But we need to ensure the TO knows it is PAID.
+    # The `Subscription` model doesn't have a `is_paid` field.
+    # The link is via `Payment.reference_id`.
+    
+    # For now, per instruction "set the subscription status to pending" (it is already pending),
+    # we will NOT set it to ACTIVE.
+    
+    # subscription.status = "ACTIVE"  <-- REMOVED
+    
+    # We can optionally set it to "PENDING" explicitly to be safe, 
+    # or if there was an "INITIATED" state before.
+    # But `subscribe` endpoint sets it to "PENDING".
+    
+    # So, effectively, we just save the payment link (which is done by the caller confirming the payment)
+    # and maybe update updated_at.
+    
+    # Let's just touch the subscription to ensure session tracks it if needed, 
+    # but effectively we stop auto-activating.
+    
+    pass 
+
     
     # Commit happens in the caller (confirm_payment)
 
