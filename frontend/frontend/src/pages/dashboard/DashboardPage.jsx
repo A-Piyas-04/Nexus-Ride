@@ -130,7 +130,7 @@ export default function DashboardPage() {
     }
 
     try {
-      await createSubscription(
+      const created = await createSubscription(
         {
           start_month: startMonth,
           end_month: endMonth,
@@ -140,12 +140,16 @@ export default function DashboardPage() {
         token
       );
       setSubscribeOpen(false);
-      
-      // Refresh status without redirecting
-      const sub = await getSubscription(token);
-      setSubscriptionStatus(sub.status);
-      setSubscriptionDetails(sub);
-      window.alert('Subscription request submitted successfully!');
+
+      if (created?.status) setSubscriptionStatus(created.status);
+      if (created) setSubscriptionDetails(created);
+
+      navigate('/payment', {
+        state: {
+          referenceType: 'SUBSCRIPTION',
+          referenceId: String(created?.id),
+        },
+      });
     } catch (error) {
       const message = error.response?.data?.detail || 'Subscription failed';
       window.alert(message);

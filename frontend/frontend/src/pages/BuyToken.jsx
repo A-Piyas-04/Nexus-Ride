@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import DashboardLayout from './dashboard/DashboardLayout';
 import { Button } from '../components/ui/Button';
@@ -8,6 +9,7 @@ import { useCurrentUser } from '../hooks/useCurrentUser';
 import iutLogo from '../assets/iut-logo.png';
 
 export default function BuyToken() {
+  const navigate = useNavigate();
 
   const { userEmail } = useCurrentUser();
 
@@ -16,7 +18,7 @@ export default function BuyToken() {
   const [routes, setRoutes] = useState([]);
   const [stops, setStops] = useState([]);
 
-  const [direction, setDirection] = useState("TO_IUT");
+  const [direction, setDirection] = useState("UP");
   const [consumerEmail, setConsumerEmail] = useState("");
 
   const [formData, setFormData] = useState({
@@ -58,24 +60,18 @@ export default function BuyToken() {
       return;
     }
 
-    try {
-      await axios.post(`${apiUrl}/token/buy`, {
-        route_id: formData.route_id,
-        pickup_stop_id: formData.pickup_stop_id,
-        consumer_email: userEmail || consumerEmail,
-        travel_date: today,
-        direction
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      alert("Token purchased successfully");
-
-    } catch (err) {
-      alert(err.response?.data?.detail || "Purchase failed");
-    }
+    navigate('/payment', {
+      state: {
+        referenceType: 'TOKEN',
+        tokenPayload: {
+          route_id: formData.route_id,
+          pickup_stop_id: formData.pickup_stop_id,
+          consumer_email: userEmail || consumerEmail,
+          travel_date: today,
+          direction,
+        },
+      },
+    });
   };
 
   return (
@@ -87,8 +83,8 @@ export default function BuyToken() {
 
           <Label>Direction</Label>
           <select value={direction} onChange={e => setDirection(e.target.value)} className="w-full mb-4">
-            <option value="TO_IUT">To IUT</option>
-            <option value="FROM_IUT">From IUT</option>
+            <option value="UP">To IUT</option>
+            <option value="DOWN">From IUT</option>
           </select>
 
           <Label>Select Route</Label>
@@ -115,7 +111,7 @@ export default function BuyToken() {
             required
           />
 
-          <Button className="w-full mt-6">Buy Token</Button>
+          <Button className="w-full mt-6">Continue to Payment</Button>
 
         </form>
       </section>

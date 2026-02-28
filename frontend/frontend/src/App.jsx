@@ -34,6 +34,8 @@ import VehicleList from './pages/to-pages/vehicle-manage/vehicleList';
 import VehicleAdd from './pages/to-pages/vehicle-manage/vehicleAdd';
 import DriverList from './pages/to-pages/driver-manage/driverList';
 import { NavigationControls } from './components/ui/NavigationControls';
+import PaymentStartPage from './pages/payment/PaymentStartPage';
+import PaymentPage from './pages/payment/PaymentPage';
 
 
 
@@ -81,6 +83,22 @@ function AppRoutes() {
         <Route path="/profile" element={<Staff_Profile />} />
         <Route path="/driver-profile" element={<DriverProfile />} />
         <Route path="/buy-token" element={<BuyToken />} />
+        <Route
+          path="/payment"
+          element={
+            <ProtectedRoute>
+              <PaymentStartPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/payment/:payment_id"
+          element={
+            <ProtectedRoute>
+              <PaymentPage />
+            </ProtectedRoute>
+          }
+        />
         
         {/* Faculty Transport Routes */}
         <Route path="/dashboard/transport-requests/new" element={<TransportRequestForm />} />

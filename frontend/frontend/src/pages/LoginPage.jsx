@@ -45,8 +45,7 @@ export default function LoginPage() {
         let data;
         try {
           data = await driverLogin(mm, password);
-        } catch (err) {
-          // The error is already handled in AuthContext but we catch here to stop navigation
+        } catch {
           return;
         }
         token = data?.access_token;

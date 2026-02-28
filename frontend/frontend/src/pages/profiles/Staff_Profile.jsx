@@ -10,7 +10,6 @@ import { Label } from '../../components/ui/Label';
 import { getStaffProfile, updateStaffProfile } from '../../services/staff';
 import { getRoutes } from '../../services/transport';
 import { getMe } from '../../services/auth';
-import { cn } from '../../utils/cn';
 import defaultProfile from '../../assets/profile.png';
 
 const Staff_Profile = () => {
