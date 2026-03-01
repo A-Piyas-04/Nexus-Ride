@@ -41,8 +41,10 @@ export default function SignupPage() {
           setLocalError(msg);
           return;
         }
-        if (!licenseNumber) {
-          const msg = 'Driver licence is required';
+        const lic = (licenseNumber || '').trim().toUpperCase();
+        const licOk = /^DL-\d{4}$/.test(lic);
+        if (!licOk) {
+          const msg = 'Invalid licence. Use format DL-1234';
           window.alert(msg);
           setLocalError(msg);
           return;
@@ -52,7 +54,7 @@ export default function SignupPage() {
             full_name: fullName,
             mobile_number: mm,
             password,
-            license_number: licenseNumber,
+            license_number: lic,
           });
         } catch (err) {
           const detail = err?.response?.data?.detail || 'Signup failed';
