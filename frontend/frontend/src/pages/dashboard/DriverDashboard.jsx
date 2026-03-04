@@ -1,3 +1,5 @@
+/*
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from './DashboardLayout';
@@ -131,6 +133,85 @@ export default function DriverDashboard() {
           </div>
         </div>
       </section>
+      </div>
+    </DashboardLayout>
+  );
+}
+*/
+
+import React, { useEffect, useState } from 'react';
+import DashboardLayout from './DashboardLayout';
+import { Button } from '../../components/ui/Button';
+import axios from 'axios';
+
+export default function DriverDashboard() {
+  const [trips, setTrips] = useState([]);
+  const token = localStorage.getItem('token');
+
+  const fetchTrips = async () => {
+    const res = await axios.get('/api/driver/my-trips', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    setTrips(res.data);
+  };
+
+  useEffect(() => {
+    fetchTrips();
+  }, []);
+
+  const handleStart = async (id) => {
+    await axios.patch(`/api/trips/${id}/start`, {}, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    fetchTrips();
+  };
+
+  const handleComplete = async (id) => {
+    await axios.patch(`/api/trips/${id}/complete`, {}, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    fetchTrips();
+  };
+
+  return (
+    <DashboardLayout>
+      <div className="pl-4 md:pl-32">
+        <section className="px-6 py-8">
+          <h2 className="text-xl font-bold mb-4">Today's Trips</h2>
+
+          <div className="space-y-4">
+            {trips.map(trip => (
+              <div key={trip.id} className="border rounded-xl p-4 bg-white">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p><strong>{trip.route_name}</strong></p>
+                    <p>{trip.trip_date} | {trip.start_time}</p>
+                  </div>
+
+                  <div className="space-x-2">
+                    {trip.status === 'SCHEDULED' && (
+                      <Button onClick={() => handleStart(trip.id)}>
+                        Start
+                      </Button>
+                    )}
+
+                    {trip.status === 'STARTED' && (
+                      <Button onClick={() => handleComplete(trip.id)} variant="secondary">
+                        Complete
+                      </Button>
+                    )}
+
+                    {trip.status === 'COMPLETED' && (
+                      <span className="text-green-600 font-semibold">
+                        Completed
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
     </DashboardLayout>
   );
