@@ -119,15 +119,18 @@ def update_driver_profile(
 
         if data.email is not None:
             if data.email:
+                email_val = data.email.strip().lower()
+                if not email_val.endswith("@iut-dhaka.edu"):
+                    raise HTTPException(status_code=400, detail="Email must end with @iut-dhaka.edu")
                 existing_email = session.exec(
-                    select(User).where(User.email == data.email).where(User.id != current_user.id)
+                    select(User).where(User.email == email_val).where(User.id != current_user.id)
                 ).first()
                 if existing_email:
                     raise HTTPException(status_code=400, detail="Email already in use")
-            current_user.email = data.email
+            current_user.email = data.email.strip().lower() if data.email else None
             session.add(current_user)
             session.flush() # Flush User update first for email FK
-            profile.email = data.email
+            profile.email = current_user.email
 
         if data.mobile_number is not None:
             mobile_val = data.mobile_number.strip() if data.mobile_number else None

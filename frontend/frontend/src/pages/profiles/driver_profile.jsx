@@ -109,9 +109,16 @@ const DriverProfile = () => {
     setSuccessMessage(null);
 
     try {
+      const emailNorm = (formData.email || '').trim().toLowerCase();
+      if (emailNorm && !emailNorm.endsWith('@iut-dhaka.edu')) {
+        setError('Email must end with @iut-dhaka.edu');
+        setSaving(false);
+        return;
+      }
+
       const payload = {
         full_name: formData.full_name,
-        email: formData.email,
+        email: emailNorm,
         mobile_number: formData.mobile_number,
         license_number: formData.license_number,
       };
@@ -254,7 +261,7 @@ const DriverProfile = () => {
                       id="email"
                       name="email"
                       type="email"
-                      placeholder="e.g. john@example.com"
+                      placeholder="e.g. name@iut-dhaka.edu"
                       value={formData.email}
                       onChange={handleChange}
                       className="h-11 border-gray-200 focus:border-primary-500 focus:ring-primary-500/20 rounded-lg transition-all"

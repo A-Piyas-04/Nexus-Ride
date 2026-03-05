@@ -12,6 +12,7 @@ from app.utils.hashing import hash_password, verify_password
 from app.core.security import create_access_token, get_current_user
 from app.seeds.faculty import assign_faculty_role_if_applicable
 from app.api.drivers import router as drivers_router
+import re
 
 
 router = APIRouter(prefix="/auth")
@@ -106,14 +107,27 @@ def validate_bd_mobile(number: str) -> str:
         raise HTTPException(status_code=400, detail="Invalid phone number")
     return n
 
+def validate_license(license_number: str) -> str:
+    lic = (license_number or "").strip().upper()
+    if not re.fullmatch(r"DL-\d{4}", lic):
+        raise HTTPException(status_code=400, detail="Invalid license format. Use DL-1234")
+    return lic
 
 @drivers_router.post("/signup")
 def driver_signup(data: DriverSignupRequest, session: Session = Depends(get_session)):
     mobile = validate_bd_mobile(data.mobile_number)
+    license_num = validate_license(data.license_number)
 
     existing_user = session.exec(select(User).where(User.mobile_number == mobile)).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="number has been already used")
+
+    # Ensure license number is unique among drivers
+    existing_license = session.exec(
+        select(DriverProfile).where(DriverProfile.license_number == license_num)
+    ).first()
+    if existing_license:
+        raise HTTPException(status_code=400, detail="License number already in use")
 
     user = User(
         mobile_number=mobile,
@@ -127,7 +141,7 @@ def driver_signup(data: DriverSignupRequest, session: Session = Depends(get_sess
     profile = DriverProfile(
         user_id=user.id,
         mobile_number=mobile,
-        license_number=data.license_number,
+        license_number=license_num,
         driver_status=0,
     )
     session.add(profile)
