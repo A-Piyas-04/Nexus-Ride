@@ -207,6 +207,15 @@ export default function DriverDashboard() {
                       title={disabled ? 'Pending approval' : ''}
                     />
                     <ActionCard
+                      icon={Bus}
+                      label="VIEW ALL TRIPS"
+                      description="See all your assigned trips history."
+                      iconClassName={disabled ? 'text-gray-400' : 'text-primary-600'}
+                      onClick={() => navigate('/driver/all-trips')}
+                      disabled={disabled}
+                      title={disabled ? 'Pending approval' : ''}
+                    />
+                    <ActionCard
                       icon={Users}
                       label="SEE PASSENGER LIST"
                       description="See passengers on your upcoming trips."

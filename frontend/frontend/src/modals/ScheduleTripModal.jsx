@@ -2,7 +2,7 @@ import React from 'react';
 import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
 
-export default function ScheduleTripModal({ open, onClose, onSubmit, data, onChange }) {
+export default function ScheduleTripModal({ open, onClose, onSubmit, data, onChange, routes, vehicles, drivers }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
     onChange((prev) => ({ ...prev, [name]: value }));
@@ -25,15 +25,21 @@ export default function ScheduleTripModal({ open, onClose, onSubmit, data, onCha
     >
       <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Route ID</label>
-          <input
+          <label className="text-sm font-medium text-gray-700">Route</label>
+          <select
             name="route_id"
             className={fieldClassName}
             value={data.route_id}
             onChange={handleChange}
-            placeholder="Enter Route ID"
             required
-          />
+          >
+            <option value="">Select Route</option>
+            {routes?.map((route) => (
+              <option key={route.id} value={route.id}>
+                {route.route_name}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="space-y-2">
@@ -50,27 +56,39 @@ export default function ScheduleTripModal({ open, onClose, onSubmit, data, onCha
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Vehicle ID</label>
-          <input
+          <label className="text-sm font-medium text-gray-700">Vehicle</label>
+          <select
             name="vehicle_id"
             className={fieldClassName}
             value={data.vehicle_id}
             onChange={handleChange}
-            placeholder="Enter Vehicle ID"
             required
-          />
+          >
+            <option value="">Select Vehicle</option>
+            {vehicles?.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.vehicle_number} (Cap: {v.capacity})
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Driver Profile ID</label>
-          <input
+          <label className="text-sm font-medium text-gray-700">Driver</label>
+          <select
             name="driver_profile_id"
             className={fieldClassName}
             value={data.driver_profile_id}
             onChange={handleChange}
-            placeholder="Enter Driver Profile ID"
             required
-          />
+          >
+            <option value="">Select Driver</option>
+            {drivers?.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.full_name} ({d.mobile_number})
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="grid grid-cols-2 gap-4">

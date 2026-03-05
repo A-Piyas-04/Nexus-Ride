@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bus, History, MapPin, Ticket, XCircle, FileText, User, CreditCard, AlertCircle, Navigation } from 'lucide-react';
+import { Bus, History, MapPin, Ticket, XCircle, FileText, User, CreditCard, AlertCircle, Navigation, Calendar } from 'lucide-react';
 
 import { Button } from '../../components/ui/Button';
 import { ActionCard } from '../../components/ui/ActionCard';
@@ -20,6 +20,10 @@ export default function TODashboard() {
   
   // Schedule Trip States
   const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [routes, setRoutes] = useState([]);
+  const [vehicles, setVehicles] = useState([]);
+  const [drivers, setDrivers] = useState([]);
+  
   const [tripData, setTripData] = useState({
     vehicle_id: '',
     driver_profile_id: '',
@@ -44,6 +48,32 @@ export default function TODashboard() {
     { name: 'Analytics', targetId: 'to-analytics' },
   ];
   const isTO = user?.roles?.some(role => [1, 3].includes(role.id));
+
+  // Fetch data for trip scheduling
+  useEffect(() => {
+    if (isTO && scheduleOpen) {
+      const fetchData = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const headers = { Authorization: `Bearer ${token}` };
+
+        try {
+          const [routesRes, vehiclesRes, driversRes] = await Promise.all([
+            fetch("http://localhost:8000/routes", { headers }),
+            fetch("http://localhost:8000/vehicles", { headers }),
+            fetch("http://localhost:8000/drivers", { headers })
+          ]);
+
+          if (routesRes.ok) setRoutes(await routesRes.json());
+          if (vehiclesRes.ok) setVehicles(await vehiclesRes.json());
+          if (driversRes.ok) setDrivers(await driversRes.json());
+        } catch (error) {
+          console.error("Failed to fetch scheduling data:", error);
+        }
+      };
+      fetchData();
+    }
+  }, [isTO, scheduleOpen]);
 
   // 🆕 Schedule Trip Submit
   const handleScheduleTrip = async () => {
@@ -288,6 +318,14 @@ export default function TODashboard() {
                 iconClassName="text-gray-400"
                 onClick={handleManageDrivers}
                 />
+
+                <ActionCard
+                icon={Calendar}
+                label="Schedule Trip"
+                description="Create and schedule a new trip."
+                iconClassName="text-primary-600"
+                onClick={() => setScheduleOpen(true)}
+                />
                 </div>
               </div>
             </div>
@@ -441,6 +479,9 @@ export default function TODashboard() {
           onSubmit={handleScheduleTrip}
           data={tripData}
           onChange={setTripData}
+          routes={routes}
+          vehicles={vehicles}
+          drivers={drivers}
         />
       </section>
       </div>

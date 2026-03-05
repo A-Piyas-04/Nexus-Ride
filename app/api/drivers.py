@@ -55,35 +55,44 @@ def get_my_trips(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    # Get driver profile
-    statement = select(DriverProfile).where(DriverProfile.user_id == current_user.id)
-    driver_profile = session.exec(statement).first()
-    if not driver_profile:
-        raise HTTPException(status_code=404, detail="Driver profile not found")
+    try:
+        # Get driver profile
+        statement = select(DriverProfile).where(DriverProfile.user_id == current_user.id)
+        driver_profile = session.exec(statement).first()
+        if not driver_profile:
+            raise HTTPException(status_code=404, detail="Driver profile not found")
 
-    # Get trips
-    from app.models.trip import Trip
-    from app.models.route import Route
-    
-    trips = session.exec(
-        select(Trip, Route.route_name)
-        .join(Route, Trip.route_id == Route.id)
-        .where(Trip.driver_profile_id == driver_profile.id)
-        .order_by(Trip.trip_date, Trip.start_time)
-    ).all()
-
-    return [
-        {
-            "id": trip.id,
-            "route_name": route_name,
-            "trip_date": trip.trip_date,
-            "start_time": trip.start_time,
-            "status": trip.status,
-            "vehicle_id": trip.vehicle_id,
-            "direction": trip.direction
-        }
-        for trip, route_name in trips
-    ]
+        # Get trips
+        from app.models.trip import Trip
+        from app.models.route import Route
+        
+        print(f"DEBUG: Driver Profile ID: {driver_profile.id}")
+        
+        query = select(Trip, Route.route_name).join(Route, Trip.route_id == Route.id).where(Trip.driver_profile_id == driver_profile.id)
+        print(f"DEBUG: Query: {query}")
+        
+        trips = session.exec(query).all()
+        print(f"DEBUG: Found {len(trips)} trips")
+        
+        results = []
+        for trip, route_name in trips:
+            print(f"DEBUG: Processing trip {trip.id}")
+            results.append({
+                "id": trip.id,
+                "route_name": route_name or "Unknown Route",
+                "trip_date": trip.trip_date.isoformat() if trip.trip_date else None,
+                "start_time": trip.start_time.isoformat() if trip.start_time else None,
+                "status": trip.status,
+                "vehicle_id": trip.vehicle_id,
+                "direction": trip.direction
+            })
+            
+        return results
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print(f"ERROR in get_my_trips: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/requests")
