@@ -7,6 +7,7 @@ import { ActionCard } from '../../components/ui/ActionCard';
 import { WelcomeBanner } from '../../components/ui/WelcomeBanner';
 import SubscriptionModal from '../../modals/SubscriptionModal';
 import SubscriptionDetailsModal from '../../modals/SubscriptionDetailsModal';
+import ScheduleTripModal from '../../modals/ScheduleTripModal';
 import { createSubscription, getSubscription } from '../../services/auth';
 import { Navbar } from '../../components/Navbar';
 import DashboardLayout from './DashboardLayout';
@@ -432,6 +433,14 @@ export default function TODashboard() {
             onClose={() => setDetailsOpen(false)}
             subscription={subscriptionDetails}
             loading={detailsLoading}
+        />
+
+        <ScheduleTripModal
+          open={scheduleOpen}
+          onClose={() => setScheduleOpen(false)}
+          onSubmit={handleScheduleTrip}
+          data={tripData}
+          onChange={setTripData}
         />
       </section>
       </div>

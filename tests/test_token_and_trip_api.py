@@ -64,6 +64,7 @@ def test_token_and_trip_flow():
         "consumer_email": email,
         "travel_date": today,
         "direction": "TO_IUT",
+        "payment_method": "BKASH",
     }
     print("Attempting to buy token...")
     resp_buy = httpx.post(f"{BASE_URL}/token/buy", headers=headers, json=payload)
@@ -73,12 +74,25 @@ def test_token_and_trip_flow():
     except Exception:
         print("Response text:", resp_buy.text)
     assert resp_buy.status_code == 200, f"Token buy failed: {resp_buy.status_code} {resp_buy.text}"
-    token_data = resp_buy.json()
-    token_id = token_data["id"]
+    payment_data = resp_buy.json()
+    payment_id = payment_data["id"]
+    
+    print(f"Payment initiated: {payment_id}. Confirming...")
+    confirm_payload = {
+        "external_txn_id": "TEST_TXN_TOKEN_123",
+        "status": "SUCCESS"
+    }
+    resp_confirm = httpx.post(f"{BASE_URL}/payments/{payment_id}/confirm", headers=headers, json=confirm_payload)
+    assert resp_confirm.status_code == 200, f"Payment confirm failed: {resp_confirm.status_code} {resp_confirm.text}"
+    confirmed_payment = resp_confirm.json()
+    token_id = confirmed_payment.get("reference_id")
+    
     resp_my = httpx.get(f"{BASE_URL}/token/my-tokens", headers=headers)
     assert resp_my.status_code == 200, f"/token/my-tokens failed: {resp_my.status_code} {resp_my.text}"
     tokens = resp_my.json()
-    assert any(t["id"] == token_id for t in tokens), "Created token not found in /token/my-tokens"
+    
+    found = any(str(t["id"]) == str(token_id) for t in tokens)
+    assert found, f"Created token {token_id} not found in /token/my-tokens: {tokens}"
     print("✅ Token and trip flow test passed")
 
 

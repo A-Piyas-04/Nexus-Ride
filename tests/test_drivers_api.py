@@ -9,9 +9,13 @@ def test_drivers_flow():
     if len(digits) < 8:
         digits = (digits + "12345678")[:8]
     mobile_number = "017" + digits[:8]
-    license_suffix = uuid.uuid4().hex[:8]
+    
+    # Generate random 4 digits for license
+    import random
+    license_digits = "".join([str(random.randint(0, 9)) for _ in range(4)])
+    license_number = f"DL-{license_digits}"
+    
     password = "password123"
-    license_number = f"LIC-{license_suffix}"
     signup_payload = {
         "full_name": "Test Driver",
         "mobile_number": mobile_number,

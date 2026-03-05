@@ -50,6 +50,42 @@ def list_drivers(session: Session = Depends(get_session)):
     return [DriverSummary(**_serialize_driver(profile, user)) for profile, user in results]
 
 
+@router.get("/my-trips")
+def get_my_trips(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    # Get driver profile
+    statement = select(DriverProfile).where(DriverProfile.user_id == current_user.id)
+    driver_profile = session.exec(statement).first()
+    if not driver_profile:
+        raise HTTPException(status_code=404, detail="Driver profile not found")
+
+    # Get trips
+    from app.models.trip import Trip
+    from app.models.route import Route
+    
+    trips = session.exec(
+        select(Trip, Route.route_name)
+        .join(Route, Trip.route_id == Route.id)
+        .where(Trip.driver_profile_id == driver_profile.id)
+        .order_by(Trip.trip_date, Trip.start_time)
+    ).all()
+
+    return [
+        {
+            "id": trip.id,
+            "route_name": route_name,
+            "trip_date": trip.trip_date,
+            "start_time": trip.start_time,
+            "status": trip.status,
+            "vehicle_id": trip.vehicle_id,
+            "direction": trip.direction
+        }
+        for trip, route_name in trips
+    ]
+
+
 @router.get("/requests")
 def driver_requests(session: Session = Depends(get_session)):
     results = session.exec(

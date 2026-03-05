@@ -69,7 +69,6 @@ def test_token_flow():
     
     # 1. Get Route and Trip Info (Prerequisite)
     # We need a valid trip to buy a token for.
-    # Assuming seed data exists for routes/trips.
     resp_trips = httpx.get(f"{BASE_URL}/trips/availability", headers=headers)
     if resp_trips.status_code != 200 or not resp_trips.json():
         print("⚠️ No trips available, skipping Token Flow test.")
@@ -77,18 +76,26 @@ def test_token_flow():
 
     trip = resp_trips.json()[0]
     trip_id = trip["id"]
-    # We need route_id and stop_id. 
-    # The trip object might not have them directly depending on schema, let's fetch routes.
-    resp_routes = httpx.get(f"{BASE_URL}/routes", headers=headers)
-    route = resp_routes.json()[0]
-    stop = route["stops"][0]
+    
+    # Ensure we use the route_id from the trip if available, or fetch route
+    trip_route_id = trip["route_id"]
+    trip_direction = trip["direction"] # e.g. "TO_IUT" or "FROM_IUT"
+    
+    # We need a stop for this route.
+    resp_stops = httpx.get(f"{BASE_URL}/stops/{trip_route_id}/stops", headers=headers)
+    stops = resp_stops.json()
+    if not stops:
+        print("⚠️ No stops found for route, skipping Token Flow test.")
+        return
+        
+    stop_id = stops[0]["id"]
     
     # 2. Call /token/buy (Should create Payment, NOT Token)
     buy_payload = {
-        "route_id": route["id"],
-        "pickup_stop_id": stop["id"],
+        "route_id": trip_route_id,
+        "pickup_stop_id": stop_id,
         "travel_date": trip["trip_date"],
-        "direction": "UP", # Assuming UP direction
+        "direction": trip_direction, 
         "payment_method": "NAGAD",
         "consumer_email": email
     }
@@ -181,12 +188,12 @@ def test_subscription_flow():
     resp_confirm = httpx.post(f"{BASE_URL}/payments/{payment_id}/confirm", json=confirm_payload, headers=headers)
     assert resp_confirm.status_code == 200
     
-    # 4. Verify Subscription is ACTIVE
+    # 4. Verify Subscription is PENDING (waiting for TO approval)
     resp_sub = httpx.get(f"{BASE_URL}/subscription/", headers=headers)
     my_sub = resp_sub.json()
     print(f"Subscription Status after Payment: {my_sub['status']}")
-    assert my_sub["status"] == "ACTIVE"
-    print("✅ Subscription Flow Success")
+    assert my_sub["status"] == "PENDING"
+    print("✅ Subscription Flow Success (Pending TO Approval)")
 
 def test_my_payments():
     print("\n--- Testing My Payments ---")
