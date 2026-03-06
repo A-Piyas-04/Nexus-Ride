@@ -161,6 +161,12 @@ This document outlines the available API endpoints for the NexusRide University 
 - **Path**: `/drivers/{driver_id}/status`
 - **Request Body**: `{"status": 1}`
 
+### 3.8 Get My Trips (Driver)
+- **Method**: `GET`
+- **Path**: `/drivers/my-trips`
+- **Headers**: `Authorization: Bearer <token>`
+- **Response**: List of trips assigned to the driver.
+
 ---
 
 ## 4. Subscription Management (`/subscription`)
@@ -282,6 +288,18 @@ This document outlines the available API endpoints for the NexusRide University 
 - **Method**: `GET`
 - **Path**: `/trips/availability`
 - **Response**: List of trips with seat counts.
+
+### 8.2 Start Trip (Driver)
+- **Method**: `PATCH`
+- **Path**: `/trips/{trip_id}/start`
+- **Headers**: `Authorization: Bearer <token>`
+- **Response**: Updated trip object with status `STARTED`.
+
+### 8.3 Complete Trip (Driver)
+- **Method**: `PATCH`
+- **Path**: `/trips/{trip_id}/complete`
+- **Headers**: `Authorization: Bearer <token>`
+- **Response**: Updated trip object with status `COMPLETED`.
 
 ---
 

@@ -29,6 +29,11 @@ This document explains the platform’s features and behavior derived from the c
   - FACULTY: Grants ability to create and manage Faculty Transport Requests.
   - TO (Transport Officer): Grants administrative abilities for routes, vehicles, and approval workflows.
 
+### Transport Officer Seed
+- A seeded Transport Officer account is created via the role seeding routine:
+  - Email and password are defined in [to_credentials.py](file:///e:/Projects/NexusRide/app/core/to_credentials.py).
+  - The seed ensures roles NORMAL_STAFF and TO are assigned (see [roles.py](file:///e:/Projects/NexusRide/app/seeds/roles.py)).
+
 ## Authentication & Profile
 - Signup (POST /auth/signup)
   - Validates email domain (@iut-dhaka.edu) and password length (8–128).
@@ -91,6 +96,50 @@ SubscriptionLeave:
 - Defines leave intervals against an existing subscription with optional reasons.
 - Not exposed in the documented API yet; the model enables future features like pausing billing/service during leave windows.
 
+## Driver Trip Operations
+Data Model (models/trip.py):
+- Trip fields:
+  - id (UUID, PK)
+  - vehicle_id (UUID, FK → vehicle.id)
+  - driver_profile_id (int, FK → driver_profile.id)
+  - route_id (UUID, FK → route.id)
+  - direction: TO_IUT | FROM_IUT
+  - trip_date (date)
+  - start_time (time)
+  - status: SCHEDULED | STARTED | COMPLETED
+
+APIs and behavior:
+- Get my trips (GET `/drivers/my-trips`) — returns all trips assigned to the authenticated driver (see [drivers.py](file:///e:/Projects/NexusRide/app/api/drivers.py)).
+- Start a trip (PATCH `/trips/{trip_id}/start`) — only the assigned driver can start; validates legal state transition (see [trips.py](file:///e:/Projects/NexusRide/app/api/trips.py#L108)).
+- Complete a trip (PATCH `/trips/{trip_id}/complete`) — only the assigned driver can complete; validates legal state transition (see [trips.py](file:///e:/Projects/NexusRide/app/api/trips.py#L137)).
+
+Frontend:
+- Driver Dashboard shows “Today’s Trips” with Start/Complete actions (see [DriverDashboard.jsx](file:///e:/Projects/NexusRide/frontend/frontend/src/pages/dashboard/DriverDashboard.jsx)).
+- A dedicated “All Assigned Trips” page lists every assigned trip irrespective of date (see [DriverTrips.jsx](file:///e:/Projects/NexusRide/frontend/frontend/src/pages/dashboard/DriverTrips.jsx)). Route: `/driver/all-trips`.
+
+## Trip Scheduling (Transport Officer)
+UI:
+- The Transport Officer dashboard includes a “Schedule Trip” action that opens a modal to schedule trips (see [TODashboard.jsx](file:///e:/Projects/NexusRide/frontend/frontend/src/pages/dashboard/TODashboard.jsx) and [ScheduleTripModal.jsx](file:///e:/Projects/NexusRide/frontend/frontend/src/modals/ScheduleTripModal.jsx)).
+- The modal presents selectable names for Route, Vehicle, and Driver (not raw IDs). The UI fetches:
+  - Routes from `/routes`
+  - Vehicles from `/vehicles`
+  - Drivers from `/drivers`
+  - Selected values populate the IDs in the payload when creating a trip.
+
+Backend:
+- Create trip (POST `/trips/`) — creates a scheduled trip with the selected route, vehicle, driver, direction, date, and start_time (see [trips.py](file:///e:/Projects/NexusRide/app/api/trips.py#L63)).
+
+## Token & Payment Flow
+Model:
+- Payment fields and enums are defined in [payment.py](file:///e:/Projects/NexusRide/app/models/payment.py).
+- Methods: BKASH | NAGAD | UPAY
+- Statuses: INITIATED | SUCCESS | FAILED | CANCELLED | REFUNDED
+
+Flow:
+- Buying a token initiates a Payment with status `INITIATED` rather than directly creating a Token.
+- A separate confirmation step finalizes the payment; on `SUCCESS`, the system finalizes the reference (e.g., creates the token).
+- Tests demonstrate this sequence in the repository’s `tests` folder (e.g., token and payment tests).
+
 ## Feature Matrix by Role
 - NORMAL_STAFF:
   - Authenticate and access staff endpoints.
@@ -104,6 +153,10 @@ SubscriptionLeave:
   - Manage routes (create, add/sync stops, update).
   - Manage vehicles (create, update status/metadata, delete with guardrails).
   - Oversee Faculty Transport Requests (list, filter, update status, assign).
+  - Schedule trips (create trip with route, vehicle, driver, direction, date, time).
+- DRIVER:
+  - View all assigned trips (GET `/drivers/my-trips`) and “Today’s Trips” in dashboard.
+  - Start and complete trips (PATCH `/trips/{id}/start`, `/trips/{id}/complete`) for trips assigned to them.
 
 ## Data Integrity Highlights
 - **Email/Mobile**: Normalized and unique constraints.
@@ -111,6 +164,8 @@ SubscriptionLeave:
   - Email domain enforcement (@iut-dhaka.edu for staff).
   - Mobile number validation (Bangladeshi format).
 - **Status Workflows**: Strict transitions for transport requests (e.g., cannot assign before approval).
+- **Trip Direction Domain**: `TO_IUT` or `FROM_IUT` consistently across backend and frontend.
+- **Driver Trip Authorization**: Start/Complete operations restricted to the assigned driver profile.
 
 ## References
 - [user.py](file:///e:/Projects/NexusRide/app/models/user.py)
@@ -118,3 +173,7 @@ SubscriptionLeave:
 - [subscription.py](file:///e:/Projects/NexusRide/app/models/subscription.py)
 - [token.py](file:///e:/Projects/NexusRide/app/models/token.py)
 - [transport_request.py](file:///e:/Projects/NexusRide/app/models/transport_request.py)
+- [trip.py](file:///e:/Projects/NexusRide/app/models/trip.py)
+- [drivers.py](file:///e:/Projects/NexusRide/app/api/drivers.py)
+- [trips.py](file:///e:/Projects/NexusRide/app/api/trips.py)
+- [payment.py](file:///e:/Projects/NexusRide/app/models/payment.py)

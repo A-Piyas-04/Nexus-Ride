@@ -167,7 +167,7 @@ This document describes the complete database schema for the NexusRide Universit
 | `vehicle_id` | UUID | FK → `vehicle.id` |
 | `driver_profile_id` | INTEGER | FK → `driver_profile.id` |
 | `route_id` | UUID | FK → `route.id` |
-| `direction` | VARCHAR | e.g., `UP` / `DOWN` |
+| `direction` | VARCHAR | `TO_IUT` / `FROM_IUT` |
 | `trip_date` | DATE | |
 | `start_time` | TIME | |
 | `status` | VARCHAR | `SCHEDULED`, `STARTED`, `COMPLETED` |
@@ -194,8 +194,15 @@ This document describes the complete database schema for the NexusRide Universit
 | `user_id` | UUID | FK → `user.id` |
 | `amount` | DECIMAL | |
 | `payment_type` | VARCHAR | `SUBSCRIPTION`, `TOKEN` |
-| `status` | VARCHAR | `SUCCESS`, `FAILED` |
-| `transaction_time` | TIMESTAMP | |
+| `payment_method` | VARCHAR | `BKASH`, `NAGAD`, `UPAY` |
+| `reference_id` | VARCHAR | Nullable |
+| `reference_type` | VARCHAR | `SUBSCRIPTION`, `TOKEN` |
+| `status` | VARCHAR | `INITIATED`, `SUCCESS`, `FAILED`, `CANCELLED`, `REFUNDED` |
+| `external_txn_id` | VARCHAR | Nullable |
+| `currency` | VARCHAR | Default: `BDT` |
+| `metadata` | JSON | Nullable |
+| `created_at` | TIMESTAMP | |
+| `updated_at` | TIMESTAMP | |
 
 ### `notification`
 **Source**: `app/models/notification.py`
