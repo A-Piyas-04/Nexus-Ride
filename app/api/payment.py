@@ -17,6 +17,7 @@ from app.models.trip import Trip
 from app.models.vehicle import Vehicle
 from app.models.subscription import Subscription
 from app.schemas.payment import PaymentInitiateRequest, PaymentConfirmRequest, PaymentRead
+from app.services.subscription_reserved import count_subscription_reserved
 
 router = APIRouter(prefix="/payments", tags=["payments"])
 
@@ -78,15 +79,14 @@ def create_token_from_payment(payment: Payment, session: Session):
         raise HTTPException(status_code=404, detail="Trip not found")
         
     vehicle = session.get(Vehicle, trip.vehicle_id)
-    booked = session.exec(
+    allocated = session.exec(
         select(func.count(SeatAllocation.id))
         .where(SeatAllocation.trip_id == trip.id)
     ).one()
+    sub_reserved = count_subscription_reserved(session, trip.route_id, trip.trip_date)
+    booked = allocated + sub_reserved
 
     if booked >= vehicle.capacity:
-        # Seat unavailable - Rollback payment or handle refund logic
-        # For Pattern A, we should probably mark payment as REFUNDED or FAILED
-        # But per requirements, we just rollback everything in this transaction
         raise HTTPException(status_code=400, detail="No seats available. Payment will be refunded.")
 
     # 3. Create Token

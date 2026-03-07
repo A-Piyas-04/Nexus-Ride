@@ -11,6 +11,7 @@ from app.schemas.auth import SignupRequest, LoginRequest
 from app.utils.hashing import hash_password, verify_password
 from app.core.security import create_access_token, get_current_user
 from app.seeds.faculty import assign_faculty_role_if_applicable
+from app.seeds.drivers import SEED_DRIVER_MOBILES
 from app.api.drivers import router as drivers_router
 
 
@@ -145,5 +146,15 @@ def driver_login(data: DriverLoginRequest, session: Session = Depends(get_sessio
         raise HTTPException(status_code=400, detail="Invalid user type")
     if not verify_password(data.password, user.password_hash):
         raise HTTPException(status_code=401, detail="incorrect password")
+
+    # Seed drivers (hardcoded in seed data) are always treated as verified: ensure they are approved
+    # so they don't show as "pending approval" and can start/complete trips.
+    if user.mobile_number and user.mobile_number in SEED_DRIVER_MOBILES:
+        profile = session.exec(select(DriverProfile).where(DriverProfile.user_id == user.id)).first()
+        if profile and profile.driver_status != 1:
+            profile.driver_status = 1
+            session.add(profile)
+            session.commit()
+
     token = create_access_token({"sub": str(user.id)})
     return {"access_token": token}

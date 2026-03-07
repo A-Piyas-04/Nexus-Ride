@@ -15,6 +15,7 @@ from app.models.role import Role, UserRole
 from app.schemas.trip import TripCreate, TripRead
 from app.core.security import get_current_user
 from app.models.user import User
+from app.services.subscription_reserved import count_subscription_reserved
 
 router = APIRouter()
 
@@ -83,18 +84,22 @@ def get_trips_availability(
 
     rows = session.exec(stmt).all()
 
-    return [
-        TripAvailabilityRead(
-            **trip.dict(),
-            route_name=route,
-            vehicle_number=vehicle,
-            driver_name=driver,
-            total_capacity=cap,
-            booked_seats=booked,
-            available_seats=cap - booked
+    result = []
+    for trip, route, vehicle, cap, driver, allocated in rows:
+        sub_reserved = count_subscription_reserved(session, trip.route_id, trip.trip_date)
+        booked_seats = allocated + sub_reserved
+        result.append(
+            TripAvailabilityRead(
+                **trip.dict(),
+                route_name=route,
+                vehicle_number=vehicle,
+                driver_name=driver,
+                total_capacity=cap,
+                booked_seats=booked_seats,
+                available_seats=cap - booked_seats,
+            )
         )
-        for trip, route, vehicle, cap, driver, booked in rows
-    ]
+    return result
 
 
 

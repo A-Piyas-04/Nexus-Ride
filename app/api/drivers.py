@@ -75,8 +75,8 @@ def me(current_user: User = Depends(get_current_user), session: Session = Depend
     profile = session.exec(select(DriverProfile).where(DriverProfile.user_id == current_user.id)).first()
     if not profile:
         raise HTTPException(status_code=404, detail="Not found")
+    session.refresh(profile)
     
-    # We might need vehicle details if assigned
     assigned_vehicle = None
     if profile.assigned_vehicle_id:
         from app.models.vehicle import Vehicle
@@ -91,7 +91,7 @@ def me(current_user: User = Depends(get_current_user), session: Session = Depend
         "license_number": profile.license_number,
         "driver_status": profile.driver_status,
         "assigned_vehicle_id": str(profile.assigned_vehicle_id) if profile.assigned_vehicle_id else None,
-        "assigned_vehicle_number": assigned_vehicle.number if assigned_vehicle else None,
+        "assigned_vehicle_number": assigned_vehicle.vehicle_number if assigned_vehicle else None,
     }
 
 
@@ -189,4 +189,9 @@ def approve_driver(id: int, session: Session = Depends(get_session)):
     profile.driver_status = 1
     session.add(profile)
     session.commit()
-    return {"msg": "Approved"}
+    session.refresh(profile)
+    return {
+        "msg": "Approved",
+        "driver_profile_id": profile.id,
+        "mobile_number": profile.mobile_number,
+    }

@@ -4,10 +4,15 @@ from datetime import date
 from calendar import monthrange
 
 from app.db.session import get_session
-from app.models.subscription import Subscription
+from app.models.subscription import Subscription, SubscriptionLeave
 from app.models.user import User
 from app.models.route import RouteStop, Route
-from app.schemas.subscription import SubscriptionRead, SubscriptionCreate
+from app.schemas.subscription import (
+    SubscriptionRead,
+    SubscriptionCreate,
+    SubscriptionLeaveCreateByUser,
+    SubscriptionLeaveRead,
+)
 from app.core.security import get_current_user
 
 router = APIRouter(prefix="/subscription", tags=["subscription"])
@@ -315,3 +320,84 @@ def get_subscription(
         end_date=subscription.end_date,
         route_name=route_name,
     )
+
+
+# ----- Subscription Leave (1 day to 4 months) -----
+MAX_LEAVE_DAYS = 120
+
+
+@router.post("/leave", response_model=SubscriptionLeaveRead, status_code=status.HTTP_201_CREATED)
+def create_leave(
+    data: SubscriptionLeaveCreateByUser,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    subscription = session.exec(
+        select(Subscription).where(Subscription.user_id == current_user.id)
+    ).first()
+    if not subscription:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Subscription not found",
+        )
+    if subscription.status != "ACTIVE":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only active subscribers can take leave",
+        )
+    if data.from_date > data.to_date:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="from_date must be before or equal to to_date",
+        )
+    days = (data.to_date - data.from_date).days + 1
+    if days > MAX_LEAVE_DAYS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Leave period cannot exceed {MAX_LEAVE_DAYS} days (4 months)",
+        )
+    leave = SubscriptionLeave(
+        subscription_id=subscription.id,
+        from_date=data.from_date,
+        to_date=data.to_date,
+        reason=data.reason,
+    )
+    session.add(leave)
+    session.commit()
+    session.refresh(leave)
+    return leave
+
+
+@router.get("/leaves", response_model=list[SubscriptionLeaveRead])
+def list_my_leaves(
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    subscription = session.exec(
+        select(Subscription).where(Subscription.user_id == current_user.id)
+    ).first()
+    if not subscription:
+        return []
+    leaves = session.exec(
+        select(SubscriptionLeave).where(
+            SubscriptionLeave.subscription_id == subscription.id
+        ).order_by(SubscriptionLeave.from_date.desc())
+    ).all()
+    return list(leaves)
+
+
+@router.delete("/leave/{leave_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_leave(
+    leave_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    leave = session.get(SubscriptionLeave, leave_id)
+    if not leave:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Leave not found")
+    subscription = session.get(Subscription, leave.subscription_id)
+    if not subscription or subscription.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your leave")
+    session.delete(leave)
+    session.commit()
+    return None

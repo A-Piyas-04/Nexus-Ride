@@ -93,6 +93,26 @@ export const declineSubscription = async (id, token) => {
   return response.data;
 };
 
+export const createLeave = async (data, token) => {
+  const response = await api.post('/subscription/leave', data, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+};
+
+export const getMyLeaves = async (token) => {
+  const response = await api.get('/subscription/leaves', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+};
+
+export const deleteLeave = async (leaveId, token) => {
+  await api.delete(`/subscription/leave/${leaveId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
+
 export const getTripsAvailability = async (token) => {
   const response = await api.get('/trips/availability', {
     headers: {

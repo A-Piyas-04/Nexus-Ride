@@ -30,3 +30,10 @@ class SubscriptionLeaveCreate(SubscriptionLeaveBase):
 
 class SubscriptionLeaveRead(SubscriptionLeaveBase):
     id: int
+
+
+class SubscriptionLeaveCreateByUser(SQLModel):
+    """Body for creating leave; subscription_id is set from current user's subscription."""
+    from_date: date
+    to_date: date
+    reason: Optional[str] = None

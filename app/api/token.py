@@ -17,8 +17,7 @@ from app.schemas.token import TokenCreate, TokenRead
 from app.schemas.seat_allocation import SeatAllocationCreate, SeatAllocationRead
 from app.schemas.payment import PaymentRead
 from app.api.auth import get_current_user
-
-
+from app.services.subscription_reserved import count_subscription_reserved
 
 router = APIRouter()
 
@@ -43,10 +42,12 @@ def buy_token(
 
     vehicle = session.get(Vehicle, trip.vehicle_id)
 
-    booked = session.exec(
+    allocated = session.exec(
         select(func.count(SeatAllocation.id))
         .where(SeatAllocation.trip_id == trip.id)
     ).one()
+    sub_reserved = count_subscription_reserved(session, trip.route_id, trip.trip_date)
+    booked = allocated + sub_reserved
 
     if booked >= vehicle.capacity:
         raise HTTPException(status_code=400, detail="No seats available")

@@ -21,6 +21,7 @@ import DriverProfile from './pages/profiles/driver_profile';
 import BuyToken from './pages/BuyToken';
 import DriverRequestsPage from './pages/request/driverRequests';
 import DriverDashboard from './pages/dashboard/DriverDashboard';
+import DriverAllTripsPage from './pages/dashboard/DriverAllTripsPage';
 import TransportRequestForm from './pages/request/TransportRequestForm';
 import { FacultyRequestsList } from './pages/request/FacultyRequests';
 import RequestDetailPage from './pages/request/RequestDetailPage';
@@ -79,6 +80,7 @@ function AppRoutes() {
           <Route path="/subscription-requests" element={<SubscriptionRequestsPage />} />
           <Route path="/driver-list" element={<DriverRequestsPage />} />
           <Route path="/driver-dashboard" element={<DriverDashboard />} />
+          <Route path="/driver/all-trips" element={<DriverAllTripsPage />} />
         <Route path="/seat-availability" element={<SeatAvailabilityPage />} />
         <Route path="/token-history" element={<TokenHistoryPage />} />
         <Route path="/profile" element={<Staff_Profile />} />
