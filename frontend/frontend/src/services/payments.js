@@ -47,3 +47,11 @@ export const initiateTokenPayment = async ({
   return response.data;
 };
 
+export const getTokenHistory = async (params = {}) => {
+  const response = await api.get('/token/history', {
+    headers: getAuthHeaders(),
+    params,
+  });
+  return response.data;
+};
+

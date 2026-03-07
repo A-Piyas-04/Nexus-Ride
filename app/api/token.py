@@ -10,10 +10,12 @@ from app.models.token import Token
 from app.models.seat_allocation import SeatAllocation
 from app.models.trip import Trip
 from app.models.vehicle import Vehicle
-from app.models.route import Route
+from app.models.route import Route, RouteStop
 from app.models.user import User
+from app.models.profile import DriverProfile
 from app.models.payment import Payment, PaymentStatus, PaymentType
 from app.schemas.token import TokenCreate, TokenRead
+from app.schemas.token_history import TokenHistoryRead
 from app.schemas.seat_allocation import SeatAllocationCreate, SeatAllocationRead
 from app.schemas.payment import PaymentRead
 from app.api.auth import get_current_user
@@ -88,3 +90,56 @@ def get_my_tokens(
 ):
     tokens = session.exec(select(Token).where(Token.user_id == current_user.id)).all()
     return tokens
+
+
+@router.get("/history", response_model=list[TokenHistoryRead])
+def get_token_history(
+    limit: int = 50,
+    offset: int = 0,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Returns a history of purchased tokens with detailed trip info.
+    Joins: Token -> Trip -> Route, Vehicle, DriverProfile -> User, RouteStop
+    """
+    stmt = (
+        select(
+            Token,
+            Route.route_name,
+            RouteStop.stop_name,
+            Vehicle.vehicle_number,
+            User.full_name.label("driver_name"),
+            Trip.direction.label("trip_direction")
+        )
+        .join(Trip, Token.trip_id == Trip.id)
+        .join(Route, Trip.route_id == Route.id)
+        .join(RouteStop, Token.pickup_stop_id == RouteStop.id)
+        .join(Vehicle, Trip.vehicle_id == Vehicle.id)
+        .join(DriverProfile, Trip.driver_profile_id == DriverProfile.id)
+        .join(User, DriverProfile.user_id == User.id)
+        .where(Token.user_id == current_user.id)
+        .order_by(Token.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+    )
+
+    results = session.exec(stmt).all()
+
+    history = []
+    for token, route_name, stop_name, vehicle_number, driver_name, trip_direction in results:
+        history.append(
+            TokenHistoryRead(
+                token_id=token.id,
+                travel_date=token.travel_date,
+                route_name=route_name,
+                pickup_stop=stop_name,
+                direction=trip_direction,
+                vehicle_number=vehicle_number,
+                driver_name=driver_name,
+                status=token.status,
+                created_at=token.created_at
+            )
+        )
+    
+    return history
