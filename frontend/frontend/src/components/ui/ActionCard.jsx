@@ -13,9 +13,9 @@ export function ActionCard({ icon: Icon, label, iconClassName, onClick, disabled
         <div className={`flex h-8 w-8 items-center justify-center rounded-full bg-primary-50 ${disabled ? 'bg-gray-100' : ''}`}>
           {React.createElement(Icon, { className: `h-4 w-4 ${iconClassName}` })}
         </div>
-        <p className="text-sm md:text-base font-semibold text-gray-900 text-center leading-tight break-words">
+        <div className="text-sm md:text-base font-semibold text-gray-900 text-center leading-tight break-words">
           {label}
-        </p>
+        </div>
       </div>
     </Button>
   );

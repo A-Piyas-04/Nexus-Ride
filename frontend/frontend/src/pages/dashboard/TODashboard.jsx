@@ -20,12 +20,13 @@ import { WelcomeBanner } from '../../components/ui/WelcomeBanner';
 import SubscriptionModal from '../../modals/SubscriptionModal';
 import SubscriptionDetailsModal from '../../modals/SubscriptionDetailsModal';
 import ScheduleTripModal from '../../modals/ScheduleTripModal';
-import { createSubscription, getSubscription, createLeave, getMyLeaves, deleteLeave } from '../../services/auth';
+import { createSubscription, getSubscription, createLeave, getMyLeaves, deleteLeave, getSubscriptionRequests, getDriverRequests } from '../../services/auth';
 import {
   createTrip,
   getRoutes,
   getAllVehicles,
   getAllDrivers,
+  getAllTransportRequests,
 } from '../../services/transport';
 import { Navbar } from '../../components/Navbar';
 import DashboardLayout from './DashboardLayout';
@@ -67,6 +68,11 @@ export default function TODashboard() {
   const [leaveSuccessView, setLeaveSuccessView] = useState(false);
   const [leaveSuccessPeriod, setLeaveSuccessPeriod] = useState(null);
 
+  // Counts for Review & Notify section
+  const [subscriptionCount, setSubscriptionCount] = useState(0);
+  const [transportRequestCount, setTransportRequestCount] = useState(0);
+  const [driverRequestCount, setDriverRequestCount] = useState(0);
+
   const navLinks = [
     { name: 'Overview', targetId: 'to-welcome' },
     { name: 'Review', targetId: 'to-review' },
@@ -95,6 +101,26 @@ export default function TODashboard() {
       }
     };
     fetchSubscription();
+  }, []);
+
+  useEffect(() => {
+    const fetchCounts = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      try {
+        const [subReqs, transReqs, drvReqs] = await Promise.all([
+          getSubscriptionRequests(token),
+          getAllTransportRequests('PENDING'),
+          getDriverRequests(token),
+        ]);
+        setSubscriptionCount(Array.isArray(subReqs) ? subReqs.length : 0);
+        setTransportRequestCount(Array.isArray(transReqs) ? transReqs.length : 0);
+        setDriverRequestCount(Array.isArray(drvReqs) ? drvReqs.length : 0);
+      } catch (error) {
+        console.error('Failed to fetch dashboard counts:', error);
+      }
+    };
+    fetchCounts();
   }, []);
 
   useEffect(() => {
@@ -322,32 +348,47 @@ export default function TODashboard() {
                   <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(120px,150px))] justify-start">
                     <ActionCard
                       icon={FileText}
-                      label="Subscription requests"
+                      label={
+                        <span>
+                          Subscription requests
+                          <span className="text-red-600 font-bold ml-1">({subscriptionCount})</span>
+                        </span>
+                      }
                       description="Review and manage pending subscription requests."
                       iconClassName="text-primary-600"
                       onClick={() => navigate('/subscription-requests')}
                     />
                     <ActionCard
                       icon={FileText}
-                      label="Transport Requests"
+                      label={
+                        <span>
+                          Transport Requests
+                          <span className="text-red-600 font-bold ml-1">({transportRequestCount})</span>
+                        </span>
+                      }
                       description="Review and manage faculty transport requests."
                       iconClassName="text-primary-600"
                       onClick={() => navigate('/dashboard/transport-requests/manage')}
                     />
                     <ActionCard
                       icon={FileText}
-                      label="Driver Requests"
+                      label={
+                        <span>
+                          Driver Requests
+                          <span className="text-red-600 font-bold ml-1">({driverRequestCount})</span>
+                        </span>
+                      }
                       description="Review and manage driver requests."
                       iconClassName="text-primary-600"
                       onClick={() => navigate('/dashboard/driver-requests/manage')}
                     />
-                    <ActionCard
+                    {/* <ActionCard
                       icon={FileText}
                       label="Notify Users"
                       description="Notify users about important updates."
                       iconClassName="text-primary-600"
                       onClick={() => window.alert('Notify users about important updates.')}
-                    />
+                    /> */}
                   </div>
                 </div>
               </div>
