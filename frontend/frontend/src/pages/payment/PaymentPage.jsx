@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import DashboardLayout from '../dashboard/DashboardLayout';
 import { Button } from '../../components/ui/Button';
 import PaymentSummaryCard from './components/PaymentSummaryCard';
@@ -12,6 +12,7 @@ const buildSimulatedTxnId = () => `SIMULATED-${Date.now()}`;
 export default function PaymentPage() {
   const { payment_id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [loading, setLoading] = React.useState(true);
   const [payment, setPayment] = React.useState(null);
@@ -20,6 +21,17 @@ export default function PaymentPage() {
   const [statusView, setStatusView] = React.useState(null);
   const [overrideAmount, setOverrideAmount] = React.useState(null);
   const [amountNote, setAmountNote] = React.useState(null);
+
+  React.useEffect(() => {
+    const preAmount = location.state?.subscriptionAmount ?? null;
+    const months = location.state?.monthsSelected ?? null;
+    if (preAmount) {
+      setOverrideAmount(preAmount);
+      if (months) {
+        setAmountNote(`Based on ${months} ${months === 1 ? 'month' : 'months'} at 5,000.00 BDT/month`);
+      }
+    }
+  }, [location.state]);
 
   const fetchPayment = React.useCallback(async () => {
     setLoading(true);
@@ -38,7 +50,8 @@ export default function PaymentPage() {
       // If subscription, compute client-side expected amount to display
       if ((found.reference_type ?? found.payment_type) === 'SUBSCRIPTION') {
         try {
-          const sub = await getSubscription();
+          const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+          const sub = await getSubscription(token);
           const start = new Date(sub.start_date);
           const end = new Date(sub.end_date);
           if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())) {

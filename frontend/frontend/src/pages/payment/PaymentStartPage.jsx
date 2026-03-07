@@ -13,6 +13,8 @@ export default function PaymentStartPage() {
   const referenceType = location.state?.referenceType;
   const referenceId = location.state?.referenceId ?? null;
   const tokenPayload = location.state?.tokenPayload ?? null;
+  const monthsSelected = location.state?.monthsSelected ?? null;
+  const subscriptionAmount = location.state?.subscriptionAmount ?? null;
 
   const [paymentMethod, setPaymentMethod] = React.useState('BKASH');
   const [submitting, setSubmitting] = React.useState(false);
@@ -43,7 +45,14 @@ export default function PaymentStartPage() {
       const paymentId = payment?.id;
       if (!paymentId) throw new Error('Payment initiation failed');
 
-      navigate(`/payment/${paymentId}`, { replace: true, state: { payment } });
+      navigate(`/payment/${paymentId}`, {
+        replace: true,
+        state: {
+          payment,
+          monthsSelected,
+          subscriptionAmount,
+        },
+      });
     } catch (e) {
       setError(e?.response?.data?.detail || e?.message || 'Unable to initiate payment');
     } finally {
