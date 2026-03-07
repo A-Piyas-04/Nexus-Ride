@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlmodel import Session
 from typing import List
 from uuid import UUID
@@ -6,12 +6,12 @@ from uuid import UUID
 from app.db.session import get_session
 from app.core.security import get_current_user
 from app.models.user import User
-from app.notifications.schemas import NotificationRead
+from app.notifications.schemas import NotificationResponse
 from app.notifications import service
 
 router = APIRouter()
 
-@router.get("/", response_model=List[NotificationRead])
+@router.get("/", response_model=List[NotificationResponse])
 def get_notifications(
     skip: int = 0,
     limit: int = 20,
@@ -30,7 +30,7 @@ def get_notifications(
         unread_only=unread_only
     )
 
-@router.put("/{notification_id}/read", response_model=NotificationRead)
+@router.patch("/{notification_id}/read", response_model=NotificationResponse)
 def mark_notification_as_read(
     notification_id: UUID,
     current_user: User = Depends(get_current_user),
@@ -48,7 +48,7 @@ def mark_notification_as_read(
         raise HTTPException(status_code=404, detail="Notification not found")
     return notification
 
-@router.put("/read-all", response_model=dict)
+@router.patch("/read-all", response_model=dict)
 def mark_all_notifications_as_read(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
@@ -61,3 +61,21 @@ def mark_all_notifications_as_read(
         user_id=current_user.id
     )
     return {"message": "All notifications marked as read", "count": count}
+
+@router.delete("/{notification_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_notification(
+    notification_id: UUID,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """
+    Delete a notification.
+    """
+    success = service.delete_notification(
+        session=session,
+        notification_id=notification_id,
+        user_id=current_user.id
+    )
+    if not success:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    return None

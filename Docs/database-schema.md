@@ -228,15 +228,19 @@ This document describes the complete database schema for the NexusRide Universit
 | `created_at` | TIMESTAMP | |
 | `updated_at` | TIMESTAMP | |
 
-### `notification`
-**Source**: `app/models/notification.py`
+### `notification_v2`
+**Source**: `app/notifications/models.py`
 | Column | Type | Notes |
 |---|---|---|
-| `id` | UUID | PK |
+| `id` | UUID | PK, default: `uuid4` |
 | `user_id` | UUID | FK → `user.id` |
+| `event_type` | VARCHAR | Index |
+| `title` | VARCHAR | |
 | `message` | VARCHAR | |
+| `reference_type` | VARCHAR | |
+| `reference_id` | UUID | Nullable |
 | `is_read` | BOOLEAN | Default: `False` |
-| `created_at` | TIMESTAMP | |
+| `created_at` | TIMESTAMP | Default: `now()` |
 
 ---
 

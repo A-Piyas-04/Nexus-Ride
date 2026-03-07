@@ -211,6 +211,13 @@ def approve_subscription(
     session.commit()
     session.refresh(subscription)
     
+    # Emit notification event
+    try:
+        from app.notifications.event_bus import event_bus
+        event_bus.emit("SUBSCRIPTION_APPROVED", subscription, session)
+    except Exception as e:
+        print(f"Failed to emit notification: {e}")
+    
     stop = session.exec(
         select(RouteStop).where(RouteStop.stop_name == subscription.stop_name)
     ).first()

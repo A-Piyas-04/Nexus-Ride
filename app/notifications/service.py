@@ -71,3 +71,19 @@ def mark_all_as_read(
         count += 1
     session.commit()
     return count
+
+def delete_notification(
+    session: Session,
+    notification_id: UUID,
+    user_id: UUID
+) -> bool:
+    statement = select(Notification).where(
+        Notification.id == notification_id,
+        Notification.user_id == user_id
+    )
+    notification = session.exec(statement).first()
+    if notification:
+        session.delete(notification)
+        session.commit()
+        return True
+    return False

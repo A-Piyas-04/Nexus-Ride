@@ -9,9 +9,15 @@ class SubscriptionApprovedHandler(NotificationHandler):
         return "SUBSCRIPTION_APPROVED"
 
     def handle(self, payload: Any, session: Session) -> None:
-        user_id = payload.get("user_id")
-        subscription_id = payload.get("subscription_id")
-        
+        if hasattr(payload, 'id'):
+            # Object
+            user_id = payload.user_id
+            subscription_id = payload.id
+        else:
+            # Dict
+            user_id = payload.get("user_id")
+            subscription_id = payload.get("id") or payload.get("subscription_id")
+
         create_notification(
             session=session,
             user_id=user_id,

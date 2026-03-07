@@ -36,7 +36,7 @@ from app.api.routes import router as routes_router
 from app.api.stops import router as stops_router
 from app.api.token import router as token_router
 from app.api.trip_templates import router as trip_templates_router
-from app.notifications.api import router as notifications_router
+from app.notifications.router import router as notifications_router
 from app.notifications.registry import discover_handlers
 from app.notifications.models import Notification as NotificationV2
 
