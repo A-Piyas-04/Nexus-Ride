@@ -76,6 +76,9 @@ This document describes the complete database schema for the NexusRide Universit
 | `default_pickup_stop_id` | UUID | FK → `route_stop.id`, Nullable |
 | `email` | VARCHAR | FK → `user.email`, Nullable |
 | `mobile_number` | VARCHAR | FK → `user.mobile_number`, Nullable |
+| `profile_picture` | BYTEA/BLOB | Binary Image Data |
+| `profile_picture_mime` | VARCHAR | e.g., image/png |
+| `profile_picture_filename` | VARCHAR | Original filename |
 
 ### `driver_profile`
 **Source**: `app/models/profile.py`
@@ -88,6 +91,9 @@ This document describes the complete database schema for the NexusRide Universit
 | `license_number` | VARCHAR | |
 | `assigned_vehicle_id` | UUID | FK → `vehicle.id`, Nullable |
 | `driver_status` | INTEGER | Default: `0` (0: Pending, 1: Approved) |
+| `profile_picture` | BYTEA/BLOB | Binary Image Data |
+| `profile_picture_mime` | VARCHAR | e.g., image/png |
+| `profile_picture_filename` | VARCHAR | Original filename |
 
 ---
 

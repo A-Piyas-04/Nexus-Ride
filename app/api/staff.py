@@ -68,6 +68,7 @@ def get_my_staff_profile(
             "default_pickup_stop_id": str(profile.default_pickup_stop_id) if profile.default_pickup_stop_id else None,
             "default_route_name": route_name,
             "default_pickup_stop_name": stop_name,
+            "has_profile_picture": profile.has_profile_picture,
         }
     except Exception as e:
         logger.error(f"Error fetching staff profile: {str(e)}")

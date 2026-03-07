@@ -39,6 +39,7 @@ from app.api.trip_templates import router as trip_templates_router
 from app.notifications.router import router as notifications_router
 from app.notifications.registry import discover_handlers
 from app.notifications.models import Notification as NotificationV2
+from app.profile_picture.router import router as profile_picture_router
 
 # Import seeds
 from app.seeds.roles import seed_roles_and_to
@@ -106,3 +107,4 @@ app.include_router(trip_templates_router)
 from app.api.payment import router as payment_router
 app.include_router(payment_router)
 app.include_router(notifications_router, prefix="/notifications", tags=["notifications"])
+app.include_router(profile_picture_router)

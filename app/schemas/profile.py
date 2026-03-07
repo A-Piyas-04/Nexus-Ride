@@ -17,6 +17,7 @@ class StaffProfileCreate(StaffProfileBase):
 class StaffProfileRead(StaffProfileBase):
     id: int
     user_id: UUID
+    has_profile_picture: bool = False
 
 # Driver Profile Schemas
 class DriverProfileBase(SQLModel):
@@ -31,3 +32,4 @@ class DriverProfileCreate(DriverProfileBase):
 class DriverProfileRead(DriverProfileBase):
     id: int
     user_id: UUID
+    has_profile_picture: bool = False

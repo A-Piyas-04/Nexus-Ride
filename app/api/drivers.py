@@ -27,6 +27,7 @@ class DriverSummary(BaseModel):
     license_number: str
     driver_status: int
     assigned_vehicle_id: Optional[UUID] = None
+    has_profile_picture: bool = False
 
 
 def _serialize_driver(profile: DriverProfile, user: User) -> dict:
@@ -39,6 +40,7 @@ def _serialize_driver(profile: DriverProfile, user: User) -> dict:
         "license_number": profile.license_number,
         "driver_status": profile.driver_status,
         "assigned_vehicle_id": profile.assigned_vehicle_id,
+        "has_profile_picture": profile.has_profile_picture,
     }
 
 
