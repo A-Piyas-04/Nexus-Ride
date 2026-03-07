@@ -100,6 +100,20 @@ export const createLeave = async (data, token) => {
   return response.data;
 };
 
+export const changePickupToday = async (pickupStopId, token) => {
+  const response = await api.post('/subscription/change-pickup-today', { pickup_stop_id: pickupStopId }, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+};
+
+export const getPickupToday = async (token) => {
+  const response = await api.get('/subscription/pickup-today', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+};
+
 export const getMyLeaves = async (token) => {
   const response = await api.get('/subscription/leaves', {
     headers: { Authorization: `Bearer ${token}` },

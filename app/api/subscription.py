@@ -13,9 +13,152 @@ from app.schemas.subscription import (
     SubscriptionLeaveCreateByUser,
     SubscriptionLeaveRead,
 )
+from app.models.subscription_override import SubscriptionPickupOverride
+from app.schemas.subscription_override import SubscriptionPickupOverrideCreate, SubscriptionPickupOverrideRead
+from uuid import uuid4
 from app.core.security import get_current_user
 
 router = APIRouter(prefix="/subscription", tags=["subscription"])
+
+
+@router.post("/change-pickup-today", response_model=SubscriptionPickupOverrideRead)
+def change_pickup_today(
+    data: SubscriptionPickupOverrideCreate,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    today = date.today()
+    
+    # 1. Get user's ACTIVE subscription
+    subscription = session.exec(
+        select(Subscription).where(
+            Subscription.user_id == current_user.id,
+            Subscription.status == "ACTIVE"
+        )
+    ).first()
+    
+    if not subscription:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No active subscription found"
+        )
+        
+    # 2. Ensure today is within subscription period
+    if subscription.start_date and today < subscription.start_date:
+         raise HTTPException(status_code=400, detail="Subscription not started yet")
+    if subscription.end_date and today > subscription.end_date:
+         raise HTTPException(status_code=400, detail="Subscription expired")
+
+    # 3. Ensure user is not on leave
+    leave = session.exec(
+        select(SubscriptionLeave).where(
+            SubscriptionLeave.subscription_id == subscription.id,
+            SubscriptionLeave.from_date <= today,
+            SubscriptionLeave.to_date >= today
+        )
+    ).first()
+    
+    if leave:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot change pickup while on leave"
+        )
+
+    # 4. Validate pickup_stop belongs to the same route
+    # First get the route of the current subscription stop
+    current_stop = session.exec(
+        select(RouteStop).where(RouteStop.stop_name == subscription.stop_name)
+    ).first()
+    
+    if not current_stop:
+        # Should not happen if data integrity is maintained
+        raise HTTPException(status_code=500, detail="Current subscription stop invalid")
+        
+    new_stop = session.get(RouteStop, data.pickup_stop_id)
+    if not new_stop:
+        raise HTTPException(status_code=404, detail="New stop not found")
+        
+    if new_stop.route_id != current_stop.route_id:
+        raise HTTPException(
+            status_code=400,
+            detail="New pickup stop must be on the same route"
+        )
+        
+    # 5. Save/Update override
+    override = session.exec(
+        select(SubscriptionPickupOverride).where(
+            SubscriptionPickupOverride.subscription_id == subscription.id,
+            SubscriptionPickupOverride.date == today
+        )
+    ).first()
+    
+    if override:
+        override.pickup_stop_id = data.pickup_stop_id
+        session.add(override)
+    else:
+        override = SubscriptionPickupOverride(
+            id=uuid4(),
+            subscription_id=subscription.id,
+            date=today,
+            pickup_stop_id=data.pickup_stop_id
+        )
+        session.add(override)
+        
+    session.commit()
+    session.refresh(override)
+    
+    return SubscriptionPickupOverrideRead(
+        pickup_stop_id=override.pickup_stop_id,
+        stop_name=new_stop.stop_name,
+        is_override=True,
+        date=today
+    )
+
+@router.get("/pickup-today", response_model=SubscriptionPickupOverrideRead)
+def get_pickup_today(
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    today = date.today()
+    
+    subscription = session.exec(
+        select(Subscription).where(
+            Subscription.user_id == current_user.id,
+            Subscription.status == "ACTIVE"
+        )
+    ).first()
+    
+    if not subscription:
+        raise HTTPException(status_code=404, detail="No active subscription")
+        
+    # Check for override
+    override = session.exec(
+        select(SubscriptionPickupOverride).where(
+            SubscriptionPickupOverride.subscription_id == subscription.id,
+            SubscriptionPickupOverride.date == today
+        )
+    ).first()
+    
+    if override:
+        stop = session.get(RouteStop, override.pickup_stop_id)
+        return SubscriptionPickupOverrideRead(
+            pickup_stop_id=override.pickup_stop_id,
+            stop_name=stop.stop_name,
+            is_override=True,
+            date=today
+        )
+    
+    # Return default subscription stop
+    stop = session.exec(
+        select(RouteStop).where(RouteStop.stop_name == subscription.stop_name)
+    ).first()
+    
+    return SubscriptionPickupOverrideRead(
+        pickup_stop_id=stop.id,
+        stop_name=stop.stop_name,
+        is_override=False,
+        date=today
+    )
 
 
 @router.post("/", response_model=SubscriptionRead)
@@ -98,6 +241,7 @@ def subscribe(
         session.refresh(subscription)
         route = session.get(Route, stop.route_id)
         route_name = route.route_name if route else None
+        
         return SubscriptionRead(
             id=subscription.id,
             user_id=subscription.user_id,

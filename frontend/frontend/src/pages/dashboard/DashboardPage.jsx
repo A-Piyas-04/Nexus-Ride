@@ -9,6 +9,7 @@ import { WelcomeBanner } from '../../components/ui/WelcomeBanner';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import SubscriptionModal from '../../modals/SubscriptionModal';
 import SubscriptionDetailsModal from '../../modals/SubscriptionDetailsModal';
+import PickupChangeModal from '../../modals/PickupChangeModal';
 import { createSubscription, getSubscription, createLeave, getMyLeaves, deleteLeave } from '../../services/auth';
 import { Navbar } from '../../components/Navbar';
 import DashboardLayout from './DashboardLayout';
@@ -23,6 +24,7 @@ export default function DashboardPage() {
   const [subscriptionDetails, setSubscriptionDetails] = useState(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [pickupChangeOpen, setPickupChangeOpen] = useState(false);
 
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
   const [leaves, setLeaves] = useState([]);
@@ -212,7 +214,7 @@ export default function DashboardPage() {
 
   const handleChangePickup = () => {
     if (checkSubscription()) {
-        window.alert('Change pickup location for the current day');
+        setPickupChangeOpen(true);
     }
   };
 
@@ -404,6 +406,11 @@ export default function DashboardPage() {
             onClose={() => setDetailsOpen(false)}
             subscription={subscriptionDetails}
             loading={detailsLoading}
+        />
+
+        <PickupChangeModal
+          open={pickupChangeOpen}
+          onClose={() => setPickupChangeOpen(false)}
         />
 
         {leaveModalOpen && (

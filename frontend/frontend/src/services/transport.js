@@ -130,6 +130,9 @@ export const getRoutes = async () => {
   return response.data;
 };
 
+// Alias for getRoutes to match naming convention in other files
+export const getAllRoutes = getRoutes;
+
 export const updateRoute = async (id, routeData) => {
   const response = await axios.patch(`${API_URL}/routes/${id}`, routeData, {
     headers: getAuthHeaders(),

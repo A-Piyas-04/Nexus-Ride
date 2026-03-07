@@ -25,6 +25,7 @@ from app.models.token import Token
 from app.models.transport_request import TransportRequest, Guest, TransportRequestStatusLog
 from app.models.schedule_override import ScheduleOverride
 from app.models.trip_template import TripTemplate
+from app.models.subscription_override import SubscriptionPickupOverride
 
 # Map table names to model classes
 TABLE_MAP = {
@@ -33,6 +34,7 @@ TABLE_MAP = {
     "UserRole": UserRole,
     "Subscription": Subscription,
     "SubscriptionLeave": SubscriptionLeave,
+    "SubscriptionPickupOverride": SubscriptionPickupOverride,
     "Route": Route,
     "RouteStop": RouteStop,
     "Vehicle": Vehicle,
