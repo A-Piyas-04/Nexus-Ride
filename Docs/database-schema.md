@@ -172,6 +172,30 @@ This document describes the complete database schema for the NexusRide Universit
 | `start_time` | TIME | |
 | `status` | VARCHAR | `SCHEDULED`, `STARTED`, `COMPLETED` |
 
+### `trip_template`
+**Source**: `app/models/trip_template.py`
+| Column | Type | Notes |
+|---|---|---|
+| `id` | UUID | PK, default: `uuid4` |
+| `route_id` | UUID | FK → `route.id` |
+| `vehicle_id` | UUID | FK → `vehicle.id` |
+| `driver_profile_id` | INTEGER | FK → `driver_profile.id` |
+| `direction` | VARCHAR | `TO_IUT` / `FROM_IUT` |
+| `start_time` | TIME | |
+| `is_active` | BOOLEAN | Default: `True` |
+| `valid_from` | DATE | Nullable |
+| `valid_to` | DATE | Nullable |
+
+### `schedule_override`
+**Source**: `app/models/schedule_override.py`
+| Column | Type | Notes |
+|---|---|---|
+| `id` | UUID | PK, default: `uuid4` |
+| `route_id` | UUID | FK → `route.id` |
+| `date` | DATE | |
+| `new_start_time` | TIME | Nullable |
+| `is_cancelled` | BOOLEAN | Default: `False` |
+
 ### `seat_allocation`
 **Source**: `app/models/seat_allocation.py`
 | Column | Type | Notes |

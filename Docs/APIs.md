@@ -263,6 +263,11 @@ This document outlines the available API endpoints for the NexusRide University 
 - **Method**: `GET`
 - **Path**: `/routes/{route_id}/stops`
 
+### 6.6 Get Stops (Alternative)
+- **Method**: `GET`
+- **Path**: `/stops/{route_id}/stops`
+- **Response**: List of stops for a route.
+
 ---
 
 ## 7. Vehicles (`/vehicles`)
@@ -303,7 +308,33 @@ This document outlines the available API endpoints for the NexusRide University 
 
 ---
 
-## 9. Faculty Transport Requests (`/transport-requests`)
+## 9. Trip Templates (`/trip-templates`)
+
+### 9.1 Create Trip Template (TO)
+- **Method**: `POST`
+- **Path**: `/trip-templates`
+- **Roles**: TO required.
+- **Request Body**: `TripTemplateCreate` schema.
+
+### 9.2 List Trip Templates (TO)
+- **Method**: `GET`
+- **Path**: `/trip-templates`
+- **Query**: `is_active` (bool), `route_id` (uuid)
+- **Roles**: TO required.
+
+### 9.3 Update Trip Template (TO)
+- **Method**: `PUT`
+- **Path**: `/trip-templates/{template_id}`
+- **Roles**: TO required.
+
+### 9.4 Delete Trip Template (TO)
+- **Method**: `DELETE`
+- **Path**: `/trip-templates/{template_id}`
+- **Roles**: TO required.
+
+---
+
+## 10. Faculty Transport Requests (`/transport-requests`)
 
 ### 9.1 Create Request (Faculty)
 - **Method**: `POST`
