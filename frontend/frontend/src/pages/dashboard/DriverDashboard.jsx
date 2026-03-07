@@ -9,12 +9,14 @@ import { Button } from '../../components/ui/Button';
 import { WelcomeBanner } from '../../components/ui/WelcomeBanner';
 import { ActionCard } from '../../components/ui/ActionCard';
 import { getMyDriverProfile } from '../../services/auth';
+import AssignedVehiclesModal from '../../modals/assigned_vehicles';
 
 export default function DriverDashboard() {
   const navigate = useNavigate();
   const [status, setStatus] = useState(0);
   const [loading, setLoading] = useState(true);
   const [trips, setTrips] = useState([]);
+  const [openAssigned, setOpenAssigned] = useState(false);
   
   const token = localStorage.getItem('token');
 
@@ -202,7 +204,7 @@ export default function DriverDashboard() {
                       label="SEE ASSIGNED VEHICLES"
                       description="View vehicles assigned to you."
                       iconClassName={disabled ? 'text-gray-400' : 'text-primary-600'}
-                      onClick={() => window.alert('Assigned vehicles')}
+                      onClick={() => setOpenAssigned(true)}
                       disabled={disabled}
                       title={disabled ? 'Pending approval' : ''}
                     />
@@ -244,7 +246,8 @@ export default function DriverDashboard() {
               Back
             </Button>
           </div>
-        </div>
+      </div>
+      <AssignedVehiclesModal open={openAssigned} onClose={() => setOpenAssigned(false)} />
       </section>
       </div>
     </DashboardLayout>
