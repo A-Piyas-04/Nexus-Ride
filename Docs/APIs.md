@@ -57,6 +57,26 @@ This document outlines the available API endpoints for the NexusRide University 
   }
   ```
 
+### 1.4 Profile Picture
+#### 1.4.1 Upload Profile Picture
+- **Method**: `POST`
+- **Path**: `/profile/picture`
+- **Headers**: `Authorization: Bearer <token>`
+- **Content-Type**: `multipart/form-data`
+- **Request Body**:
+  - `file`: Binary file (Max 2MB, `image/jpeg`, `image/png`, `image/webp`)
+- **Response**:
+  ```json
+  {
+    "message": "Profile picture updated successfully"
+  }
+  ```
+
+#### 1.4.2 Get Profile Picture
+- **Method**: `GET`
+- **Path**: `/profile/picture/{user_id}`
+- **Response**: Binary image data with appropriate `Content-Type` header (e.g., `image/png`).
+
 ---
 
 ## 2. Staff Management (`/staff`)

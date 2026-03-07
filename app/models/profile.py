@@ -13,6 +13,19 @@ class StaffProfile(SQLModel, table=True):
     department: str
     default_route_id: Optional[UUID] = Field(default=None, foreign_key="route.id")
     default_pickup_stop_id: Optional[UUID] = Field(default=None, foreign_key="route_stop.id")
+    
+    # Profile Picture
+    profile_picture: Optional[bytes] = Field(default=None)
+    profile_picture_mime: Optional[str] = Field(default=None)
+    profile_picture_filename: Optional[str] = Field(default=None)
+
+    @property
+    def has_profile_picture(self) -> bool:
+        return self.profile_picture is not None
+
+    @property
+    def has_profile_picture(self) -> bool:
+        return self.profile_picture is not None
 
 class DriverProfile(SQLModel, table=True):
     __tablename__ = "driver_profile"
@@ -24,5 +37,14 @@ class DriverProfile(SQLModel, table=True):
     license_number: str
     assigned_vehicle_id: Optional[UUID] = Field(default=None, foreign_key="vehicle.id")
     driver_status: int = Field(default=0)
+    
+    # Profile Picture
+    profile_picture: Optional[bytes] = Field(default=None)
+    profile_picture_mime: Optional[str] = Field(default=None)
+    profile_picture_filename: Optional[str] = Field(default=None)
+
+    @property
+    def has_profile_picture(self) -> bool:
+        return self.profile_picture is not None
 
 
