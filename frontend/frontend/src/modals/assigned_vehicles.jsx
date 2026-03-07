@@ -55,6 +55,7 @@ export default function AssignedVehiclesModal({ open, onClose }) {
         }
         setTrips(list);
       } catch (e) {
+        console.error('Error fetching assigned vehicle:', e);
         setError('Failed to load assigned vehicle');
       } finally {
         setLoading(false);
