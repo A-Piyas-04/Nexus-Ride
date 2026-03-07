@@ -3,6 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select
+from sqlalchemy.exc import IntegrityError
 
 from app.core.security import get_current_user
 from app.db.session import get_session
@@ -32,9 +33,34 @@ def create_trip_template(
     current_user: User = Depends(get_current_user),
 ):
     _require_transport_officer(current_user, session)
+    
+    # Check for existing template with same vehicle, start_time, and direction
+    existing = session.exec(
+        select(TripTemplate).where(
+            TripTemplate.vehicle_id == data.vehicle_id,
+            TripTemplate.start_time == data.start_time,
+            TripTemplate.direction == data.direction
+        )
+    ).first()
+
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail="Vehicle already scheduled at this time and direction"
+        )
+
     template = TripTemplate(**data.model_dump())
     session.add(template)
-    session.commit()
+    
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="Duplicate trip template detected"
+        )
+        
     session.refresh(template)
     return template
 

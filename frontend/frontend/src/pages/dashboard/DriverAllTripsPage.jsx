@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from './DashboardLayout';
 import { Button } from '../../components/ui/Button';
@@ -23,7 +23,7 @@ export default function DriverAllTripsPage() {
   const [actionId, setActionId] = useState(null);
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
-  const fetchTrips = async () => {
+  const fetchTrips = useCallback(async () => {
     if (!token) return;
     setLoading(true);
     setError('');
@@ -36,11 +36,11 @@ export default function DriverAllTripsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     fetchTrips();
-  }, []);
+  }, [fetchTrips]);
 
   const handleStart = async (trip) => {
     if (!token || actionId) return;

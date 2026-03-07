@@ -224,7 +224,7 @@ This document describes the complete database schema for the NexusRide Universit
 | `status` | VARCHAR | `INITIATED`, `SUCCESS`, `FAILED`, `CANCELLED`, `REFUNDED` |
 | `external_txn_id` | VARCHAR | Nullable |
 | `currency` | VARCHAR | Default: `BDT` |
-| `metadata` | JSON | Nullable |
+| `payment_metadata` | JSON | Nullable (stored as `metadata` column) |
 | `created_at` | TIMESTAMP | |
 | `updated_at` | TIMESTAMP | |
 

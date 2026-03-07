@@ -44,7 +44,7 @@ export default function DriverDashboard() {
       }
       try {
         const profile = await getMyDriverProfile(token);
-        setStatus(Number(profile?.driver_status) ?? 0);
+        setStatus(Number(profile?.driver_status || 0));
       } finally {
         setLoading(false);
       }
@@ -58,7 +58,7 @@ export default function DriverDashboard() {
       if (!token) return;
       try {
         const profile = await getMyDriverProfile(token);
-        const s = Number(profile?.driver_status) ?? 0;
+        const s = Number(profile?.driver_status || 0);
         setStatus(s);
         if (s === 1 && intervalId) {
           clearInterval(intervalId);

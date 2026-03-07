@@ -23,6 +23,8 @@ from app.models.notification import Notification
 from app.models.profile import StaffProfile, DriverProfile
 from app.models.token import Token
 from app.models.transport_request import TransportRequest, Guest, TransportRequestStatusLog
+from app.models.schedule_override import ScheduleOverride
+from app.models.trip_template import TripTemplate
 
 # Map table names to model classes
 TABLE_MAP = {
@@ -43,7 +45,9 @@ TABLE_MAP = {
     "Token": Token,
     "TransportRequest": TransportRequest,
     "Guest": Guest,
-    "TransportRequestStatusLog": TransportRequestStatusLog
+    "TransportRequestStatusLog": TransportRequestStatusLog,
+    "ScheduleOverride": ScheduleOverride,
+    "TripTemplate": TripTemplate
 }
 
 # Database connection

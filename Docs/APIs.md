@@ -7,11 +7,11 @@ This document outlines the available API endpoints for the NexusRide University 
 ### 1.1 Staff Signup
 - **Method**: `POST`
 - **Path**: `/auth/signup`
-- **Description**: Registers a new user as `STAFF` and assigns the `NORMAL_STAFF` role by default.
+- **Description**: Registers a new user as `STAFF` and assigns the `NORMAL_STAFF` role by default. Only `@iut-dhaka.edu` emails are accepted.
 - **Request Body**:
   ```json
   {
-    "email": "user@example.com",
+    "email": "user@iut-dhaka.edu",
     "password": "securepassword",
     "full_name": "John Doe"
   }
@@ -26,11 +26,11 @@ This document outlines the available API endpoints for the NexusRide University 
 ### 1.2 Login (Staff & General)
 - **Method**: `POST`
 - **Path**: `/auth/login`
-- **Description**: Authenticates a user (via email) and returns a JWT access token.
+- **Description**: Authenticates a user (via email) and returns a JWT access token. Only `@iut-dhaka.edu` emails are accepted.
 - **Request Body**:
   ```json
   {
-    "email": "user@example.com",
+    "email": "user@iut-dhaka.edu",
     "password": "securepassword"
   }
   ```
@@ -75,6 +75,8 @@ This document outlines the available API endpoints for the NexusRide University 
     "department": "CSE",
     "email": "user@example.com",
     "mobile_number": "017...",
+    "default_route_id": "uuid",
+    "default_pickup_stop_id": "uuid",
     "default_route_name": "Route-1",
     "default_pickup_stop_name": "Banani"
   }
@@ -103,14 +105,14 @@ This document outlines the available API endpoints for the NexusRide University 
 ### 3.1 Driver Signup
 - **Method**: `POST`
 - **Path**: `/drivers/signup`
-- **Description**: Registers a new driver.
+- **Description**: Registers a new driver. Mobile number must be 11 digits and start with `01`. License format must be `DL-1234`.
 - **Request Body**:
   ```json
   {
     "full_name": "Driver Name",
-    "mobile_number": "017...",
+    "mobile_number": "017XXXXXXXX",
     "password": "password",
-    "license_number": "LIC-123"
+    "license_number": "DL-1234"
   }
   ```
 
@@ -121,12 +123,12 @@ This document outlines the available API endpoints for the NexusRide University 
 - **Request Body**:
   ```json
   {
-    "mobile_number": "017...",
+    "mobile_number": "017XXXXXXXX",
     "password": "password"
   }
   ```
 
-### 3.3 List Drivers (Admin/TO)
+### 3.3 List Drivers
 - **Method**: `GET`
 - **Path**: `/drivers`
 - **Response**: List of drivers with details.
@@ -135,7 +137,7 @@ This document outlines the available API endpoints for the NexusRide University 
 - **Method**: `GET`
 - **Path**: `/drivers/me`
 - **Headers**: `Authorization: Bearer <token>`
-- **Response**: Driver profile details.
+- **Response**: Driver profile details with assigned vehicle (if any).
 
 ### 3.5 Update Driver Profile
 - **Method**: `PUT`
@@ -145,27 +147,34 @@ This document outlines the available API endpoints for the NexusRide University 
   ```json
   {
     "full_name": "Updated Name",
-    "mobile_number": "018...",
-    "email": "driver@example.com"
+    "mobile_number": "018XXXXXXXX",
+    "email": "driver@iut-dhaka.edu"
   }
   ```
 
-### 3.6 Approve Driver (TO)
-- **Method**: `PUT`
-- **Path**: `/drivers/{id}/approve`
-- **Roles**: TO required (implied)
-- **Description**: Approves a driver account (sets status to 1).
+### 3.6 Get Driver (By ID)
+- **Method**: `GET`
+- **Path**: `/drivers/{driver_id}`
 
-### 3.7 Update Driver Status
+### 3.7 Driver Requests (Pending Approvals)
+- **Method**: `GET`
+- **Path**: `/drivers/requests`
+
+### 3.8 Update Driver Status
 - **Method**: `PATCH`
 - **Path**: `/drivers/{driver_id}/status`
 - **Request Body**: `{"status": 1}`
 
-### 3.8 Get My Trips (Driver)
+### 3.9 Approve Driver
+- **Method**: `PUT`
+- **Path**: `/drivers/{id}/approve`
+- **Description**: Approves a driver account (sets status to 1).
+
+### 3.10 Get My Trips (Driver)
 - **Method**: `GET`
 - **Path**: `/drivers/my-trips`
 - **Headers**: `Authorization: Bearer <token>`
-- **Response**: List of trips assigned to the driver.
+- **Response**: List of trips assigned to the driver (legacy format).
 
 ---
 
@@ -202,6 +211,29 @@ This document outlines the available API endpoints for the NexusRide University 
 - **Path**: `/subscription/{id}/approve` or `/subscription/{id}/decline`
 - **Roles**: TO required.
 
+### 4.5 Create Subscription Leave
+- **Method**: `POST`
+- **Path**: `/subscription/leave`
+- **Headers**: `Authorization: Bearer <token>`
+- **Request Body**:
+  ```json
+  {
+    "from_date": "2026-03-01",
+    "to_date": "2026-03-05",
+    "reason": "Vacation"
+  }
+  ```
+
+### 4.6 List My Leaves
+- **Method**: `GET`
+- **Path**: `/subscription/leaves`
+- **Headers**: `Authorization: Bearer <token>`
+
+### 4.7 Delete Leave
+- **Method**: `DELETE`
+- **Path**: `/subscription/leave/{leave_id}`
+- **Headers**: `Authorization: Bearer <token>`
+
 ---
 
 ## 5. Token Management (`/token`)
@@ -217,10 +249,11 @@ This document outlines the available API endpoints for the NexusRide University 
     "pickup_stop_id": "uuid",
     "travel_date": "2024-03-01",
     "direction": "UP",
-    "consumer_email": "optional@example.com"
+    "consumer_email": "optional@example.com",
+    "payment_method": "BKASH"
   }
   ```
-- **Response**: Created token object.
+- **Response**: `PaymentRead` (payment is initiated and token is created on payment confirmation).
 
 ### 5.2 Get My Tokens
 - **Method**: `GET`
@@ -249,21 +282,26 @@ This document outlines the available API endpoints for the NexusRide University 
 - **Path**: `/routes`
 - **Response**: List of routes with stops.
 
-### 6.3 Update Route (TO)
+### 6.3 Get Route
+- **Method**: `GET`
+- **Path**: `/routes/{route_id}`
+
+### 6.4 Update Route (TO)
 - **Method**: `PATCH`
 - **Path**: `/routes/{route_id}`
 - **Request Body**: Partial route update.
 
-### 6.4 Sync Route Stops (TO)
+### 6.5 Add Stop to Route (TO)
+- **Method**: `POST`
+- **Path**: `/routes/{route_id}/stops`
+- **Request Body**: `{ "stop_name": "Banani", "sequence_number": 1 }`
+
+### 6.6 Sync Route Stops (TO)
 - **Method**: `PUT`
 - **Path**: `/routes/{route_id}/stops`
 - **Request Body**: List of stops to replace existing ones.
 
-### 6.5 Get Route Stops
-- **Method**: `GET`
-- **Path**: `/routes/{route_id}/stops`
-
-### 6.6 Get Stops (Alternative)
+### 6.7 Get Stops (Alternative)
 - **Method**: `GET`
 - **Path**: `/stops/{route_id}/stops`
 - **Response**: List of stops for a route.
@@ -276,14 +314,28 @@ This document outlines the available API endpoints for the NexusRide University 
 - **Method**: `GET`
 - **Path**: `/vehicles`
 
-### 7.2 Create Vehicle (TO)
+### 7.2 Get Vehicle
+- **Method**: `GET`
+- **Path**: `/vehicles/{vehicle_id}`
+
+### 7.3 Create Vehicle (TO)
 - **Method**: `POST`
 - **Path**: `/vehicles`
 - **Request Body**: `{"vehicle_number": "NR-01", "capacity": 40}`
 
-### 7.3 Update Vehicle (TO)
+### 7.4 Update Vehicle (TO)
 - **Method**: `PATCH`
-- **Path**: `/vehicles/{id}` or `/vehicles/{id}/status`
+- **Path**: `/vehicles/{vehicle_id}`
+- **Request Body**: `{"vehicle_number": "NR-01", "capacity": 40}`
+
+### 7.5 Update Vehicle Status (TO)
+- **Method**: `PATCH`
+- **Path**: `/vehicles/{vehicle_id}/status`
+- **Request Body**: `{"status": "IN_SERVICE"}`
+
+### 7.6 Delete Vehicle (TO)
+- **Method**: `DELETE`
+- **Path**: `/vehicles/{vehicle_id}`
 
 ---
 
@@ -294,13 +346,24 @@ This document outlines the available API endpoints for the NexusRide University 
 - **Path**: `/trips/availability`
 - **Response**: List of trips with seat counts.
 
-### 8.2 Start Trip (Driver)
+### 8.2 Get My Trips (Driver)
+- **Method**: `GET`
+- **Path**: `/trips/my`
+- **Headers**: `Authorization: Bearer <token>`
+
+### 8.3 Create Trip (TO)
+- **Method**: `POST`
+- **Path**: `/trips`
+- **Headers**: `Authorization: Bearer <token>`
+- **Description**: TO schedules a one-off trip.
+
+### 8.4 Start Trip (Driver)
 - **Method**: `PATCH`
 - **Path**: `/trips/{trip_id}/start`
 - **Headers**: `Authorization: Bearer <token>`
 - **Response**: Updated trip object with status `STARTED`.
 
-### 8.3 Complete Trip (Driver)
+### 8.5 Complete Trip (Driver)
 - **Method**: `PATCH`
 - **Path**: `/trips/{trip_id}/complete`
 - **Headers**: `Authorization: Bearer <token>`
@@ -336,7 +399,7 @@ This document outlines the available API endpoints for the NexusRide University 
 
 ## 10. Faculty Transport Requests (`/transport-requests`)
 
-### 9.1 Create Request (Faculty)
+### 10.1 Create Request (Faculty)
 - **Method**: `POST`
 - **Path**: `/transport-requests`
 - **Roles**: FACULTY required.
@@ -351,21 +414,25 @@ This document outlines the available API endpoints for the NexusRide University 
   }
   ```
 
-### 9.2 Get My Requests (Faculty)
+### 10.2 Get My Requests (Faculty)
 - **Method**: `GET`
 - **Path**: `/transport-requests/my`
 
-### 9.3 List All Requests (TO)
+### 10.3 Get Request By ID (Faculty or TO)
+- **Method**: `GET`
+- **Path**: `/transport-requests/by-id/{request_id}`
+
+### 10.4 List All Requests (TO)
 - **Method**: `GET`
 - **Path**: `/transport-requests`
 - **Query**: `status_filter`
 
-### 9.4 Update Status (TO)
+### 10.5 Update Status (TO)
 - **Method**: `PATCH`
 - **Path**: `/transport-requests/{id}/status`
 - **Request Body**: `{"status": "APPROVED", "note": "..."}`
 
-### 9.5 Assign Vehicle/Driver (TO)
+### 10.6 Assign Vehicle/Driver (TO)
 - **Method**: `PATCH`
 - **Path**: `/transport-requests/{id}/assign`
 - **Request Body**:
@@ -377,11 +444,61 @@ This document outlines the available API endpoints for the NexusRide University 
   }
   ```
 
+### 10.7 List Vehicles (TO)
+- **Method**: `GET`
+- **Path**: `/transport-requests/vehicles`
+
+### 10.8 List Drivers (TO)
+- **Method**: `GET`
+- **Path**: `/transport-requests/drivers`
+
+---
+
+## 11. Payments (`/payments`)
+
+### 11.1 Initiate Payment
+- **Method**: `POST`
+- **Path**: `/payments/initiate`
+- **Headers**: `Authorization: Bearer <token>`
+- **Request Body**:
+  ```json
+  {
+    "reference_type": "TOKEN",
+    "reference_id": "reference-id",
+    "payment_method": "BKASH",
+    "amount": 50.0
+  }
+  ```
+
+### 11.2 Confirm Payment
+- **Method**: `POST`
+- **Path**: `/payments/{payment_id}/confirm`
+- **Headers**: `Authorization: Bearer <token>`
+- **Request Body**:
+  ```json
+  {
+    "external_txn_id": "gateway-id",
+    "status": "SUCCESS"
+  }
+  ```
+
+### 11.3 Get My Payments
+- **Method**: `GET`
+- **Path**: `/payments/me`
+- **Headers**: `Authorization: Bearer <token>`
+- **Query**: `status`, `payment_type`, `payment_method`, `start_date`, `end_date`
+
+### 11.4 List Payments (TO)
+- **Method**: `GET`
+- **Path**: `/payments`
+- **Headers**: `Authorization: Bearer <token>`
+- **Query**: `user_id`, `status`, `payment_type`, `payment_method`, `start_date`, `end_date`, `min_amount`, `max_amount`, `offset`, `limit`
+
 ---
 
 ## Security Overview
 - **Authentication**: JWT Bearer tokens.
 - **User Types**: `STAFF`, `DRIVER`.
 - **Roles**: `NORMAL_STAFF`, `FACULTY`, `TO` (Transport Officer).
-- **Driver Auth**: Uses Mobile Number + Password.
-- **Staff Auth**: Uses Email + Password.
+- **Driver Auth**: Uses mobile number + password (mobile must be 11 digits starting with `01`).
+- **Staff Auth**: Uses email + password (must be `@iut-dhaka.edu`).

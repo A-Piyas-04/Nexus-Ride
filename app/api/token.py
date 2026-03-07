@@ -18,6 +18,7 @@ from app.schemas.seat_allocation import SeatAllocationCreate, SeatAllocationRead
 from app.schemas.payment import PaymentRead
 from app.api.auth import get_current_user
 from app.services.subscription_reserved import count_subscription_reserved
+from app.services.trip_service import get_or_create_trip
 
 router = APIRouter()
 
@@ -27,18 +28,13 @@ def buy_token(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    # Find matching trip
-    trip = session.exec(
-        select(Trip).where(
-            Trip.route_id == data.route_id,
-            Trip.trip_date == data.travel_date,
-            Trip.direction == data.direction, 
-            Trip.status == "SCHEDULED"
-        )
-    ).first()
-
-    if not trip:
-        raise HTTPException(status_code=404, detail="Trip not found")
+    # Find matching trip or create from template
+    trip = get_or_create_trip(
+        session=session,
+        route_id=data.route_id,
+        travel_date=data.travel_date,
+        direction=data.direction
+    )
 
     vehicle = session.get(Vehicle, trip.vehicle_id)
 
