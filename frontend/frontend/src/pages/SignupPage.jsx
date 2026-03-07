@@ -17,7 +17,7 @@ export default function SignupPage() {
   const [licenseNumber, setLicenseNumber] = useState('');
   const [mobileValid, setMobileValid] = useState(true);
   const [localError, setLocalError] = useState(null);
-  const { signup, loading, error, clearError } = useAuth();
+  const { signup, login, loading, error, clearError } = useAuth();
   const navigate = useNavigate();
 
   React.useEffect(() => {
@@ -31,6 +31,14 @@ export default function SignupPage() {
       if (mode === 'staff') {
         await signup(fullName, email, password);
         localStorage.setItem('auth_mode', 'staff');
+        try {
+          await login(email, password);
+          navigate('/dashboard');
+          return;
+        } catch {
+          navigate('/login');
+          return;
+        }
       } else {
         const mm = (mobile || '').trim();
         const valid = mm.length === 11 && /^\d+$/.test(mm) && mm.startsWith('01');
