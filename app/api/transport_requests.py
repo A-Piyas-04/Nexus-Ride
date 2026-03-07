@@ -185,6 +185,14 @@ def update_status(
     
     session.commit()
     session.refresh(request)
+    
+    # Emit notification
+    try:
+        from app.notifications.event_bus import event_bus
+        event_bus.emit("TRIP_ASSIGNED", request, session)
+    except Exception as e:
+        print(f"Failed to emit notification: {e}")
+
     return request
 
 @router.get("/vehicles", response_model=List[VehicleOption])

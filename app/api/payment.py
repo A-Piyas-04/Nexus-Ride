@@ -50,6 +50,9 @@ def compute_amount(reference_type: PaymentType, reference_id: str, session: Sess
         return Decimal("1500.00")
     return Decimal("0.00")
 
+from app.notifications.event_bus import event_bus
+from app.models.token import Token
+
 def create_token_from_payment(payment: Payment, session: Session):
     """
     Creates a Token and SeatAllocation from a successful Payment.
@@ -280,6 +283,16 @@ def confirm_payment(
         if payment.status == PaymentStatus.SUCCESS:
             if payment.reference_type == PaymentType.TOKEN:
                 create_token_from_payment(payment, session)
+                # Emit token purchased event
+                try:
+                    # We need to get the token ID from payment reference
+                    # create_token_from_payment sets payment.reference_id
+                    token_id = UUID(payment.reference_id)
+                    token = session.get(Token, token_id)
+                    if token:
+                        event_bus.emit("TOKEN_PURCHASED", token, session)
+                except Exception as e:
+                    print(f"Failed to emit notification: {e}")
             elif payment.reference_type == PaymentType.SUBSCRIPTION:
                 activate_subscription_from_payment(payment, session)
             

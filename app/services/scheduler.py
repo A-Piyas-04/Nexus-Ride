@@ -36,6 +36,11 @@ def start_scheduler() -> None:
         minute=5,
         id="daily_trip_generation",
     )
+    
+    # Placeholder for notification jobs
+    # from app.notifications.jobs import send_trip_reminders
+    # _scheduler.add_job(send_trip_reminders, "interval", minutes=15)
+    
     _scheduler.start()
     logger.info("Scheduler started (daily trip generation at 00:05)")
 

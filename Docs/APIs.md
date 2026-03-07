@@ -496,6 +496,58 @@ This document outlines the available API endpoints for the NexusRide University 
 
 ---
 
+## 11. Notifications (`/notifications`)
+
+### 11.1 Get Notifications
+- **Method**: `GET`
+- **Path**: `/notifications/`
+- **Headers**: `Authorization: Bearer <token>`
+- **Query**:
+  - `skip` (int, default: 0)
+  - `limit` (int, default: 20)
+  - `unread_only` (bool, default: false)
+- **Response**:
+  ```json
+  [
+    {
+      "id": "uuid",
+      "title": "Subscription Approved",
+      "message": "Your subscription...",
+      "event_type": "SUBSCRIPTION_APPROVED",
+      "reference_type": "SUBSCRIPTION",
+      "reference_id": "uuid",
+      "is_read": false,
+      "created_at": "2024-03-01T10:00:00"
+    }
+  ]
+  ```
+
+### 11.2 Mark Notification as Read
+- **Method**: `PATCH`
+- **Path**: `/notifications/{id}/read`
+- **Headers**: `Authorization: Bearer <token>`
+- **Response**: Updated notification object.
+
+### 11.3 Mark All as Read
+- **Method**: `PATCH`
+- **Path**: `/notifications/read-all`
+- **Headers**: `Authorization: Bearer <token>`
+- **Response**:
+  ```json
+  {
+    "message": "All notifications marked as read",
+    "count": 5
+  }
+  ```
+
+### 11.4 Delete Notification
+- **Method**: `DELETE`
+- **Path**: `/notifications/{id}`
+- **Headers**: `Authorization: Bearer <token>`
+- **Response**: `204 No Content`
+
+---
+
 ## Security Overview
 - **Authentication**: JWT Bearer tokens.
 - **User Types**: `STAFF`, `DRIVER`.
