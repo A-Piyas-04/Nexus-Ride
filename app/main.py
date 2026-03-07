@@ -36,6 +36,9 @@ from app.api.routes import router as routes_router
 from app.api.stops import router as stops_router
 from app.api.token import router as token_router
 from app.api.trip_templates import router as trip_templates_router
+from app.notifications.api import router as notifications_router
+from app.notifications.registry import discover_handlers
+from app.notifications.models import Notification as NotificationV2
 
 # Import seeds
 from app.seeds.roles import seed_roles_and_to
@@ -59,6 +62,7 @@ async def lifespan(app: FastAPI):
         generate_trips_for_date(session, date.today())
 
     start_scheduler()
+    discover_handlers()
 
     yield
 
@@ -101,3 +105,4 @@ app.include_router(trip_templates_router)
 
 from app.api.payment import router as payment_router
 app.include_router(payment_router)
+app.include_router(notifications_router, prefix="/notifications", tags=["notifications"])
