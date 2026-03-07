@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/Button';
 import PaymentSummaryCard from './components/PaymentSummaryCard';
 import PaymentStatusScreen from './components/PaymentStatusScreen';
 import { confirmPayment, getMyPayments } from '../../services/payments';
+import { getSubscription } from '../../services/auth';
 
 const buildSimulatedTxnId = () => `SIMULATED-${Date.now()}`;
 
@@ -17,6 +18,8 @@ export default function PaymentPage() {
   const [error, setError] = React.useState(null);
   const [confirming, setConfirming] = React.useState(false);
   const [statusView, setStatusView] = React.useState(null);
+  const [overrideAmount, setOverrideAmount] = React.useState(null);
+  const [amountNote, setAmountNote] = React.useState(null);
 
   const fetchPayment = React.useCallback(async () => {
     setLoading(true);
@@ -32,6 +35,35 @@ export default function PaymentPage() {
       setPayment(found);
       if (found.status === 'SUCCESS') setStatusView('success');
       if (found.status === 'FAILED' || found.status === 'CANCELLED') setStatusView('failed');
+      // If subscription, compute client-side expected amount to display
+      if ((found.reference_type ?? found.payment_type) === 'SUBSCRIPTION') {
+        try {
+          const sub = await getSubscription();
+          const start = new Date(sub.start_date);
+          const end = new Date(sub.end_date);
+          if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())) {
+            const months =
+              (end.getFullYear() - start.getFullYear()) * 12 +
+              (end.getMonth() - start.getMonth()) +
+              1;
+            const m = Math.max(1, months);
+            const total = m * 5000;
+            setOverrideAmount(
+              total.toLocaleString('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            );
+            setAmountNote(`Based on ${m} ${m === 1 ? 'month' : 'months'} at 5,000.00 BDT/month`);
+          } else {
+            setOverrideAmount(null);
+            setAmountNote(null);
+          }
+        } catch {
+          setOverrideAmount(null);
+          setAmountNote(null);
+        }
+      } else {
+        setOverrideAmount(null);
+        setAmountNote(null);
+      }
     } catch (e) {
       setError(e?.response?.data?.detail || 'Unable to load payment details');
     } finally {
@@ -107,7 +139,7 @@ export default function PaymentPage() {
 
           {!loading && !error && payment && !statusView && (
             <>
-              <PaymentSummaryCard payment={payment} />
+              <PaymentSummaryCard payment={payment} displayAmount={overrideAmount} amountNote={amountNote} />
 
               <div className="rounded-lg border border-gray-200 bg-white px-4 py-4 text-sm text-gray-700">
                 <div className="font-medium text-gray-900">Simulation</div>

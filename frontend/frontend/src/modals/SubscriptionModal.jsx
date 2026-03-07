@@ -32,6 +32,7 @@ export default function SubscriptionModal({ open, onClose, onSubmit }) {
   const now = React.useMemo(() => new Date(), []);
   const currentYear = now.getFullYear();
   const defaultMonth = numberToMonth(now.getMonth() + 1);
+  const PRICE_PER_MONTH = 5000;
 
   const yearOptions = React.useMemo(
     () => Array.from({ length: 6 }, (_, index) => String(currentYear + index)),
@@ -60,6 +61,23 @@ export default function SubscriptionModal({ open, onClose, onSubmit }) {
     const start = monthToNumber(startMonth);
     const end = monthToNumber(endMonth);
     if (end < start) setEndMonth(startMonth);
+  }, [startMonth, endMonth]);
+
+  const monthsSelected = React.useMemo(() => {
+    const s = monthToNumber(startMonth);
+    const e = monthToNumber(endMonth);
+    return Math.max(1, e - s + 1);
+  }, [startMonth, endMonth]);
+
+  const totalAmount = React.useMemo(() => {
+    const amount = monthsSelected * PRICE_PER_MONTH;
+    return amount.toLocaleString('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }, [monthsSelected]);
+
+  const monthsLabel = React.useMemo(() => {
+    const sm = MONTH_OPTIONS.find(m => m.value === startMonth)?.label || '';
+    const em = MONTH_OPTIONS.find(m => m.value === endMonth)?.label || '';
+    return { sm, em };
   }, [startMonth, endMonth]);
 
   const handleSubmit = (event) => {
@@ -143,6 +161,18 @@ export default function SubscriptionModal({ open, onClose, onSubmit }) {
                 </optgroup>
               ))}
             </select>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-primary-200 bg-primary-50/60 p-4">
+          <div className="flex items-baseline justify-between">
+            <div className="text-sm text-gray-700">Total amount</div>
+            <div className="text-2xl font-extrabold text-primary-700">
+              {totalAmount} BDT
+            </div>
+          </div>
+          <div className="mt-1 text-xs text-gray-600">
+            You have selected to subscribe for {monthsSelected} {monthsSelected === 1 ? 'month' : 'months'} from {monthsLabel.sm} to {monthsLabel.em}. (Rate: {PRICE_PER_MONTH.toLocaleString('en-BD')} BDT/month)
           </div>
         </div>
 

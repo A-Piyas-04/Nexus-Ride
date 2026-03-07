@@ -1,8 +1,8 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card';
 
-export default function PaymentSummaryCard({ payment }) {
-  const amount = payment?.amount ?? '-';
+export default function PaymentSummaryCard({ payment, displayAmount, amountNote }) {
+  const amount = displayAmount ?? payment?.amount ?? '-';
   const currency = payment?.currency ?? 'BDT';
   const type = payment?.reference_type ?? payment?.payment_type ?? '-';
   const method = payment?.payment_method ?? '-';
@@ -20,6 +20,9 @@ export default function PaymentSummaryCard({ payment }) {
             <div className="text-3xl font-semibold text-gray-900">{amount}</div>
             <div className="pb-1 text-sm text-gray-700">{currency}</div>
           </div>
+          {amountNote ? (
+            <div className="mt-1 text-xs text-gray-600">{amountNote}</div>
+          ) : null}
         </div>
         <div className="grid gap-2 text-sm">
           <div className="flex items-center justify-between">
