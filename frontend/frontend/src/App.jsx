@@ -39,6 +39,7 @@ import TripTemplateList from './pages/to-pages/trip-templates/tripTemplateList';
 import { NavigationControls } from './components/ui/NavigationControls';
 import PaymentStartPage from './pages/payment/PaymentStartPage';
 import PaymentPage from './pages/payment/PaymentPage';
+import UpdateLeavePage from './pages/update_leave_page';
 
 
 
@@ -88,6 +89,7 @@ function AppRoutes() {
         <Route path="/profile" element={<Staff_Profile />} />
         <Route path="/driver-profile" element={<DriverProfile />} />
         <Route path="/buy-token" element={<BuyToken />} />
+        <Route path="/update-leave" element={<UpdateLeavePage />} />
         <Route
           path="/payment"
           element={

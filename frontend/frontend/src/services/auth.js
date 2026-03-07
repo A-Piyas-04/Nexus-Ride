@@ -13,7 +13,15 @@ const api = axios.create({
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
+    const url = error?.config?.url || '';
+    const path = (typeof window !== 'undefined' && window.location?.pathname) ? window.location.pathname : '';
+    const isPaymentFlow =
+      typeof url === 'string' &&
+      (url.includes('/payments') || url.includes('/payment') || url.includes('/token'));
+    const isPaymentPage =
+      typeof path === 'string' && (path.startsWith('/payment') || path.startsWith('/token'));
+
+    if (error.response && error.response.status === 401 && !isPaymentFlow && !isPaymentPage) {
       console.warn('Unauthorized request detected. Clearing session...');
       localStorage.removeItem('token');
       localStorage.removeItem('user_email');

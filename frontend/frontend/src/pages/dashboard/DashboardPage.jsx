@@ -13,6 +13,7 @@ import PickupChangeModal from '../../modals/PickupChangeModal';
 import { createSubscription, getSubscription, createLeave, getMyLeaves, deleteLeave } from '../../services/auth';
 import { Navbar } from '../../components/Navbar';
 import DashboardLayout from './DashboardLayout';
+import UpdateLeaveModal from '../../modals/update_leave';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -28,6 +29,7 @@ export default function DashboardPage() {
 
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
   const [leaves, setLeaves] = useState([]);
+  const [updateLeaveOpen, setUpdateLeaveOpen] = useState(false);
   const [leaveForm, setLeaveForm] = useState({ from_date: '', to_date: '', reason: '' });
   const [leaveError, setLeaveError] = useState('');
   const [leaveSaving, setLeaveSaving] = useState(false);
@@ -136,6 +138,7 @@ export default function DashboardPage() {
     [leaves, todayStr]
   );
   const isOnLeave = activeLeavePeriods.length > 0;
+  const hasAnyLeave = Array.isArray(leaves) && leaves.length > 0;
 
   const formatLeaveDate = (d) => {
     if (!d) return '';
@@ -157,6 +160,12 @@ export default function DashboardPage() {
     setLeaveError('');
     setLeaveForm({ from_date: '', to_date: '', reason: '' });
     loadLeaves();
+  };
+
+  const openUpdateLeave = () => {
+    if (!checkSubscription()) return;
+    if (!hasAnyLeave) return;
+    setUpdateLeaveOpen(true);
   };
 
   const handleLeaveSubmit = async (e) => {
@@ -244,6 +253,13 @@ export default function DashboardPage() {
       return;
     }
 
+    const monthToNumber = (v) => Number.parseInt(String(v), 10);
+    const monthsSelected = Math.max(1, monthToNumber(endMonth) - monthToNumber(startMonth) + 1);
+    const subscriptionAmount = (monthsSelected * 5000).toLocaleString('en-BD', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+
     try {
       const created = await createSubscription(
         {
@@ -263,6 +279,8 @@ export default function DashboardPage() {
         state: {
           referenceType: 'SUBSCRIPTION',
           referenceId: String(created?.id),
+          monthsSelected,
+          subscriptionAmount,
         },
       });
     } catch (error) {
@@ -314,6 +332,16 @@ export default function DashboardPage() {
                     title={!isSubscribed ? 'Subscribe first' : isOnLeave ? 'You are already on a leave' : ''}
                   />
                 </div>
+
+                <ActionCard
+                  icon={Ticket}
+                  label="Update leave"
+                  description="Edit or cancel your leave periods."
+                  iconClassName={isSubscribed && hasAnyLeave ? 'text-primary-600' : 'text-gray-400'}
+                  onClick={openUpdateLeave}
+                  disabled={!isSubscribed || !hasAnyLeave}
+                  title={!isSubscribed ? 'Subscribe first' : !hasAnyLeave ? 'No leave to update' : ''}
+                />
 
                 <ActionCard
                 icon={Ticket}
@@ -484,33 +512,7 @@ export default function DashboardPage() {
                       </Button>
                     </div>
                   </form>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Your leave periods</h4>
-                  {leavesLoading ? (
-                    <p className="text-sm text-gray-500">Loading...</p>
-                  ) : leaves.length === 0 ? (
-                    <p className="text-sm text-gray-500">No leave periods added yet.</p>
-                  ) : (
-                    <ul className="space-y-2">
-                      {leaves.map((leave) => (
-                        <li
-                          key={leave.id}
-                          className="flex justify-between items-center border border-gray-200 rounded-lg px-3 py-2 text-sm"
-                        >
-                          <span>
-                            {String(leave.from_date).slice(0, 10)} – {String(leave.to_date).slice(0, 10)}
-                            {leave.reason ? ` (${leave.reason})` : ''}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteLeave(leave.id)}
-                            className="text-red-600 hover:underline"
-                          >
-                            Cancel
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                  {/* Leave listing moved to Update Leave modal */}
                 </>
               )}
             </div>
@@ -518,6 +520,7 @@ export default function DashboardPage() {
         )}
       </section>
       </div>
+      <UpdateLeaveModal open={updateLeaveOpen} onClose={() => setUpdateLeaveOpen(false)} />
     </DashboardLayout>
   );
 }
