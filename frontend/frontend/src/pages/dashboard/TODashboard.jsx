@@ -9,6 +9,12 @@ import SubscriptionModal from '../../modals/SubscriptionModal';
 import SubscriptionDetailsModal from '../../modals/SubscriptionDetailsModal';
 import ScheduleTripModal from '../../modals/ScheduleTripModal';
 import { createSubscription, getSubscription } from '../../services/auth';
+import {
+  createTrip,
+  getRoutes,
+  getAllVehicles,
+  getAllDrivers,
+} from '../../services/transport';
 import { Navbar } from '../../components/Navbar';
 import DashboardLayout from './DashboardLayout';
 import { useAuth } from '../../context/auth-context';
@@ -30,7 +36,7 @@ export default function TODashboard() {
     route_id: '',
     direction: 'FROM_IUT',
     trip_date: '',
-    start_time: '',
+    start_time: '07:30',
   });
 
   const [subscribeOpen, setSubscribeOpen] = useState(false);

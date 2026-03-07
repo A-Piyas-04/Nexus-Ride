@@ -144,3 +144,43 @@ export const syncRouteStops = async (id, stopsData) => {
   return response.data;
 };
 
+// Trip Templates (TO only)
+export const getTripTemplates = async (params = {}) => {
+  const p = {};
+  if (params.is_active !== undefined) p.is_active = params.is_active;
+  if (params.route_id != null) p.route_id = params.route_id;
+  const response = await axios.get(`${API_URL}/trip-templates`, {
+    headers: getAuthHeaders(),
+    params: Object.keys(p).length ? p : undefined,
+  });
+  return response.data;
+};
+
+export const createTripTemplate = async (data) => {
+  const response = await axios.post(`${API_URL}/trip-templates`, data, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
+};
+
+export const updateTripTemplate = async (id, data) => {
+  const response = await axios.put(`${API_URL}/trip-templates/${id}`, data, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
+};
+
+export const deleteTripTemplate = async (id) => {
+  await axios.delete(`${API_URL}/trip-templates/${id}`, {
+    headers: getAuthHeaders(),
+  });
+};
+
+// One-off manual trip (TO only) – trips are usually generated from templates
+export const createTrip = async (data) => {
+  const response = await axios.post(`${API_URL}/trips/`, data, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
+};
+

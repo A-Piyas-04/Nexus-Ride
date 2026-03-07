@@ -29,3 +29,8 @@ class TripAvailabilityRead(TripRead):
     total_capacity: int
     booked_seats: int
     available_seats: int
+
+
+class TripForDriverRead(TripRead):
+    """Trip with route_name for driver 'my trips' list."""
+    route_name: str
