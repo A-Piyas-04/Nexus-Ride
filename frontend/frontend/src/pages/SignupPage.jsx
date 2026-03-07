@@ -6,7 +6,7 @@ import { Input } from '../components/ui/Input';
 import { Label } from '../components/ui/Label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/Card';
 import { AlertCircle } from 'lucide-react';
-import { driverSignup } from '../services/auth';
+import { driverSignup, driverLogin } from '../services/auth';
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState('');
@@ -64,6 +64,22 @@ export default function SignupPage() {
             password,
             license_number: lic,
           });
+          // Auto-login the driver right after successful signup
+          try {
+            const resp = await driverLogin({ mobile_number: mm, password });
+            const token = resp?.access_token;
+            if (token) {
+              localStorage.setItem('token', token);
+              localStorage.setItem('auth_mode', 'driver');
+              navigate('/driver-dashboard');
+              return;
+            }
+          } catch {
+            // Fallback to manual login if auto-login fails
+            localStorage.setItem('auth_mode', 'driver');
+            navigate('/login');
+            return;
+          }
         } catch (err) {
           const detail = err?.response?.data?.detail || 'Signup failed';
           window.alert(detail);
