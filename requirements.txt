@@ -11,4 +11,4 @@ httpx
 email-validator
 python-dotenv
 apscheduler
-
+Pillow

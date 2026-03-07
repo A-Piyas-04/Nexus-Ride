@@ -38,7 +38,6 @@ from app.api.token import router as token_router
 from app.api.trip_templates import router as trip_templates_router
 from app.notifications.router import router as notifications_router
 from app.notifications.registry import discover_handlers
-from app.notifications.models import Notification as NotificationV2
 from app.profile_picture.router import router as profile_picture_router
 
 # Import seeds
