@@ -9,7 +9,7 @@ import { WelcomeBanner } from '../../components/ui/WelcomeBanner';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import SubscriptionModal from '../../modals/SubscriptionModal';
 import SubscriptionDetailsModal from '../../modals/SubscriptionDetailsModal';
-import { createSubscription, getSubscription } from '../../services/auth';
+import { createSubscription, getSubscription, createLeave, getMyLeaves, deleteLeave } from '../../services/auth';
 import { Navbar } from '../../components/Navbar';
 import DashboardLayout from './DashboardLayout';
 
@@ -23,6 +23,15 @@ export default function DashboardPage() {
   const [subscriptionDetails, setSubscriptionDetails] = useState(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
+
+  const [leaveModalOpen, setLeaveModalOpen] = useState(false);
+  const [leaves, setLeaves] = useState([]);
+  const [leaveForm, setLeaveForm] = useState({ from_date: '', to_date: '', reason: '' });
+  const [leaveError, setLeaveError] = useState('');
+  const [leaveSaving, setLeaveSaving] = useState(false);
+  const [leavesLoading, setLeavesLoading] = useState(false);
+  const [leaveSuccessView, setLeaveSuccessView] = useState(false);
+  const [leaveSuccessPeriod, setLeaveSuccessPeriod] = useState(null);
 
   const navLinks = [
     { name: 'Overview', targetId: 'dashboard-welcome' },
@@ -72,6 +81,18 @@ export default function DashboardPage() {
     fetchDashboardData();
   }, [navigate, userEmail]);
 
+  useEffect(() => {
+    if (subscriptionStatus === 'ACTIVE') {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      if (!token) return;
+      setLeavesLoading(true);
+      getMyLeaves(token)
+        .then((data) => setLeaves(Array.isArray(data) ? data : []))
+        .catch(() => setLeaves([]))
+        .finally(() => setLeavesLoading(false));
+    }
+  }, [subscriptionStatus]);
+
   const handleSeatAvailability = () => navigate('/seat-availability');
   const handleBuyToken = () => navigate('/buy-token');
   const handleCancelToken = () => window.alert('Cancel token');
@@ -91,9 +112,101 @@ export default function DashboardPage() {
     return true;
   };
 
+  const MAX_LEAVE_DAYS = 120;
+
+  const loadLeaves = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    setLeavesLoading(true);
+    try {
+      const data = await getMyLeaves(token);
+      setLeaves(Array.isArray(data) ? data : []);
+    } catch {
+      setLeaves([]);
+    } finally {
+      setLeavesLoading(false);
+    }
+  };
+
+  const todayStr = React.useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const activeLeavePeriods = React.useMemo(
+    () => (Array.isArray(leaves) ? leaves.filter((l) => String(l.from_date).slice(0, 10) <= todayStr && String(l.to_date).slice(0, 10) >= todayStr) : []),
+    [leaves, todayStr]
+  );
+  const isOnLeave = activeLeavePeriods.length > 0;
+
+  const formatLeaveDate = (d) => {
+    if (!d) return '';
+    const s = String(d).slice(0, 10);
+    const [y, m, day] = s.split('-');
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${Number(day)} ${months[Number(m) - 1]} ${y}`;
+  };
+
   const handleTakeLeave = () => {
-    if (checkSubscription()) {
-        window.alert('Take leave for one or multiple days, releasing reserved seats');
+    if (!checkSubscription()) return;
+    if (isOnLeave) {
+      window.alert('You are already on a leave.');
+      return;
+    }
+    setLeaveSuccessView(false);
+    setLeaveSuccessPeriod(null);
+    setLeaveModalOpen(true);
+    setLeaveError('');
+    setLeaveForm({ from_date: '', to_date: '', reason: '' });
+    loadLeaves();
+  };
+
+  const handleLeaveSubmit = async (e) => {
+    e.preventDefault();
+    if (!leaveForm.from_date || !leaveForm.to_date) {
+      setLeaveError('From date and to date are required.');
+      return;
+    }
+    if (leaveForm.from_date > leaveForm.to_date) {
+      setLeaveError('From date must be on or before to date.');
+      return;
+    }
+    const from = new Date(leaveForm.from_date);
+    const to = new Date(leaveForm.to_date);
+    const days = Math.floor((to - from) / (24 * 60 * 60 * 1000)) + 1;
+    if (days > MAX_LEAVE_DAYS) {
+      setLeaveError(`Leave cannot exceed ${MAX_LEAVE_DAYS} days (4 months).`);
+      return;
+    }
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    setLeaveSaving(true);
+    setLeaveError('');
+    try {
+      await createLeave(
+        {
+          from_date: leaveForm.from_date,
+          to_date: leaveForm.to_date,
+          reason: leaveForm.reason || null,
+        },
+        token
+      );
+      setLeaveSuccessPeriod({ from_date: leaveForm.from_date, to_date: leaveForm.to_date });
+      setLeaveForm({ from_date: '', to_date: '', reason: '' });
+      await loadLeaves();
+      setLeaveSuccessView(true);
+    } catch (err) {
+      const msg = err.response?.data?.detail || err.message || 'Failed to create leave';
+      setLeaveError(typeof msg === 'string' ? msg : JSON.stringify(msg));
+    } finally {
+      setLeaveSaving(false);
+    }
+  };
+
+  const handleDeleteLeave = async (leaveId) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      await deleteLeave(leaveId, token);
+      loadLeaves();
+    } catch {
+      window.alert('Failed to cancel leave');
     }
   };
 
@@ -175,6 +288,11 @@ export default function DashboardPage() {
                   </div>
               )}
             </WelcomeBanner>
+            {isSubscribed && isOnLeave && (
+              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800 text-sm font-medium animate-in fade-in duration-300">
+                You are on leave for this period: {activeLeavePeriods.map((l) => `${formatLeaveDate(l.from_date)} – ${formatLeaveDate(l.to_date)}${l.reason ? ` (${l.reason})` : ''}`).join('; ')}.
+              </div>
+            )}
           </div>
 
           {/* Subscription Section */}
@@ -183,15 +301,17 @@ export default function DashboardPage() {
               <h2 className="text-xl font-bold text-gray-900">Subscription</h2>
               <div className="rounded-2xl border border-gray-200 bg-white/80 px-4 py-4">
                 <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(120px,150px))] justify-start">
-                <ActionCard
-                icon={Ticket}
-                label="Take leave"
-                description="Release reserved seats for specific days."
-                iconClassName={isSubscribed ? "text-primary-600" : "text-gray-400"}
-                onClick={handleTakeLeave}
-                disabled={!isSubscribed}
-                title={!isSubscribed ? "Subscribe first" : ""}
-                />
+                <div className={isOnLeave ? 'opacity-70' : ''}>
+                  <ActionCard
+                    icon={Ticket}
+                    label="Take leave"
+                    description={isOnLeave ? 'You are on leave for the selected period.' : 'Release reserved seats for specific days.'}
+                    iconClassName={isOnLeave ? 'text-gray-400' : isSubscribed ? 'text-primary-600' : 'text-gray-400'}
+                    onClick={handleTakeLeave}
+                    disabled={!isSubscribed}
+                    title={!isSubscribed ? 'Subscribe first' : isOnLeave ? 'You are already on a leave' : ''}
+                  />
+                </div>
 
                 <ActionCard
                 icon={Ticket}
@@ -285,6 +405,110 @@ export default function DashboardPage() {
             subscription={subscriptionDetails}
             loading={detailsLoading}
         />
+
+        {leaveModalOpen && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+            <div className={`bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6 ${leaveSuccessView ? 'animate-in zoom-in-95 duration-300' : ''}`}>
+              {leaveSuccessView ? (
+                <div className="text-center py-4">
+                  <div className="mx-auto w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4 animate-in zoom-in duration-500">
+                    <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-1">Leave confirmed</h3>
+                  <p className="text-gray-600 text-sm mb-2">
+                    Your leave has been recorded for{' '}
+                    {leaveSuccessPeriod && `${formatLeaveDate(leaveSuccessPeriod.from_date)} – ${formatLeaveDate(leaveSuccessPeriod.to_date)}`}.
+                  </p>
+                  <p className="text-gray-500 text-xs mb-6">Your reserved seat will be released for others on those dates.</p>
+                  <Button onClick={() => { setLeaveModalOpen(false); setLeaveSuccessView(false); setLeaveSuccessPeriod(null); }}>
+                    Back to dashboard
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <h3 className="text-lg font-bold mb-2">Take leave</h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Release your reserved seat for 1 day up to 4 months. Others can buy tokens for those dates.
+                  </p>
+                  {leaveError && (
+                    <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                      {leaveError}
+                    </div>
+                  )}
+                  <form onSubmit={handleLeaveSubmit} className="space-y-3 mb-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">From date</label>
+                      <input
+                        type="date"
+                        value={leaveForm.from_date}
+                        onChange={(e) => setLeaveForm({ ...leaveForm, from_date: e.target.value })}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">To date</label>
+                      <input
+                        type="date"
+                        value={leaveForm.to_date}
+                        onChange={(e) => setLeaveForm({ ...leaveForm, to_date: e.target.value })}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Reason (optional)</label>
+                      <input
+                        type="text"
+                        value={leaveForm.reason}
+                        onChange={(e) => setLeaveForm({ ...leaveForm, reason: e.target.value })}
+                        placeholder="e.g. Vacation"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button type="submit" disabled={leaveSaving}>
+                        {leaveSaving ? 'Adding...' : 'Add leave'}
+                      </Button>
+                      <Button type="button" variant="secondary" onClick={() => setLeaveModalOpen(false)}>
+                        Close
+                      </Button>
+                    </div>
+                  </form>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Your leave periods</h4>
+                  {leavesLoading ? (
+                    <p className="text-sm text-gray-500">Loading...</p>
+                  ) : leaves.length === 0 ? (
+                    <p className="text-sm text-gray-500">No leave periods added yet.</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {leaves.map((leave) => (
+                        <li
+                          key={leave.id}
+                          className="flex justify-between items-center border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                        >
+                          <span>
+                            {String(leave.from_date).slice(0, 10)} – {String(leave.to_date).slice(0, 10)}
+                            {leave.reason ? ` (${leave.reason})` : ''}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteLeave(leave.id)}
+                            className="text-red-600 hover:underline"
+                          >
+                            Cancel
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </section>
       </div>
     </DashboardLayout>

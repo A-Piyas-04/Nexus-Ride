@@ -1,12 +1,24 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Bus, Ticket, Users } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { StatCard } from '../components/ui/StatCard';
 import { getTripsAvailability } from '../services/auth';
 import DashboardLayout from './dashboard/DashboardLayout';
+
+// Format date/time from backend (e.g. "2026-03-07", "07:30:00") for display
+function formatTripDate(value) {
+  if (value == null) return '—';
+  const s = String(value);
+  return s.slice(0, 10);
+}
+
+function formatTripTime(value) {
+  if (value == null) return '—';
+  const s = String(value);
+  return s.length >= 5 ? s.slice(0, 5) : s;
+}
 
 export default function SeatAvailabilityPage() {
   const navigate = useNavigate();
@@ -52,9 +64,9 @@ export default function SeatAvailabilityPage() {
       .map(([name, routeTrips]) => ({
         name,
         trips: routeTrips.sort((a, b) => {
-          const dateCompare = String(a.trip_date).localeCompare(String(b.trip_date));
+          const dateCompare = String(a.trip_date || '').localeCompare(String(b.trip_date || ''));
           if (dateCompare !== 0) return dateCompare;
-          return String(a.start_time).localeCompare(String(b.start_time));
+          return String(a.start_time || '').localeCompare(String(b.start_time || ''));
         }),
       }))
       .sort((a, b) => a.name.localeCompare(b.name));
@@ -116,9 +128,11 @@ export default function SeatAvailabilityPage() {
                           <tr className="text-left text-gray-500 border-b">
                             <th className="py-3 pr-4 font-medium">Date</th>
                             <th className="py-3 pr-4 font-medium">Time</th>
+                            <th className="py-3 pr-4 font-medium">Direction</th>
                             <th className="py-3 pr-4 font-medium">Status</th>
                             <th className="py-3 pr-4 font-medium">Vehicle</th>
                             <th className="py-3 pr-4 font-medium">Capacity</th>
+                            <th className="py-3 pr-4 font-medium">Booked</th>
                             <th className="py-3 pr-4 font-medium">Available</th>
                             <th className="py-3 pr-4 font-medium">Driver</th>
                           </tr>
@@ -126,8 +140,9 @@ export default function SeatAvailabilityPage() {
                         <tbody>
                           {route.trips.map((trip) => (
                             <tr key={trip.id} className="border-b last:border-none text-gray-700">
-                              <td className="py-3 pr-4">{trip.trip_date}</td>
-                              <td className="py-3 pr-4">{trip.start_time}</td>
+                              <td className="py-3 pr-4">{formatTripDate(trip.trip_date)}</td>
+                              <td className="py-3 pr-4">{formatTripTime(trip.start_time)}</td>
+                              <td className="py-3 pr-4">{trip.direction ?? '—'}</td>
                               <td className="py-3 pr-4">
                                 <span
                                   className={[
@@ -143,13 +158,14 @@ export default function SeatAvailabilityPage() {
                                 </span>
                               </td>
                               <td className="py-3 pr-4 font-semibold text-gray-900">
-                                {trip.vehicle_number}
+                                {trip.vehicle_number ?? '—'}
                               </td>
-                              <td className="py-3 pr-4">{trip.total_capacity}</td>
+                              <td className="py-3 pr-4">{trip.total_capacity ?? '—'}</td>
+                              <td className="py-3 pr-4">{trip.booked_seats ?? '—'}</td>
                               <td className="py-3 pr-4 font-semibold text-gray-900">
-                                {trip.available_seats}
+                                {trip.available_seats ?? '—'}
                               </td>
-                              <td className="py-3 pr-4">{trip.driver_name}</td>
+                              <td className="py-3 pr-4">{trip.driver_name ?? '—'}</td>
                             </tr>
                           ))}
                         </tbody>

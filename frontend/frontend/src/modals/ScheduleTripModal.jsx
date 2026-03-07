@@ -1,128 +1,114 @@
 import React from 'react';
-import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
 
-export default function ScheduleTripModal({ open, onClose, onSubmit, data, onChange, routes, vehicles, drivers }) {
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    onChange((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit();
-  };
-
-  const fieldClassName =
-    'flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent';
+export default function ScheduleTripModal({
+  open,
+  onClose,
+  onSubmit,
+  data,
+  onChange,
+  routes = [],
+  vehicles = [],
+  drivers = [],
+  error = '',
+  loading = false,
+}) {
+  if (!open) return null;
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title="Schedule Trip"
-      description="Create a new trip schedule"
-    >
-      <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Route</label>
-          <select
-            name="route_id"
-            className={fieldClassName}
-            value={data.route_id}
-            onChange={handleChange}
-            required
-          >
-            <option value="">Select Route</option>
-            {routes?.map((route) => (
-              <option key={route.id} value={route.id}>
-                {route.route_name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Direction</label>
-          <select
-            name="direction"
-            className={fieldClassName}
-            value={data.direction}
-            onChange={handleChange}
-          >
-            <option value="TO_IUT">To IUT</option>
-            <option value="FROM_IUT">From IUT</option>
-          </select>
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Vehicle</label>
-          <select
-            name="vehicle_id"
-            className={fieldClassName}
-            value={data.vehicle_id}
-            onChange={handleChange}
-            required
-          >
-            <option value="">Select Vehicle</option>
-            {vehicles?.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.vehicle_number} (Cap: {v.capacity})
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Driver</label>
-          <select
-            name="driver_profile_id"
-            className={fieldClassName}
-            value={data.driver_profile_id}
-            onChange={handleChange}
-            required
-          >
-            <option value="">Select Driver</option>
-            {drivers?.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.full_name} ({d.mobile_number})
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Date</label>
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto p-6">
+        <h3 className="text-lg font-bold mb-2">Schedule one-off trip</h3>
+        <p className="text-sm text-gray-600 mb-4">Create a single trip manually. For recurring schedule, use Trip Templates.</p>
+        {error && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+        <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Route</label>
+            <select
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              value={data.route_id || ''}
+              onChange={(e) => onChange({ ...data, route_id: e.target.value })}
+              required
+            >
+              <option value="">Select route</option>
+              {routes.map((r) => (
+                <option key={r.id} value={r.id}>{r.route_name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Vehicle</label>
+            <select
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              value={data.vehicle_id || ''}
+              onChange={(e) => onChange({ ...data, vehicle_id: e.target.value })}
+              required
+            >
+              <option value="">Select vehicle</option>
+              {vehicles.map((v) => (
+                <option key={v.id} value={v.id}>{v.vehicle_number}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Driver</label>
+            <select
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              value={data.driver_profile_id || ''}
+              onChange={(e) => onChange({ ...data, driver_profile_id: e.target.value })}
+              required
+            >
+              <option value="">Select driver</option>
+              {drivers.map((d) => (
+                <option key={d.id} value={d.id}>{d.full_name || d.id}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Direction</label>
+            <select
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              value={data.direction || 'FROM_IUT'}
+              onChange={(e) => onChange({ ...data, direction: e.target.value })}
+            >
+              <option value="FROM_IUT">FROM_IUT</option>
+              <option value="TO_IUT">TO_IUT</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
             <input
               type="date"
-              name="trip_date"
-              className={fieldClassName}
-              value={data.trip_date}
-              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              value={data.trip_date || ''}
+              onChange={(e) => onChange({ ...data, trip_date: e.target.value })}
               required
             />
           </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Time</label>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Start time</label>
             <input
               type="time"
-              name="start_time"
-              className={fieldClassName}
-              value={data.start_time}
-              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              value={data.start_time || '07:30'}
+              onChange={(e) => onChange({ ...data, start_time: e.target.value })}
               required
             />
           </div>
-        </div>
-
-        <div className="flex justify-end gap-3 mt-6">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit">Schedule</Button>
-        </div>
-      </form>
-    </Modal>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="secondary" onClick={onClose} disabled={loading}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Scheduling...' : 'Schedule'}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }

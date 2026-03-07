@@ -38,13 +38,22 @@ export default function DriverRequestsPage() {
     fetchDrivers();
   }, []);
 
-  const handleApprove = async (id) => {
+  const handleApprove = async (driver) => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) return;
+    const id = Number(driver.id);
+    if (Number.isNaN(id)) return;
     setProcessingId(id);
+    setError(null);
     try {
-      await approveDriver(id, token);
+      const result = await approveDriver(id, token);
       await fetchDrivers();
+      const mobile = result?.mobile_number || driver.mobile_number;
+      if (mobile) {
+        window.alert(`Driver approved. They can log in with mobile: ${mobile}`);
+      } else {
+        window.alert('Driver approved successfully.');
+      }
     } catch (err) {
       console.error('Failed to approve driver', err);
       setError('Failed to approve driver. Please try again.');
@@ -120,7 +129,7 @@ export default function DriverRequestsPage() {
                     <div className="flex-shrink-0">
                       <Button
                         size="sm"
-                        onClick={() => handleApprove(driver.id)}
+                        onClick={() => handleApprove(driver)}
                         isLoading={processingId === driver.id}
                         disabled={processingId !== null && processingId !== driver.id}
                       >
@@ -176,7 +185,7 @@ export default function DriverRequestsPage() {
                   <CardFooter className="pt-4">
                     <Button
                       className="w-full"
-                      onClick={() => handleApprove(driver.id)}
+                      onClick={() => handleApprove(driver)}
                       isLoading={processingId === driver.id}
                       disabled={processingId !== null && processingId !== driver.id}
                     >
