@@ -19,6 +19,8 @@ function formatTime(str) {
   const s = String(str);
   return s.length >= 5 ? s.slice(0, 5) : s;
 }
+import { getMyDriverProfile } from '../../services/auth';
+import AssignedVehiclesModal from '../../modals/assigned_vehicles';
 
 export default function DriverDashboard() {
   const navigate = useNavigate();
@@ -29,6 +31,9 @@ export default function DriverDashboard() {
   const [actionId, setActionId] = useState(null);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const [openAssigned, setOpenAssigned] = useState(false);
+  
+  const token = localStorage.getItem('token');
 
   const navLinks = [
     { name: 'Overview', targetId: 'driver-dashboard-overview' },
@@ -242,12 +247,70 @@ export default function DriverDashboard() {
                 </div>
               )}
             </div>
+          {/* Actions Section */}
+          <div id="driver-dashboard-actions" className="scroll-mt-24">
+            {loading ? (
+              <div className="text-sm text-gray-600">Loading...</div>
+            ) : (
+              <div className="space-y-3">
+                <h2 className="text-xl font-bold text-gray-900">Driver actions</h2>
+                <div className="rounded-2xl border border-gray-200 bg-white/80 px-4 py-4">
+                  <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(120px,150px))] justify-start">
+                    <ActionCard
+                      icon={Bus}
+                      label="SEE ASSIGNED VEHICLES"
+                      description="View vehicles assigned to you."
+                      iconClassName={disabled ? 'text-gray-400' : 'text-primary-600'}
+                      onClick={() => setOpenAssigned(true)}
+                      disabled={disabled}
+                      title={disabled ? 'Pending approval' : ''}
+                    />
+                    <ActionCard
+                      icon={Bus}
+                      label="VIEW ALL TRIPS"
+                      description="See all your assigned trips history."
+                      iconClassName={disabled ? 'text-gray-400' : 'text-primary-600'}
+                      onClick={() => navigate('/driver/all-trips')}
+                      disabled={disabled}
+                      title={disabled ? 'Pending approval' : ''}
+                    />
+                    <ActionCard
+                      icon={Users}
+                      label="SEE PASSENGER LIST"
+                      description="See passengers on your upcoming trips."
+                      iconClassName={disabled ? 'text-gray-400' : 'text-primary-600'}
+                      onClick={() => window.alert('Passenger list')}
+                      disabled={disabled}
+                      title={disabled ? 'Pending approval' : ''}
+                    />
+                    <ActionCard
+                      icon={CalendarDays}
+                      label="TAKE LEAVE"
+                      description="Request leave for specific days."
+                      iconClassName={disabled ? 'text-gray-400' : 'text-primary-600'}
+                      onClick={() => window.alert('Take leave')}
+                      disabled={disabled}
+                      title={disabled ? 'Pending approval' : ''}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
             <div>
               <Button variant="secondary" onClick={() => navigate(-1)}>Back</Button>
             </div>
           </div>
         </section>
+          <div>
+            <Button variant="secondary" onClick={() => navigate(-1)}>
+              Back
+            </Button>
+          </div>
+      </div>
+      <AssignedVehiclesModal open={openAssigned} onClose={() => setOpenAssigned(false)} />
+      </section>
       </div>
     </DashboardLayout>
   );
