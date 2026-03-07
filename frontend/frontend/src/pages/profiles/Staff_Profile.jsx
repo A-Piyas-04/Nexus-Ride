@@ -10,6 +10,7 @@ import { Label } from '../../components/ui/Label';
 import { getStaffProfile, updateStaffProfile } from '../../services/staff';
 import { getRoutes } from '../../services/transport';
 import { getMe } from '../../services/auth';
+import { uploadProfilePicture, getProfilePictureUrl } from '../../services/profile';
 import defaultProfile from '../../assets/profile.png';
 
 const Staff_Profile = () => {
@@ -18,6 +19,7 @@ const Staff_Profile = () => {
   const [routes, setRoutes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     full_name: '',
@@ -48,6 +50,10 @@ const Staff_Profile = () => {
       setProfile(profileData);
       setRoutes(routesData);
       setUser(userData);
+
+      if (profileData.has_profile_picture) {
+        setAvatarPreview(getProfilePictureUrl(profileData.user_id));
+      }
       
       // Initialize form data
       setFormData({
@@ -104,7 +110,7 @@ const Staff_Profile = () => {
     }));
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -118,9 +124,25 @@ const Staff_Profile = () => {
       return;
     }
 
-    const objectUrl = URL.createObjectURL(file);
-    setAvatarPreview(objectUrl);
-    setError(null);
+    try {
+      setUploadingPhoto(true);
+      setError(null);
+      
+      await uploadProfilePicture(file);
+      
+      // Update preview immediately
+      const objectUrl = URL.createObjectURL(file);
+      setAvatarPreview(objectUrl);
+      setSuccessMessage('Profile picture updated successfully');
+      
+      // Refresh profile data to ensure sync
+      await fetchData();
+    } catch (err) {
+      console.error('Error uploading profile picture:', err);
+      setError('Failed to upload profile picture');
+    } finally {
+      setUploadingPhoto(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -185,18 +207,24 @@ const Staff_Profile = () => {
               
               {/* Avatar */}
               <div className="relative group">
-                <div className="h-28 w-28 rounded-full border-4 border-white bg-gray-200 shadow-md overflow-hidden flex items-center justify-center">
+                <div className="h-28 w-28 rounded-full border-4 border-white bg-gray-200 shadow-md overflow-hidden flex items-center justify-center relative">
                   <img 
                     src={avatarPreview || defaultProfile} 
                     alt="Profile" 
-                    className="h-full w-full object-cover" 
+                    className={`h-full w-full object-cover ${uploadingPhoto ? 'opacity-50' : ''}`} 
                   />
+                  {uploadingPhoto && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Loader2 className="h-8 w-8 text-primary-600 animate-spin" />
+                    </div>
+                  )}
                 </div>
 
-                {/* Image Upload Overlay (Only visible locally for now as requested) */}
+                {/* Image Upload Overlay */}
                 <button 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer border-4 border-transparent"
+                  onClick={() => !uploadingPhoto && fileInputRef.current?.click()}
+                  disabled={uploadingPhoto}
+                  className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer border-4 border-transparent disabled:cursor-not-allowed"
                 >
                   <Camera className="h-8 w-8 text-white" />
                 </button>
@@ -206,6 +234,7 @@ const Staff_Profile = () => {
                   className="hidden" 
                   accept="image/*"
                   onChange={handleFileChange}
+                  disabled={uploadingPhoto}
                 />
               </div>
 
