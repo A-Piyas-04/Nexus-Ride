@@ -33,6 +33,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import VehicleList from './pages/to-pages/vehicle-manage/vehicleList';
 import VehicleAdd from './pages/to-pages/vehicle-manage/vehicleAdd';
 import DriverList from './pages/to-pages/driver-manage/driverList';
+import TripTemplateList from './pages/to-pages/trip-templates/tripTemplateList';
 import { NavigationControls } from './components/ui/NavigationControls';
 import PaymentStartPage from './pages/payment/PaymentStartPage';
 import PaymentPage from './pages/payment/PaymentPage';
@@ -148,6 +149,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute requiredRoles={[1, 3]}>
               <DriverList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/to-pages/trip-templates/tripTemplateList"
+          element={
+            <ProtectedRoute requiredRoles={[1, 3]}>
+              <TripTemplateList />
             </ProtectedRoute>
           }
         />

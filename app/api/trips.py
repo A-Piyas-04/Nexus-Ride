@@ -10,7 +10,7 @@ from app.models.vehicle import Vehicle
 from app.models.route import Route
 from app.models.profile import DriverProfile
 from app.models.seat_allocation import SeatAllocation
-from app.schemas.trip import TripAvailabilityRead
+from app.schemas.trip import TripAvailabilityRead, TripForDriverRead
 from app.models.role import Role, UserRole
 from app.schemas.trip import TripCreate, TripRead
 from app.core.security import get_current_user
@@ -23,6 +23,33 @@ VALID_TRIP_TRANSITIONS = {
     "STARTED": ["COMPLETED"],
     "COMPLETED": []
 }
+
+@router.get("/my", response_model=list[TripForDriverRead])
+def get_my_trips(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Return trips assigned to the current driver (trip_date >= today)."""
+    driver_profile = session.exec(
+        select(DriverProfile).where(DriverProfile.user_id == current_user.id)
+    ).first()
+    if not driver_profile:
+        raise HTTPException(status_code=403, detail="Not a driver")
+    stmt = (
+        select(Trip, Route.route_name)
+        .join(Route, Trip.route_id == Route.id)
+        .where(
+            Trip.driver_profile_id == driver_profile.id,
+            Trip.trip_date >= date.today(),
+        )
+        .order_by(Trip.trip_date, Trip.start_time)
+    )
+    rows = session.exec(stmt).all()
+    return [
+        TripForDriverRead(**trip.dict(), route_name=route_name)
+        for trip, route_name in rows
+    ]
+
 
 @router.get("/availability", response_model=list[TripAvailabilityRead])
 def get_trips_availability(

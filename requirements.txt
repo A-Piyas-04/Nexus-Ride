@@ -10,4 +10,5 @@ authlib
 httpx
 email-validator
 python-dotenv
+apscheduler
 

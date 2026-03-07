@@ -1,216 +1,126 @@
-/*
-
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import DashboardLayout from './DashboardLayout';
-import { Navbar } from '../../components/Navbar';
 import { Button } from '../../components/ui/Button';
-import { WelcomeBanner } from '../../components/ui/WelcomeBanner';
-import { ActionCard } from '../../components/ui/ActionCard';
-import { Bus, Users, CalendarDays } from 'lucide-react';
-import { getMyDriverProfile } from '../../services/auth';
+import { getMyTrips, startTrip, completeTrip } from '../../services/auth';
 
-export default function DriverDashboard() {
-  const navigate = useNavigate();
-  const [status, setStatus] = useState(0);
-  const [loading, setLoading] = useState(true);
-
-  const navLinks = [
-    { name: 'Overview', targetId: 'driver-dashboard-overview' },
-    { name: 'Actions', targetId: 'driver-dashboard-actions' },
-  ];
-
-  useEffect(() => {
-    const fetchStatus = async () => {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-      try {
-        const profile = await getMyDriverProfile(token);
-        setStatus(profile?.driver_status || 0);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchStatus();
-  }, []);
-
-  useEffect(() => {
-    let intervalId;
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    const checkApproval = async () => {
-      if (!token) return;
-      try {
-        const profile = await getMyDriverProfile(token);
-        const s = profile?.driver_status || 0;
-        setStatus(s);
-        if (s === 1 && intervalId) {
-          clearInterval(intervalId);
-          intervalId = null;
-        }
-      } catch (error) {
-        console.error('Failed to check approval status:', error);
-      }
-    };
-    if (status !== 1) {
-      intervalId = window.setInterval(checkApproval, 5000);
-    }
-    const onVisibility = () => {
-      if (document.visibilityState === 'visible') checkApproval();
-    };
-    document.addEventListener('visibilitychange', onVisibility);
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-      document.removeEventListener('visibilitychange', onVisibility);
-    };
-  }, [status]);
-
-  const disabled = status !== 1;
-
-  return (
-    <DashboardLayout>
-      <Navbar links={navLinks} />
-      <div className="pl-4 md:pl-32">
-      <section className="w-full px-4 py-8 md:px-8 md:py-10">
-        <div className="w-full max-w-6xl space-y-8">
-          <div id="driver-dashboard-overview" className="scroll-mt-24">
-            <WelcomeBanner>
-              {disabled && !loading ? (
-                <div className="inline-block" title="Approval pending">
-                  <Button disabled>Pending Approval</Button>
-                </div>
-              ) : null}
-            </WelcomeBanner>
-          </div>
-
-          <div id="driver-dashboard-actions" className="scroll-mt-24">
-            {loading ? (
-              <div className="text-sm text-gray-600">Loading...</div>
-            ) : (
-              <div className="space-y-3">
-                <h2 className="text-xl font-bold text-gray-900">Driver actions</h2>
-                <div className="rounded-2xl border border-gray-200 bg-white/80 px-4 py-4">
-                  <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(120px,150px))] justify-start">
-                    <ActionCard
-                      icon={Bus}
-                      label="SEE ASSIGNED VEHICLES"
-                      description="View vehicles assigned to you."
-                      iconClassName={disabled ? 'text-gray-400' : 'text-primary-600'}
-                      onClick={() => window.alert('Assigned vehicles')}
-                      disabled={disabled}
-                      title={disabled ? 'Pending approval' : ''}
-                    />
-                    <ActionCard
-                      icon={Users}
-                      label="SEE PASSENGER LIST"
-                      description="See passengers on your upcoming trips."
-                      iconClassName={disabled ? 'text-gray-400' : 'text-primary-600'}
-                      onClick={() => window.alert('Passenger list')}
-                      disabled={disabled}
-                      title={disabled ? 'Pending approval' : ''}
-                    />
-                    <ActionCard
-                      icon={CalendarDays}
-                      label="TAKE LEAVE"
-                      description="Request leave for specific days."
-                      iconClassName={disabled ? 'text-gray-400' : 'text-primary-600'}
-                      onClick={() => window.alert('Take leave')}
-                      disabled={disabled}
-                      title={disabled ? 'Pending approval' : ''}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div>
-            <Button variant="secondary" onClick={() => navigate(-1)}>
-              Back
-            </Button>
-          </div>
-        </div>
-      </section>
-      </div>
-    </DashboardLayout>
-  );
+function formatDate(str) {
+  if (!str) return '—';
+  return String(str).slice(0, 10);
 }
-*/
 
-import React, { useEffect, useState } from 'react';
-import DashboardLayout from './DashboardLayout';
-import { Button } from '../../components/ui/Button';
-import axios from 'axios';
+function formatTime(str) {
+  if (!str) return '—';
+  const s = String(str);
+  return s.length >= 5 ? s.slice(0, 5) : s;
+}
 
 export default function DriverDashboard() {
   const [trips, setTrips] = useState([]);
-  const token = localStorage.getItem('token');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [actionId, setActionId] = useState(null);
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
   const fetchTrips = async () => {
-    const res = await axios.get('/api/driver/my-trips', {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    setTrips(res.data);
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const data = await getMyTrips(token);
+      setTrips(Array.isArray(data) ? data : []);
+    } catch {
+      setError('Failed to load your trips.');
+      setTrips([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     fetchTrips();
   }, []);
 
-  const handleStart = async (id) => {
-    await axios.patch(`/api/trips/${id}/start`, {}, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    fetchTrips();
+  const handleStart = async (trip) => {
+    if (!token || actionId) return;
+    setActionId(trip.id);
+    try {
+      await startTrip(trip.id, token);
+      await fetchTrips();
+    } catch {
+      setError('Failed to start trip.');
+    } finally {
+      setActionId(null);
+    }
   };
 
-  const handleComplete = async (id) => {
-    await axios.patch(`/api/trips/${id}/complete`, {}, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    fetchTrips();
+  const handleComplete = async (trip) => {
+    if (!token || actionId) return;
+    setActionId(trip.id);
+    try {
+      await completeTrip(trip.id, token);
+      await fetchTrips();
+    } catch {
+      setError('Failed to complete trip.');
+    } finally {
+      setActionId(null);
+    }
   };
 
   return (
     <DashboardLayout>
       <div className="pl-4 md:pl-32">
         <section className="px-6 py-8">
-          <h2 className="text-xl font-bold mb-4">Today's Trips</h2>
-
-          <div className="space-y-4">
-            {trips.map(trip => (
-              <div key={trip.id} className="border rounded-xl p-4 bg-white">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p><strong>{trip.route_name}</strong></p>
-                    <p>{trip.trip_date} | {trip.start_time}</p>
-                  </div>
-
-                  <div className="space-x-2">
-                    {trip.status === 'SCHEDULED' && (
-                      <Button onClick={() => handleStart(trip.id)}>
-                        Start
-                      </Button>
-                    )}
-
-                    {trip.status === 'STARTED' && (
-                      <Button onClick={() => handleComplete(trip.id)} variant="secondary">
-                        Complete
-                      </Button>
-                    )}
-
-                    {trip.status === 'COMPLETED' && (
-                      <span className="text-green-600 font-semibold">
-                        Completed
-                      </span>
-                    )}
+          <h2 className="text-xl font-bold mb-4">My assigned trips</h2>
+          {error && (
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+          {loading ? (
+            <p className="text-gray-500">Loading trips...</p>
+          ) : trips.length === 0 ? (
+            <p className="text-gray-600">No upcoming trips assigned to you.</p>
+          ) : (
+            <div className="space-y-4">
+              {trips.map((trip) => (
+                <div key={trip.id} className="border rounded-xl p-4 bg-white shadow-sm">
+                  <div className="flex flex-wrap justify-between items-center gap-3">
+                    <div>
+                      <p className="font-semibold text-gray-900">{trip.route_name || 'Route'}</p>
+                      <p className="text-sm text-gray-600">
+                        {formatDate(trip.trip_date)} · {formatTime(trip.start_time)} · {trip.direction}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {trip.status === 'SCHEDULED' && (
+                        <Button
+                          onClick={() => handleStart(trip)}
+                          disabled={actionId !== null}
+                        >
+                          Start trip
+                        </Button>
+                      )}
+                      {trip.status === 'STARTED' && (
+                        <Button
+                          variant="secondary"
+                          onClick={() => handleComplete(trip)}
+                          disabled={actionId !== null}
+                        >
+                          Complete trip
+                        </Button>
+                      )}
+                      {trip.status === 'COMPLETED' && (
+                        <span className="text-green-600 font-semibold">Completed</span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
       </div>
     </DashboardLayout>

@@ -139,6 +139,28 @@ export const getMyDriverProfile = async (token) => {
   return response.data;
 };
 
+// Driver: my assigned trips (for start/complete)
+export const getMyTrips = async (token) => {
+  const response = await api.get('/trips/my', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+};
+
+export const startTrip = async (tripId, token) => {
+  const response = await api.patch(`/trips/${tripId}/start`, {}, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+};
+
+export const completeTrip = async (tripId, token) => {
+  const response = await api.patch(`/trips/${tripId}/complete`, {}, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+};
+
 export const updateDriverProfile = async (data) => {
   const token = localStorage.getItem('token');
   const response = await api.put('/drivers/profile', data, {
