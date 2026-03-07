@@ -27,5 +27,5 @@ class TokenPurchasedHandler(NotificationHandler):
             message=f"You have successfully purchased a token.",
             event_type=self.event_type,
             reference_type="TOKEN",
-            reference_id=token_id
+            reference_id=str(token_id)
         )

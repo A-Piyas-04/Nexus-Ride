@@ -25,5 +25,5 @@ class SubscriptionApprovedHandler(NotificationHandler):
             message=f"Your subscription request #{subscription_id} has been approved.",
             event_type=self.event_type,
             reference_type="SUBSCRIPTION",
-            reference_id=subscription_id
+            reference_id=str(subscription_id)
         )

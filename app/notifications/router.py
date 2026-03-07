@@ -13,7 +13,7 @@ router = APIRouter()
 
 @router.get("/", response_model=List[NotificationResponse])
 def get_notifications(
-    skip: int = 0,
+    offset: int = 0,
     limit: int = 20,
     unread_only: bool = False,
     current_user: User = Depends(get_current_user),
@@ -25,7 +25,7 @@ def get_notifications(
     return service.get_user_notifications(
         session=session,
         user_id=current_user.id,
-        skip=skip,
+        offset=offset,
         limit=limit,
         unread_only=unread_only
     )

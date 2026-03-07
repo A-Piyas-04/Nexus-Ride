@@ -46,5 +46,5 @@ class TripAssignedHandler(NotificationHandler):
             message=f"You have been assigned a new transport request for {event_date}.",
             event_type=self.event_type,
             reference_type="TRANSPORT_REQUEST",
-            reference_id=trip_id
+            reference_id=str(trip_id)
         )

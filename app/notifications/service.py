@@ -1,7 +1,7 @@
 from sqlmodel import Session, select
 from uuid import UUID
 from typing import Optional, List
-from app.notifications.models import Notification
+from app.models.notification import Notification
 
 def create_notification(
     session: Session,
@@ -10,7 +10,7 @@ def create_notification(
     message: str,
     event_type: str,
     reference_type: str,
-    reference_id: Optional[UUID] = None
+    reference_id: Optional[str] = None
 ) -> Notification:
     notification = Notification(
         user_id=user_id,

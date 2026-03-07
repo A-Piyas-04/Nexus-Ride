@@ -38,11 +38,12 @@ export default function SubscriptionRequestsPage() {
     try {
       const token = localStorage.getItem('token');
       await approveSubscription(id, token);
-      // Remove the approved request from the list
+      // Remove locally first for immediate feedback
       setRequests((prev) => prev.filter((req) => req.id !== id));
+      // Then refresh to ensure sync
+      await fetchRequests();
     } catch (err) {
       console.error('Failed to approve subscription:', err);
-      // You might want to show a toast or error message here
     } finally {
       setProcessingId(null);
     }
@@ -56,8 +57,8 @@ export default function SubscriptionRequestsPage() {
     try {
       const token = localStorage.getItem('token');
       await declineSubscription(id, token);
-      // Remove the declined request from the list
       setRequests((prev) => prev.filter((req) => req.id !== id));
+      await fetchRequests();
     } catch (err) {
       console.error('Failed to decline subscription:', err);
     } finally {
