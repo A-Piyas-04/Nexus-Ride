@@ -104,6 +104,8 @@ app.include_router(token_router, prefix="/token", tags=["token"])
 app.include_router(trip_templates_router)
 
 from app.api.payment import router as payment_router
+from app.api.analytics import router as analytics_router
 app.include_router(payment_router)
+app.include_router(analytics_router, prefix="/analytics", tags=["analytics"])
 app.include_router(notifications_router, prefix="/notifications", tags=["notifications"])
 app.include_router(profile_picture_router)

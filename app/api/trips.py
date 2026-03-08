@@ -10,12 +10,13 @@ from app.models.vehicle import Vehicle
 from app.models.route import Route
 from app.models.profile import DriverProfile
 from app.models.seat_allocation import SeatAllocation
-from app.schemas.trip import TripAvailabilityRead, TripForDriverRead
+from app.schemas.trip import TripAvailabilityRead, TripForDriverRead, TripPassengerRead
 from app.models.role import Role, UserRole
 from app.schemas.trip import TripCreate, TripRead
 from app.core.security import get_current_user
 from app.models.user import User
-from app.services.subscription_reserved import count_subscription_reserved
+from app.models.route import RouteStop
+from app.services.subscription_reserved import count_subscription_reserved, get_subscription_passengers_for_route_date
 
 router = APIRouter()
 
@@ -202,4 +203,57 @@ def complete_trip(
     session.commit()
     session.refresh(trip)
 
-    return trip    
+    return trip
+
+
+@router.get("/{trip_id}/passengers", response_model=list[TripPassengerRead])
+def get_trip_passengers(
+    trip_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Return passenger list for a trip. Only the assigned driver can access."""
+    trip = session.get(Trip, trip_id)
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+    driver_profile = session.exec(
+        select(DriverProfile).where(DriverProfile.user_id == current_user.id)
+    ).first()
+    if not driver_profile or trip.driver_profile_id != driver_profile.id:
+        raise HTTPException(status_code=403, detail="Not assigned to this trip")
+
+    out: list[TripPassengerRead] = []
+
+    # 1. Passengers from SeatAllocation (TOKEN, GUEST)
+    stmt = (
+        select(SeatAllocation, User.full_name, User.email, RouteStop.stop_name)
+        .join(User, SeatAllocation.user_id == User.id)
+        .join(RouteStop, SeatAllocation.pickup_stop_id == RouteStop.id)
+        .where(SeatAllocation.trip_id == trip_id)
+    )
+    for alloc, full_name, email, stop_name in session.exec(stmt).all():
+        out.append(
+            TripPassengerRead(
+                user_id=alloc.user_id,
+                full_name=full_name or "—",
+                email=email,
+                seat_type=alloc.seat_type,
+                pickup_stop_name=stop_name or "—",
+            )
+        )
+
+    # 2. Subscribers (SUBSCRIPTION) for this route/date
+    for user_id, full_name, email, _pickup_stop_id, pickup_stop_name in get_subscription_passengers_for_route_date(
+        session, trip.route_id, trip.trip_date
+    ):
+        out.append(
+            TripPassengerRead(
+                user_id=user_id,
+                full_name=full_name,
+                email=email,
+                seat_type="SUBSCRIPTION",
+                pickup_stop_name=pickup_stop_name,
+            )
+        )
+
+    return out
