@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bus, Users, CalendarDays } from 'lucide-react';
+import { Bus, Users } from 'lucide-react';
 
 import DashboardLayout from './DashboardLayout';
 import { Navbar } from '../../components/Navbar';
@@ -230,15 +230,7 @@ export default function DriverDashboard() {
                         disabled={disabled}
                         title={disabled ? 'Pending approval' : ''}
                       />
-                      <ActionCard
-                        icon={CalendarDays}
-                        label="TAKE LEAVE"
-                        description="Request leave for specific days."
-                        iconClassName={disabled ? 'text-gray-400' : 'text-primary-600'}
-                        onClick={() => window.alert('Take leave')}
-                        disabled={disabled}
-                        title={disabled ? 'Pending approval' : ''}
-                      />
+
                     </div>
                   </div>
                 </div>

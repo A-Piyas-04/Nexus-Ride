@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
@@ -13,19 +13,19 @@ export default function UpdateLeaveModal({ open, onClose }) {
   const [editForm, setEditForm] = useState({ from_date: '', to_date: '' });
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
-  const loadLeaves = async () => {
+  const loadLeaves = useCallback(async () => {
     if (!token) return;
     setLoading(true);
     setError(null);
     try {
       const data = await getMyLeaves(token);
       setLeaves(Array.isArray(data) ? data : []);
-    } catch (e) {
+    } catch {
       setError('Failed to load leave periods');
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     if (open) {
@@ -33,7 +33,7 @@ export default function UpdateLeaveModal({ open, onClose }) {
       setEditForm({ from_date: '', to_date: '' });
       loadLeaves();
     }
-  }, [open]);
+  }, [open, loadLeaves]);
 
   const beginEdit = (leave) => {
     setEditingId(leave.id);

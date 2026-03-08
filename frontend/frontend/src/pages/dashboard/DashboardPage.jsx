@@ -10,7 +10,7 @@ import { useCurrentUser } from '../../hooks/useCurrentUser';
 import SubscriptionModal from '../../modals/SubscriptionModal';
 import SubscriptionDetailsModal from '../../modals/SubscriptionDetailsModal';
 import PickupChangeModal from '../../modals/PickupChangeModal';
-import { createSubscription, getSubscription, createLeave, getMyLeaves, deleteLeave } from '../../services/auth';
+import { createSubscription, getSubscription, createLeave, getMyLeaves } from '../../services/auth';
 import { Navbar } from '../../components/Navbar';
 import DashboardLayout from './DashboardLayout';
 import UpdateLeaveModal from '../../modals/update_leave';
@@ -33,7 +33,6 @@ export default function DashboardPage() {
   const [leaveForm, setLeaveForm] = useState({ from_date: '', to_date: '', reason: '' });
   const [leaveError, setLeaveError] = useState('');
   const [leaveSaving, setLeaveSaving] = useState(false);
-  const [leavesLoading, setLeavesLoading] = useState(false);
   const [leaveSuccessView, setLeaveSuccessView] = useState(false);
   const [leaveSuccessPeriod, setLeaveSuccessPeriod] = useState(null);
 
@@ -89,11 +88,9 @@ export default function DashboardPage() {
     if (subscriptionStatus === 'ACTIVE') {
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       if (!token) return;
-      setLeavesLoading(true);
       getMyLeaves(token)
         .then((data) => setLeaves(Array.isArray(data) ? data : []))
-        .catch(() => setLeaves([]))
-        .finally(() => setLeavesLoading(false));
+        .catch(() => setLeaves([]));
     }
   }, [subscriptionStatus]);
 
@@ -121,14 +118,11 @@ export default function DashboardPage() {
   const loadLeaves = async () => {
     const token = localStorage.getItem('token');
     if (!token) return;
-    setLeavesLoading(true);
     try {
       const data = await getMyLeaves(token);
       setLeaves(Array.isArray(data) ? data : []);
     } catch {
       setLeaves([]);
-    } finally {
-      setLeavesLoading(false);
     }
   };
 
@@ -207,17 +201,6 @@ export default function DashboardPage() {
       setLeaveError(typeof msg === 'string' ? msg : JSON.stringify(msg));
     } finally {
       setLeaveSaving(false);
-    }
-  };
-
-  const handleDeleteLeave = async (leaveId) => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-    try {
-      await deleteLeave(leaveId, token);
-      loadLeaves();
-    } catch {
-      window.alert('Failed to cancel leave');
     }
   };
 
