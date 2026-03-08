@@ -195,6 +195,14 @@ export const completeTrip = async (tripId, token) => {
   return response.data;
 };
 
+/** Get passenger list for a trip (driver only). */
+export const getTripPassengers = async (tripId, token) => {
+  const response = await api.get(`/trips/${tripId}/passengers`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+};
+
 export const updateDriverProfile = async (data) => {
   const token = localStorage.getItem('token');
   const response = await api.put('/drivers/profile', data, {

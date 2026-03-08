@@ -1,6 +1,7 @@
 from sqlmodel import SQLModel
 from uuid import UUID
 from datetime import date, time
+from typing import Optional
 
 
 
@@ -34,3 +35,12 @@ class TripAvailabilityRead(TripRead):
 class TripForDriverRead(TripRead):
     """Trip with route_name for driver 'my trips' list."""
     route_name: str
+
+
+class TripPassengerRead(SQLModel):
+    """Single passenger row for driver trip passenger list."""
+    user_id: UUID
+    full_name: str
+    email: Optional[str] = None
+    seat_type: str  # SUBSCRIPTION | TOKEN | GUEST
+    pickup_stop_name: str
