@@ -1,3 +1,4 @@
+import logging
 from typing import List, Optional
 from uuid import UUID
 from datetime import datetime
@@ -20,6 +21,7 @@ from app.schemas.transport_request import (
     DriverOption
 )
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/transport-requests", tags=["transport-requests"])
 
 # Helper to check role
@@ -185,13 +187,6 @@ def update_status(
     
     session.commit()
     session.refresh(request)
-    
-    # Emit notification
-    try:
-        from app.notifications.event_bus import event_bus
-        event_bus.emit("TRIP_ASSIGNED", request, session)
-    except Exception as e:
-        print(f"Failed to emit notification: {e}")
 
     return request
 
@@ -272,4 +267,12 @@ def assign_request(
     
     session.commit()
     session.refresh(request)
+
+    # Emit notification so the assigned driver receives a notification
+    try:
+        from app.notifications.event_bus import event_bus
+        event_bus.emit("TRIP_ASSIGNED", request, session)
+    except Exception as e:
+        logger.exception("Failed to emit notification: %s", e)
+
     return request

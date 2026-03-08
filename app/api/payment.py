@@ -1,3 +1,4 @@
+import logging
 from typing import List, Optional
 from uuid import UUID
 from datetime import datetime
@@ -19,6 +20,7 @@ from app.models.subscription import Subscription
 from app.schemas.payment import PaymentInitiateRequest, PaymentConfirmRequest, PaymentRead
 from app.services.subscription_reserved import count_subscription_reserved
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/payments", tags=["payments"])
 
 # Helper to check role
@@ -283,16 +285,17 @@ def confirm_payment(
         if payment.status == PaymentStatus.SUCCESS:
             if payment.reference_type == PaymentType.TOKEN:
                 create_token_from_payment(payment, session)
-                # Emit token purchased event
+                # Emit token purchased event (Token.id is int, not UUID)
                 try:
-                    # We need to get the token ID from payment reference
-                    # create_token_from_payment sets payment.reference_id
-                    token_id = UUID(payment.reference_id)
-                    token = session.get(Token, token_id)
-                    if token:
-                        event_bus.emit("TOKEN_PURCHASED", token, session)
+                    if payment.reference_id:
+                        token_id = int(payment.reference_id)
+                        token = session.get(Token, token_id)
+                        if token:
+                            event_bus.emit("TOKEN_PURCHASED", token, session)
+                except (ValueError, TypeError) as e:
+                    logger.warning("Could not parse token id from payment.reference_id=%s: %s", payment.reference_id, e)
                 except Exception as e:
-                    print(f"Failed to emit notification: {e}")
+                    logger.exception("Failed to emit notification: %s", e)
             elif payment.reference_type == PaymentType.SUBSCRIPTION:
                 activate_subscription_from_payment(payment, session)
             

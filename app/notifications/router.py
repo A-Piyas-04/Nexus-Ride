@@ -25,10 +25,24 @@ def get_notifications(
     return service.get_user_notifications(
         session=session,
         user_id=current_user.id,
-        offset=offset,
+        skip=offset,
         limit=limit,
         unread_only=unread_only
     )
+
+@router.patch("/read-all", response_model=dict)
+def mark_all_notifications_as_read(
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """
+    Mark all notifications for the current user as read.
+    """
+    count = service.mark_all_as_read(
+        session=session,
+        user_id=current_user.id
+    )
+    return {"message": "All notifications marked as read", "count": count}
 
 @router.patch("/{notification_id}/read", response_model=NotificationResponse)
 def mark_notification_as_read(
@@ -47,20 +61,6 @@ def mark_notification_as_read(
     if not notification:
         raise HTTPException(status_code=404, detail="Notification not found")
     return notification
-
-@router.patch("/read-all", response_model=dict)
-def mark_all_notifications_as_read(
-    current_user: User = Depends(get_current_user),
-    session: Session = Depends(get_session)
-):
-    """
-    Mark all notifications for the current user as read.
-    """
-    count = service.mark_all_as_read(
-        session=session,
-        user_id=current_user.id
-    )
-    return {"message": "All notifications marked as read", "count": count}
 
 @router.delete("/{notification_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_notification(

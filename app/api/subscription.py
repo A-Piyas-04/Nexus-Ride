@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 from datetime import date
@@ -18,6 +19,7 @@ from app.schemas.subscription_override import SubscriptionPickupOverrideCreate, 
 from uuid import uuid4
 from app.core.security import get_current_user
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/subscription", tags=["subscription"])
 
 
@@ -365,7 +367,7 @@ def approve_subscription(
         from app.notifications.event_bus import event_bus
         event_bus.emit("SUBSCRIPTION_APPROVED", subscription, session)
     except Exception as e:
-        print(f"Failed to emit notification: {e}")
+        logger.exception("Failed to emit notification: %s", e)
     
     stop = session.exec(
         select(RouteStop).where(RouteStop.stop_name == subscription.stop_name)
