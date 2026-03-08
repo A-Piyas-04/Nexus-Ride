@@ -226,7 +226,7 @@ export default function DriverDashboard() {
                         label="SEE PASSENGER LIST"
                         description="See passengers on your upcoming trips."
                         iconClassName={disabled ? 'text-gray-400' : 'text-primary-600'}
-                        onClick={() => window.alert('Passenger list')}
+                        onClick={() => navigate('/driver/passenger-list')}
                         disabled={disabled}
                         title={disabled ? 'Pending approval' : ''}
                       />
