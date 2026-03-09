@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { History, Ticket, XCircle, User, Briefcase, Car } from 'lucide-react';
 import axios from 'axios';
@@ -10,9 +10,34 @@ import { useCurrentUser } from '../../hooks/useCurrentUser';
 import SubscriptionModal from '../../modals/SubscriptionModal';
 import SubscriptionDetailsModal from '../../modals/SubscriptionDetailsModal';
 import PickupChangeModal from '../../modals/PickupChangeModal';
-import { createSubscription, getSubscription, createLeave, getMyLeaves, deleteLeave } from '../../services/auth';
+import { createSubscription, getSubscription, createLeave, getMyLeaves, deleteLeave, getTripTracking } from '../../services/auth';
 import { Navbar } from '../../components/Navbar';
 import DashboardLayout from './DashboardLayout';
+
+function normalizeIsoToUtc(s) {
+  if (!s) return s;
+  const str = String(s);
+  // If timezone is already present (Z or +hh:mm / -hh:mm), keep as is
+  if (/[zZ]$/.test(str) || /[+-]\d{2}:\d{2}$/.test(str)) return str;
+  return `${str}Z`;
+}
+
+function timeAgo(isoString, nowMs) {
+  if (!isoString) return '—';
+  const ts = new Date(normalizeIsoToUtc(isoString)).getTime();
+  if (Number.isNaN(ts)) return '—';
+  const diffMs = Math.max(0, nowMs - ts);
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'just now';
+  if (mins === 1) return '1 minute ago';
+  if (mins < 60) return `${mins} minutes ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs === 1) return '1 hour ago';
+  if (hrs < 24) return `${hrs} hours ago`;
+  const days = Math.floor(hrs / 24);
+  if (days === 1) return '1 day ago';
+  return `${days} days ago`;
+}
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -35,8 +60,14 @@ export default function DashboardPage() {
   const [leaveSuccessView, setLeaveSuccessView] = useState(false);
   const [leaveSuccessPeriod, setLeaveSuccessPeriod] = useState(null);
 
+  const [tracking, setTracking] = useState([]);
+  const [trackingLoading, setTrackingLoading] = useState(false);
+  const [trackingError, setTrackingError] = useState('');
+  const [nowMs, setNowMs] = useState(() => Date.now());
+
   const navLinks = [
     { name: 'Overview', targetId: 'dashboard-welcome' },
+    { name: 'Tracking', targetId: 'dashboard-tracking' },
     { name: 'Subscription', targetId: 'dashboard-subscription' },
     { name: 'Services', targetId: 'dashboard-services' },
   ];
@@ -94,6 +125,102 @@ export default function DashboardPage() {
         .finally(() => setLeavesLoading(false));
     }
   }, [subscriptionStatus]);
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNowMs(Date.now()), 60000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const fetchTracking = useCallback(async (token, { silent = false } = {}) => {
+    if (!token) return;
+    if (!silent) setTrackingLoading(true);
+    setTrackingError('');
+    try {
+      const data = await getTripTracking(token);
+      setTracking(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setTrackingError(err.response?.data?.detail || 'Failed to load live tracking.');
+    } finally {
+      if (!silent) setTrackingLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token || userEmail === 'transportofficer@iut-dhaka.edu') return;
+
+    let cancelled = false;
+
+    fetchTracking(token);
+    const intervalId = window.setInterval(() => {
+      if (!cancelled) fetchTracking(token, { silent: true });
+    }, 30000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [userEmail, fetchTracking]);
+
+  useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token || userEmail === 'transportofficer@iut-dhaka.edu') return;
+
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    const controller = new AbortController();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let closed = false;
+    let debounceId = null;
+
+    const scheduleRefresh = () => {
+      if (debounceId) return;
+      debounceId = window.setTimeout(() => {
+        debounceId = null;
+        fetchTracking(token, { silent: true });
+      }, 300);
+    };
+
+    const run = async () => {
+      try {
+        const res = await fetch(`${baseUrl}/trips/tracking/stream`, {
+          method: 'GET',
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
+        });
+
+        if (!res.ok || !res.body) return;
+
+        const reader = res.body.getReader();
+        while (!closed) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const parts = buffer.split('\n');
+          buffer = parts.pop() || '';
+
+          for (const line of parts) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+            try {
+              const msg = JSON.parse(trimmed);
+              if (msg?.type === 'tracking_event') scheduleRefresh();
+            } catch {
+              // ignore malformed lines
+            }
+          }
+        }
+      } catch {
+        // streaming is best-effort; polling remains active as fallback
+      }
+    };
+
+    run();
+    return () => {
+      closed = true;
+      if (debounceId) window.clearTimeout(debounceId);
+      controller.abort();
+    };
+  }, [userEmail, fetchTracking]);
 
   const handleSeatAvailability = () => navigate('/seat-availability');
   const handleBuyToken = () => navigate('/buy-token');
@@ -335,6 +462,51 @@ export default function DashboardPage() {
                 title={!isSubscribed ? "Subscribe first" : ""}
                 />
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Live Tracking Section */}
+          <div id="dashboard-tracking" className="scroll-mt-24">
+            <div className="space-y-3">
+              <h2 className="text-xl font-bold text-gray-900">Live tracking</h2>
+              <div className="rounded-2xl border border-gray-200 bg-white/80 px-4 py-4">
+                {trackingLoading ? (
+                  <div className="text-sm text-gray-600">Loading live updates...</div>
+                ) : trackingError ? (
+                  <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{trackingError}</div>
+                ) : tracking.length === 0 ? (
+                  <div className="text-sm text-gray-600">No active trips to track right now.</div>
+                ) : (
+                  <div className="space-y-3">
+                    {tracking.map((t) => {
+                      const eventAt = t.last_event_at || t.started_at;
+                      const when = timeAgo(eventAt, nowMs);
+
+                      let statusLine = `Trip started ${when}.`;
+                      if (t.last_event_type === 'arrived' && t.last_stop_name) {
+                        statusLine = `Vehicle arrived at ${t.last_stop_name} ${when}.`;
+                      } else if (t.last_event_type === 'departed' && t.last_stop_name) {
+                        statusLine = `Started from ${t.last_stop_name} ${when}.`;
+                      }
+
+                      return (
+                        <div key={t.trip_id} className="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="font-semibold text-gray-900 truncate">{t.route_name || 'Route'}</div>
+                              <div className="text-xs text-gray-500">Direction: {t.direction}</div>
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {String(t.trip_date).slice(0, 10)} | {String(t.start_time).slice(0, 5)}
+                            </div>
+                          </div>
+                          <div className="mt-2 text-sm text-gray-700">{statusLine}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           </div>

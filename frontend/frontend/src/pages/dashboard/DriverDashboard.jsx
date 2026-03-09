@@ -7,7 +7,16 @@ import { Navbar } from '../../components/Navbar';
 import { Button } from '../../components/ui/Button';
 import { WelcomeBanner } from '../../components/ui/WelcomeBanner';
 import { ActionCard } from '../../components/ui/ActionCard';
-import { getMyDriverProfile, getMyTrips, startTrip, completeTrip } from '../../services/auth';
+import {
+  getMyDriverProfile,
+  getMyTrips,
+  startTrip,
+  completeTrip,
+  getRouteStops,
+  getTripProgress,
+  markStopArrived,
+  markStopDeparted,
+} from '../../services/auth';
 import AssignedVehiclesModal from '../../modals/assigned_vehicles';
 
 function formatDate(str) {
@@ -28,6 +37,11 @@ export default function DriverDashboard() {
   const [trips, setTrips] = useState([]);
   const [error, setError] = useState('');
   const [actionId, setActionId] = useState(null);
+  const [expandedTripId, setExpandedTripId] = useState(null);
+  const [stopsByRouteId, setStopsByRouteId] = useState({});
+  const [progressByTripId, setProgressByTripId] = useState({});
+  const [stopsLoadingTripId, setStopsLoadingTripId] = useState(null);
+  const [stopActionKey, setStopActionKey] = useState(null);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const [openAssigned, setOpenAssigned] = useState(false);
@@ -127,6 +141,64 @@ export default function DriverDashboard() {
     }
   };
 
+  const loadStopsAndProgress = useCallback(async (trip) => {
+    if (!token) return;
+    setStopsLoadingTripId(trip.id);
+    setError('');
+    try {
+      if (!stopsByRouteId[trip.route_id]) {
+        const stops = await getRouteStops(trip.route_id, token);
+        setStopsByRouteId((prev) => ({ ...prev, [trip.route_id]: Array.isArray(stops) ? stops : [] }));
+      }
+      const progress = await getTripProgress(trip.id, token);
+      setProgressByTripId((prev) => ({ ...prev, [trip.id]: Array.isArray(progress) ? progress : [] }));
+    } catch (err) {
+      console.error('Failed to load stops/progress', err);
+      setError(err.response?.data?.detail || 'Failed to load stops.');
+    } finally {
+      setStopsLoadingTripId(null);
+    }
+  }, [stopsByRouteId, token]);
+
+  const toggleStops = async (trip) => {
+    if (expandedTripId === trip.id) {
+      setExpandedTripId(null);
+      return;
+    }
+    setExpandedTripId(trip.id);
+    await loadStopsAndProgress(trip);
+  };
+
+  const handleArrived = async (trip, stop) => {
+    if (!token || stopActionKey) return;
+    setStopActionKey(`${trip.id}:${stop.id}:arrived`);
+    setError('');
+    try {
+      await markStopArrived(trip.id, stop.id, token);
+      const progress = await getTripProgress(trip.id, token);
+      setProgressByTripId((prev) => ({ ...prev, [trip.id]: Array.isArray(progress) ? progress : [] }));
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to mark arrived.');
+    } finally {
+      setStopActionKey(null);
+    }
+  };
+
+  const handleDeparted = async (trip, stop) => {
+    if (!token || stopActionKey) return;
+    setStopActionKey(`${trip.id}:${stop.id}:departed`);
+    setError('');
+    try {
+      await markStopDeparted(trip.id, stop.id, token);
+      const progress = await getTripProgress(trip.id, token);
+      setProgressByTripId((prev) => ({ ...prev, [trip.id]: Array.isArray(progress) ? progress : [] }));
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to mark departed.');
+    } finally {
+      setStopActionKey(null);
+    }
+  };
+
   const disabled = status != 1;
 
   return (
@@ -177,15 +249,71 @@ export default function DriverDashboard() {
                                   </Button>
                                 )}
                                 {trip.status === 'STARTED' && (
-                                  <Button variant="secondary" onClick={() => handleComplete(trip)} disabled={actionId !== null}>
-                                    Complete
-                                  </Button>
+                                  <>
+                                    <Button onClick={() => toggleStops(trip)} disabled={actionId !== null || stopsLoadingTripId === trip.id}>
+                                      {expandedTripId === trip.id ? 'Hide stops' : 'Stops'}
+                                    </Button>
+                                    <Button variant="secondary" onClick={() => handleComplete(trip)} disabled={actionId !== null}>
+                                      Complete
+                                    </Button>
+                                  </>
                                 )}
                                 {trip.status === 'COMPLETED' && (
                                   <span className="text-green-600 font-semibold px-3 py-1 bg-green-50 rounded-full">Completed</span>
                                 )}
                               </div>
                             </div>
+
+                            {trip.status === 'STARTED' && expandedTripId === trip.id && (
+                              <div className="mt-4 border-t pt-4">
+                                {stopsLoadingTripId === trip.id ? (
+                                  <div className="text-sm text-gray-600">Loading stops...</div>
+                                ) : (
+                                  <div className="space-y-2">
+                                    {(stopsByRouteId[trip.route_id] || []).map((stop) => {
+                                      const progressList = progressByTripId[trip.id] || [];
+                                      const p = progressList.find((x) => String(x.route_stop_id) === String(stop.id));
+                                      const departed = Boolean(p?.departed_at);
+                                      const arrived = Boolean(p?.arrived_at);
+
+                                      return (
+                                        <div key={stop.id} className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2">
+                                          <div className="min-w-0">
+                                            <div className="font-medium text-gray-900 truncate">{stop.stop_name}</div>
+                                            <div className="text-xs text-gray-500">
+                                              {departed ? 'Departed' : arrived ? 'Arrived' : 'Upcoming'}
+                                            </div>
+                                          </div>
+                                          <div className="flex gap-2">
+                                            {!arrived && (
+                                              <Button
+                                                variant="secondary"
+                                                onClick={() => handleArrived(trip, stop)}
+                                                disabled={Boolean(stopActionKey)}
+                                              >
+                                                Mark arrived
+                                              </Button>
+                                            )}
+                                            {arrived && !departed && (
+                                              <Button
+                                                variant="secondary"
+                                                onClick={() => handleDeparted(trip, stop)}
+                                                disabled={Boolean(stopActionKey)}
+                                              >
+                                                Start from here
+                                              </Button>
+                                            )}
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                    {(stopsByRouteId[trip.route_id] || []).length === 0 && (
+                                      <div className="text-sm text-gray-600">No stops configured for this route.</div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
