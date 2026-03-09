@@ -22,6 +22,7 @@ from app.schemas.trip import (
     TripPassengerRead,
     TripStopProgressRead,
     TripTrackingRead,
+    StopTrackingEntry,
 )
 from app.models.role import Role, UserRole
 from app.schemas.trip import TripCreate, TripRead
@@ -208,16 +209,40 @@ def get_trip_tracking(
     ).all()
 
     latest_event: dict[UUID, tuple[str, Optional[str], Optional[datetime]]] = {}
+    progress_by_trip_stop: dict[tuple[UUID, UUID], TripStopProgress] = {}
     for progress, stop_name in progress_rows:
         event_type = "departed" if progress.departed_at else "arrived"
         event_at = _as_utc(progress.departed_at or progress.arrived_at)
         current = latest_event.get(progress.trip_id)
         if not current or (current[2] is None) or (event_at and event_at > current[2]):
             latest_event[progress.trip_id] = (event_type, stop_name, event_at)
+        progress_by_trip_stop[(progress.trip_id, progress.route_stop_id)] = progress
 
     out: list[TripTrackingRead] = []
     for trip_id, (trip, route_name) in trip_by_id.items():
         started_at = _as_utc(trip.started_at)
+
+        # Build ordered stops with per-stop timestamps
+        route_stops = session.exec(
+            select(RouteStop)
+            .where(RouteStop.route_id == trip.route_id)
+            .order_by(RouteStop.sequence_number)
+        ).all()
+
+        stops: list[StopTrackingEntry] = []
+        for rs in route_stops:
+            p = progress_by_trip_stop.get((trip.id, rs.id))
+            arrived_at = _as_utc(p.arrived_at) if p and p.arrived_at else None
+            departed_at = _as_utc(p.departed_at) if p and p.departed_at else None
+            stops.append(
+                StopTrackingEntry(
+                    stop_name=rs.stop_name,
+                    sequence_number=rs.sequence_number,
+                    arrived_at=arrived_at,
+                    departed_at=departed_at,
+                )
+            )
+
         if trip_id in latest_event:
             event_type, stop_name, event_at = latest_event[trip_id]
             out.append(
@@ -231,6 +256,7 @@ def get_trip_tracking(
                     last_event_type=event_type,
                     last_stop_name=stop_name,
                     last_event_at=event_at,
+                    stops=stops,
                 )
             )
         else:
@@ -245,6 +271,7 @@ def get_trip_tracking(
                     last_event_type="started",
                     last_stop_name=None,
                     last_event_at=started_at,
+                    stops=stops,
                 )
             )
 
