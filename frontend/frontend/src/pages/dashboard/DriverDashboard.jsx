@@ -270,11 +270,17 @@ export default function DriverDashboard() {
                                   <div className="text-sm text-gray-600">Loading stops...</div>
                                 ) : (
                                   <div className="space-y-2">
-                                    {(stopsByRouteId[trip.route_id] || []).map((stop) => {
+                                    {(stopsByRouteId[trip.route_id] || []).map((stop, index, allStops) => {
                                       const progressList = progressByTripId[trip.id] || [];
                                       const p = progressList.find((x) => String(x.route_stop_id) === String(stop.id));
                                       const departed = Boolean(p?.departed_at);
                                       const arrived = Boolean(p?.arrived_at);
+
+                                      // Check if any subsequent stop is marked as arrived
+                                      const isFutureArrived = allStops.slice(index + 1).some((futureStop) => {
+                                        const fp = progressList.find((x) => String(x.route_stop_id) === String(futureStop.id));
+                                        return Boolean(fp?.arrived_at);
+                                      });
 
                                       return (
                                         <div key={stop.id} className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2">
@@ -289,7 +295,7 @@ export default function DriverDashboard() {
                                               <Button
                                                 variant="secondary"
                                                 onClick={() => handleArrived(trip, stop)}
-                                                disabled={Boolean(stopActionKey)}
+                                                disabled={Boolean(stopActionKey) || isFutureArrived}
                                               >
                                                 Mark arrived
                                               </Button>
@@ -298,7 +304,7 @@ export default function DriverDashboard() {
                                               <Button
                                                 variant="secondary"
                                                 onClick={() => handleDeparted(trip, stop)}
-                                                disabled={Boolean(stopActionKey)}
+                                                disabled={Boolean(stopActionKey) || isFutureArrived}
                                               >
                                                 Start from here
                                               </Button>

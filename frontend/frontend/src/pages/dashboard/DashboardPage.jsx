@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { History, Ticket, XCircle, User, Briefcase, Car } from 'lucide-react';
+import { History, Ticket, XCircle, User, Briefcase, Car, MapPin, ArrowRight } from 'lucide-react';
 import axios from 'axios';
 
 import { Button } from '../../components/ui/Button';
@@ -139,7 +139,7 @@ export default function DashboardPage() {
       const data = await getTripTracking(token);
       setTracking(Array.isArray(data) ? data : []);
     } catch (err) {
-      setTrackingError(err.response?.data?.detail || 'Failed to load live tracking.');
+      setTrackingError(err.response?.data?.detail || 'Failed to load tracking.');
     } finally {
       if (!silent) setTrackingLoading(false);
     }
@@ -426,6 +426,113 @@ export default function DashboardPage() {
             )}
           </div>
 
+          {/* Tracking Section */}
+          <div id="dashboard-tracking" className="scroll-mt-24">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-bold text-gray-900">Tracking</h2>
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                </span>
+              </div>
+              
+              <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                <div className="p-4 sm:p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-100">
+                   <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-blue-900">Active Trips</h3>
+                      <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                        {trackingLoading ? 'Updating...' : `${tracking.length} Active`}
+                      </span>
+                   </div>
+                </div>
+
+                <div className="p-4 sm:p-6">
+                  {trackingLoading && tracking.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8 text-gray-500">
+                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-2"></div>
+                       <p className="text-sm">Loading updates...</p>
+                    </div>
+                  ) : trackingError ? (
+                    <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 flex items-center gap-2">
+                      <XCircle className="h-4 w-4" />
+                      {trackingError}
+                    </div>
+                  ) : tracking.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <Car className="h-10 w-10 mx-auto text-gray-300 mb-2" />
+                      <p>No active trips to track right now.</p>
+                      <p className="text-xs text-gray-400 mt-1">Trips will appear here when they start.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {tracking.map((t) => {
+                        const eventAt = t.last_event_at || t.started_at;
+                        const when = timeAgo(eventAt, nowMs);
+
+                        let statusColor = "bg-blue-100 text-blue-800";
+                        let statusIcon = <Car className="h-4 w-4" />;
+                        let primaryText = "Trip Started";
+                        let secondaryText = when;
+                        let contextText = "";
+
+                        if (t.last_event_type === 'arrived' && t.last_stop_name) {
+                          primaryText = t.last_stop_name;
+                          secondaryText = when;
+                          contextText = "Arrived at";
+                          statusColor = "bg-green-100 text-green-800";
+                          statusIcon = <MapPin className="h-4 w-4" />;
+                        } else if (t.last_event_type === 'departed' && t.last_stop_name) {
+                          primaryText = t.last_stop_name;
+                          secondaryText = when;
+                          contextText = "Departed from";
+                          statusColor = "bg-amber-100 text-amber-800";
+                          statusIcon = <ArrowRight className="h-4 w-4" />;
+                        } else {
+                           // Trip started case
+                           primaryText = "Trip Started";
+                           secondaryText = when;
+                           contextText = "";
+                        }
+
+                        return (
+                          <div key={t.trip_id} className="relative rounded-xl border border-gray-100 bg-white p-4 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                              <div className="flex items-start gap-3">
+                                <div className={`p-2 rounded-lg ${statusColor}`}>
+                                  {statusIcon}
+                                </div>
+                                <div>
+                                  <h4 className="font-bold text-gray-900">{t.route_name || 'Route'}</h4>
+                                  <div className="flex items-center gap-2 text-sm text-gray-500 mt-0.5">
+                                    <span className="flex items-center gap-1">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                                      {t.direction}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="text-right">
+                                {contextText && <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-0.5">{contextText}</div>}
+                                <div className="text-2xl font-bold text-gray-900 leading-tight">
+                                  {primaryText}
+                                </div>
+                                <div className="text-lg font-bold text-primary-600 mt-0.5">
+                                  {secondaryText}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Subscription Section */}
           <div id="dashboard-subscription" className="scroll-mt-24">
             <div className="space-y-3">
@@ -478,50 +585,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Live Tracking Section */}
-          <div id="dashboard-tracking" className="scroll-mt-24">
-            <div className="space-y-3">
-              <h2 className="text-xl font-bold text-gray-900">Live tracking</h2>
-              <div className="rounded-2xl border border-gray-200 bg-white/80 px-4 py-4">
-                {trackingLoading ? (
-                  <div className="text-sm text-gray-600">Loading live updates...</div>
-                ) : trackingError ? (
-                  <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{trackingError}</div>
-                ) : tracking.length === 0 ? (
-                  <div className="text-sm text-gray-600">No active trips to track right now.</div>
-                ) : (
-                  <div className="space-y-3">
-                    {tracking.map((t) => {
-                      const eventAt = t.last_event_at || t.started_at;
-                      const when = timeAgo(eventAt, nowMs);
 
-                      let statusLine = `Trip started ${when}.`;
-                      if (t.last_event_type === 'arrived' && t.last_stop_name) {
-                        statusLine = `Vehicle arrived at ${t.last_stop_name} ${when}.`;
-                      } else if (t.last_event_type === 'departed' && t.last_stop_name) {
-                        statusLine = `Started from ${t.last_stop_name} ${when}.`;
-                      }
-
-                      return (
-                        <div key={t.trip_id} className="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <div className="min-w-0">
-                              <div className="font-semibold text-gray-900 truncate">{t.route_name || 'Route'}</div>
-                              <div className="text-xs text-gray-500">Direction: {t.direction}</div>
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {String(t.trip_date).slice(0, 10)} | {String(t.start_time).slice(0, 5)}
-                            </div>
-                          </div>
-                          <div className="mt-2 text-sm text-gray-700">{statusLine}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
 
           {/* Faculty Section - Only visible to FACULTY role */}
 
