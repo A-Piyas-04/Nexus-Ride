@@ -1,15 +1,14 @@
 from sqlmodel import SQLModel
 from uuid import UUID
 from datetime import date, time, datetime
-from typing import Optional
-
+from typing import Optional, List
 
 
 class TripBase(SQLModel):
     vehicle_id: UUID
     driver_profile_id: int
     route_id: UUID
-    direction: str   # ✅ Added
+    direction: str
     trip_date: date
     start_time: time
 
@@ -54,6 +53,13 @@ class TripStopProgressRead(SQLModel):
     departed_at: Optional[datetime] = None
 
 
+class StopTrackingEntry(SQLModel):
+    stop_name: str
+    sequence_number: int
+    arrived_at: Optional[datetime] = None
+    departed_at: Optional[datetime] = None
+
+
 class TripTrackingRead(SQLModel):
     trip_id: UUID
     route_name: str
@@ -64,3 +70,4 @@ class TripTrackingRead(SQLModel):
     last_event_type: str  # started | arrived | departed
     last_stop_name: Optional[str] = None
     last_event_at: Optional[datetime] = None
+    stops: List[StopTrackingEntry] = []

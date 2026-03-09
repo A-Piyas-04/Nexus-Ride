@@ -39,6 +39,13 @@ function timeAgo(isoString, nowMs) {
   return `${days} days ago`;
 }
 
+function formatTimeLocal(isoString) {
+  if (!isoString) return '';
+  const d = new Date(normalizeIsoToUtc(isoString));
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { userEmail } = useCurrentUser();
@@ -490,6 +497,8 @@ export default function DashboardPage() {
                         statusLine = `Started from ${t.last_stop_name} ${when}.`;
                       }
 
+                      const hasStops = Array.isArray(t.stops) && t.stops.length > 0;
+
                       return (
                         <div key={t.trip_id} className="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
                           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -502,6 +511,65 @@ export default function DashboardPage() {
                             </div>
                           </div>
                           <div className="mt-2 text-sm text-gray-700">{statusLine}</div>
+                          {hasStops && (
+                            <div className="mt-3">
+                              <div className="relative">
+                                <div className="absolute left-3 top-0 bottom-0 w-px bg-gray-200" />
+                                {t.stops
+                                  .slice()
+                                  .sort((a, b) => (a.sequence_number || 0) - (b.sequence_number || 0))
+                                  .map((stop, index, arr) => {
+                                    const prev = index > 0 ? arr[index - 1] : null;
+                                    const arrived = Boolean(stop.arrived_at);
+                                    const departed = Boolean(stop.departed_at);
+                                    const isCurrent =
+                                      t.last_event_type === 'arrived' && t.last_stop_name && t.last_stop_name === stop.stop_name;
+
+                                    let dotClass = 'border-gray-300 bg-white';
+                                    if (departed || isCurrent) {
+                                      dotClass = 'border-emerald-500 bg-emerald-500';
+                                    } else if (arrived) {
+                                      dotClass = 'border-emerald-500 bg-white';
+                                    }
+
+                                    const topActive = prev && prev.departed_at;
+                                    const bottomActive = departed;
+
+                                    return (
+                                      <div key={`${stop.sequence_number}-${stop.stop_name}`} className="relative flex items-start">
+                                        <div className="flex flex-col items-center mr-3">
+                                          {index > 0 && (
+                                            <div
+                                              className={`h-4 w-px ${topActive ? 'bg-emerald-500' : 'bg-gray-200'}`}
+                                            />
+                                          )}
+                                          <div
+                                            className={`h-3 w-3 rounded-full border-2 ${dotClass}`}
+                                            style={{ marginTop: index === 0 ? 0 : 0 }}
+                                          />
+                                          {index < arr.length - 1 && (
+                                            <div
+                                              className={`h-4 w-px ${bottomActive ? 'bg-emerald-500' : 'bg-gray-200'}`}
+                                            />
+                                          )}
+                                        </div>
+                                        <div className="pb-3">
+                                          <div className="text-sm font-medium text-gray-900">{stop.stop_name}</div>
+                                          <div className="text-xs text-gray-500 space-x-2">
+                                            {stop.arrived_at && (
+                                              <span>Arrived: {formatTimeLocal(stop.arrived_at)}</span>
+                                            )}
+                                            {stop.departed_at && (
+                                              <span>Departed: {formatTimeLocal(stop.departed_at)}</span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
