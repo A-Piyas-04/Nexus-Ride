@@ -64,3 +64,4 @@ class TripTrackingRead(SQLModel):
     last_event_type: str  # started | arrived | departed
     last_stop_name: Optional[str] = None
     last_event_at: Optional[datetime] = None
+    next_stop_name: Optional[str] = None

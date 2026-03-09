@@ -201,52 +201,120 @@ def get_trip_tracking(
     if not trip_by_id:
         return []
 
+    # Get progress for all relevant trips
     progress_rows = session.exec(
-        select(TripStopProgress, RouteStop.stop_name)
+        select(TripStopProgress, RouteStop.stop_name, RouteStop.sequence_number)
         .join(RouteStop, RouteStop.id == TripStopProgress.route_stop_id)
         .where(TripStopProgress.trip_id.in_(list(trip_by_id.keys())))
     ).all()
 
-    latest_event: dict[UUID, tuple[str, Optional[str], Optional[datetime]]] = {}
-    for progress, stop_name in progress_rows:
-        event_type = "departed" if progress.departed_at else "arrived"
-        event_at = _as_utc(progress.departed_at or progress.arrived_at)
-        current = latest_event.get(progress.trip_id)
-        if not current or (current[2] is None) or (event_at and event_at > current[2]):
-            latest_event[progress.trip_id] = (event_type, stop_name, event_at)
+    # Build progress map per trip
+    # trip_id -> list of (progress, stop_name, sequence_number)
+    progress_by_trip: dict[UUID, list] = {}
+    for progress, stop_name, seq in progress_rows:
+        if progress.trip_id not in progress_by_trip:
+            progress_by_trip[progress.trip_id] = []
+        progress_by_trip[progress.trip_id].append((progress, stop_name, seq))
+
+    # Also need all route stops to determine "next" stop
+    # This might be heavy if many routes. Optimizing: fetch only needed routes.
+    route_ids = {trip.route_id for trip, _ in trip_by_id.values()}
+    all_stops = session.exec(
+        select(RouteStop)
+        .where(RouteStop.route_id.in_(list(route_ids)))
+        .order_by(RouteStop.route_id, RouteStop.sequence_number)
+    ).all()
+
+    # map route_id -> list of RouteStop sorted by sequence
+    stops_by_route: dict[UUID, list[RouteStop]] = {}
+    for rs in all_stops:
+        if rs.route_id not in stops_by_route:
+            stops_by_route[rs.route_id] = []
+        stops_by_route[rs.route_id].append(rs)
 
     out: list[TripTrackingRead] = []
     for trip_id, (trip, route_name) in trip_by_id.items():
         started_at = _as_utc(trip.started_at)
-        if trip_id in latest_event:
-            event_type, stop_name, event_at = latest_event[trip_id]
-            out.append(
-                TripTrackingRead(
-                    trip_id=trip.id,
-                    route_name=route_name,
-                    direction=trip.direction,
-                    trip_date=trip.trip_date,
-                    start_time=trip.start_time,
-                    started_at=started_at,
-                    last_event_type=event_type,
-                    last_stop_name=stop_name,
-                    last_event_at=event_at,
-                )
-            )
+        
+        # Find latest event
+        trip_progress = progress_by_trip.get(trip_id, [])
+        
+        last_event_type = "started"
+        last_stop_name = None
+        last_event_at = started_at
+        last_stop_seq = -1
+
+        # Sort progress by event time to find latest
+        # Or simpler: iterate and find max time
+        for progress, stop_name, seq in trip_progress:
+            # Check departed
+            if progress.departed_at:
+                dt = _as_utc(progress.departed_at)
+                if not last_event_at or (dt and dt > last_event_at):
+                    last_event_at = dt
+                    last_event_type = "departed"
+                    last_stop_name = stop_name
+                    last_stop_seq = seq
+            # Check arrived (if not departed yet or arrived is later?? usually departed > arrived for same stop)
+            # Actually we just want the absolute latest timestamp
+            if progress.arrived_at:
+                dt = _as_utc(progress.arrived_at)
+                if not last_event_at or (dt and dt > last_event_at):
+                    last_event_at = dt
+                    last_event_type = "arrived"
+                    last_stop_name = stop_name
+                    last_stop_seq = seq
+        
+        # Determine next stop
+        next_stop_name = None
+        route_stops = stops_by_route.get(trip.route_id, [])
+        
+        if last_event_type == "started":
+            # If just started, next is the first stop
+            if route_stops:
+                next_stop_name = route_stops[0].stop_name
         else:
-            out.append(
-                TripTrackingRead(
-                    trip_id=trip.id,
-                    route_name=route_name,
-                    direction=trip.direction,
-                    trip_date=trip.trip_date,
-                    start_time=trip.start_time,
-                    started_at=started_at,
-                    last_event_type="started",
-                    last_stop_name=None,
-                    last_event_at=started_at,
-                )
+            # If arrived/departed at a stop, find the next one in sequence
+            # If arrived at X, next action is Depart from X (so next stop is still effectively X or next? 
+            # Usually "Next Stop" implies the one we are moving TOWARDS.
+            # If Arrived at X: we are at X. Next stop is X+1? Or we are waiting at X? 
+            # If Departed from X: we are moving to X+1.
+            
+            # Let's say:
+            # Arrived at X -> Next is X (to depart) or X+1?
+            # User wants "Next: Mohakhali" when "Departed from Banani".
+            # So if departed from current seq, next is seq + 1.
+            # If arrived at current seq, we are AT current seq. Maybe next is still current (to depart) or next?
+            # Standard transit logic: "Next Station" usually updates once you leave the previous one.
+            # But if you are AT a station, "Next Station" is usually the *following* one.
+            
+            # Logic:
+            # If status == departed from S(i), next is S(i+1).
+            # If status == arrived at S(i), next is S(i+1) (because we are already at i).
+            
+            # Find current stop index
+            # We have last_stop_seq. We want the stop with sequence > last_stop_seq
+            # route_stops is sorted.
+            
+            for rs in route_stops:
+                if rs.sequence_number > last_stop_seq:
+                    next_stop_name = rs.stop_name
+                    break
+
+        out.append(
+            TripTrackingRead(
+                trip_id=trip.id,
+                route_name=route_name,
+                direction=trip.direction,
+                trip_date=trip.trip_date,
+                start_time=trip.start_time,
+                started_at=started_at,
+                last_event_type=last_event_type,
+                last_stop_name=last_stop_name,
+                last_event_at=last_event_at,
+                next_stop_name=next_stop_name
             )
+        )
 
     out.sort(key=lambda x: (x.trip_date, x.start_time))
     return out

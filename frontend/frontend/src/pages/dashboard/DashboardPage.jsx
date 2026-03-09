@@ -498,11 +498,11 @@ export default function DashboardPage() {
                         return (
                           <div key={t.trip_id} className="relative rounded-xl border border-gray-100 bg-white p-4 shadow-sm hover:shadow-md transition-shadow">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                              <div className="flex items-start gap-3">
+                              <div className="flex items-start gap-3 w-full sm:w-auto border-b sm:border-b-0 border-gray-500 pb-4 sm:pb-0">
                                 <div className={`p-2 rounded-lg ${statusColor}`}>
                                   {statusIcon}
                                 </div>
-                                <div>
+                                <div className="flex-1 sm:flex-none">
                                   <h4 className="font-bold text-gray-900">{t.route_name || 'Route'}</h4>
                                   <div className="flex items-center gap-2 text-sm text-gray-500 mt-0.5">
                                     <span className="flex items-center gap-1">
@@ -513,14 +513,39 @@ export default function DashboardPage() {
                                 </div>
                               </div>
                               
-                              <div className="text-right">
-                                {contextText && <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-0.5">{contextText}</div>}
-                                <div className="text-2xl font-bold text-gray-900 leading-tight">
-                                  {primaryText}
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full sm:w-auto">
+                                <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center w-full sm:w-auto pr-0 sm:pr-4 sm:border-r sm:border-gray-500 pb-4 sm:pb-0 border-b sm:border-b-0 border-gray-500">
+                                  <div className="text-left sm:text-right">
+                                     {contextText && <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-0.5">{contextText}</div>}
+                                     <div className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight">
+                                       {primaryText}
+                                     </div>
+                                     <div className="text-base sm:text-lg font-bold text-primary-600 mt-0.5">
+                                       {secondaryText}
+                                     </div>
+                                  </div>
                                 </div>
-                                <div className="text-lg font-bold text-primary-600 mt-0.5">
-                                  {secondaryText}
-                                </div>
+
+                                {t.next_stop_name && (
+                                    <div className="flex sm:flex-row items-center gap-3 w-full sm:w-auto">
+                                      <div className="hidden sm:flex flex-col items-center">
+                                         <span className="text-blue-500 font-bold text-lg tracking-widest animate-pulse">
+                                           &gt;&gt;&gt;&gt;&gt;&gt;
+                                         </span>
+                                      </div>
+                                      <div className="flex sm:hidden flex-col items-center mr-3">
+                                         <span className="text-blue-500 font-bold text-lg rotate-90 sm:rotate-0 animate-pulse">
+                                           &gt;&gt;&gt;
+                                         </span>
+                                      </div>
+                                      <div className="text-left">
+                                        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Next</div>
+                                        <div className="text-lg sm:text-xl font-bold text-gray-700 leading-tight">
+                                          {t.next_stop_name}
+                                        </div>
+                                      </div>
+                                    </div>
+                                )}
                               </div>
                             </div>
                           </div>
