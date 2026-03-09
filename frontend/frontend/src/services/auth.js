@@ -211,6 +211,42 @@ export const getTripPassengers = async (tripId, token) => {
   return response.data;
 };
 
+export const getTripTracking = async (token, params = {}) => {
+  const response = await api.get('/trips/tracking', {
+    params,
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+};
+
+export const getTripProgress = async (tripId, token) => {
+  const response = await api.get(`/trips/${tripId}/progress`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+};
+
+export const markStopArrived = async (tripId, routeStopId, token) => {
+  const response = await api.patch(`/trips/${tripId}/stops/${routeStopId}/arrived`, {}, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+};
+
+export const markStopDeparted = async (tripId, routeStopId, token) => {
+  const response = await api.patch(`/trips/${tripId}/stops/${routeStopId}/departed`, {}, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+};
+
+export const getRouteStops = async (routeId, token) => {
+  const response = await api.get(`/stops/${routeId}/stops`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+};
+
 export const updateDriverProfile = async (data) => {
   const token = localStorage.getItem('token');
   const response = await api.put('/drivers/profile', data, {

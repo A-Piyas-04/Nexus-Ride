@@ -2,7 +2,7 @@ from sqlmodel import SQLModel, Field
 from sqlalchemy import UniqueConstraint
 from typing import Optional
 from uuid import UUID, uuid4
-from datetime import date, time
+from datetime import date, time, datetime
 
 
 class Trip(SQLModel, table=True):
@@ -19,4 +19,5 @@ class Trip(SQLModel, table=True):
     direction: str
     trip_date: date
     start_time: time
+    started_at: Optional[datetime] = None
     status: str # SCHEDULED / STARTED / COMPLETED

@@ -28,6 +28,7 @@ from app.models.seat_allocation import SeatAllocation
 from app.models.subscription import Subscription, SubscriptionLeave
 from app.models.token import Token
 from app.models.trip import Trip
+from app.models.trip_stop_progress import TripStopProgress
 from app.models.trip_template import TripTemplate
 from app.models.schedule_override import ScheduleOverride
 from app.models.user import User
