@@ -1,11 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlmodel import Session, select, func
+from sqlalchemy.exc import IntegrityError
 from typing import List, Optional
-from datetime import date, datetime, timezone
+from datetime import date, datetime, time, timezone
 from uuid import UUID
 import asyncio
 import json
+import os
+from zoneinfo import ZoneInfo
 
 from app.db.session import get_session
 from app.models.trip import Trip
@@ -39,6 +42,16 @@ VALID_TRIP_TRANSITIONS = {
     "STARTED": ["COMPLETED"],
     "COMPLETED": []
 }
+
+def _app_tz() -> ZoneInfo:
+    # Docker containers often run in UTC; use explicit app timezone for wall-clock scheduling rules.
+    return ZoneInfo(os.getenv("APP_TIMEZONE", "Asia/Dhaka"))
+
+def _local_now() -> datetime:
+    return datetime.now(_app_tz())
+
+def _local_today() -> date:
+    return _local_now().date()
 
 def _as_utc(dt: Optional[datetime]) -> Optional[datetime]:
     """Ensure datetimes are timezone-aware UTC (handles legacy naive values)."""
@@ -295,7 +308,7 @@ def get_my_trips(
         .join(Route, Trip.route_id == Route.id)
         .where(
             Trip.driver_profile_id == driver_profile.id,
-            Trip.trip_date >= date.today(),
+            Trip.trip_date >= _local_today(),
         )
         .order_by(Trip.trip_date, Trip.start_time)
     )
@@ -325,7 +338,7 @@ def get_trips_availability(
         .join(DriverProfile, Trip.driver_profile_id == DriverProfile.id)
         .join(User, DriverProfile.user_id == User.id)
         .outerjoin(SeatAllocation, SeatAllocation.trip_id == Trip.id)
-        .where(Trip.trip_date >= date.today())
+        .where(Trip.trip_date >= _local_today())
         .group_by(
             Trip.id,
             Route.route_name,
@@ -374,6 +387,14 @@ def create_trip(
     if not is_to:
         raise HTTPException(status_code=403, detail="Only TO can schedule trips")
 
+    today = _local_today()
+    if data.trip_date < today:
+        raise HTTPException(status_code=400, detail="Trip date must be today or a future date")
+    if data.trip_date == today:
+        scheduled_dt = datetime.combine(data.trip_date, data.start_time).replace(tzinfo=_app_tz())
+        if _local_now() >= scheduled_dt:
+            raise HTTPException(status_code=400, detail="Trip date and time must be in the future")
+
     trip = Trip(
         vehicle_id=data.vehicle_id,
         driver_profile_id=data.driver_profile_id,
@@ -385,7 +406,14 @@ def create_trip(
     )
 
     session.add(trip)
-    session.commit()
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="A trip for this route, date, time and direction already exists.",
+        )
     session.refresh(trip)
 
     return trip
@@ -417,6 +445,11 @@ def start_trip(
 
     if "STARTED" not in VALID_TRIP_TRANSITIONS[trip.status]:
         raise HTTPException(status_code=400, detail="Trip cannot be started")
+
+    # Cannot start before scheduled time
+    scheduled_dt = datetime.combine(trip.trip_date, trip.start_time).replace(tzinfo=_app_tz())
+    if _local_now() < scheduled_dt:
+        raise HTTPException(status_code=400, detail="Cannot start trip before scheduled time")
 
     trip.status = "STARTED"
     if trip.started_at is None:
@@ -461,6 +494,23 @@ def complete_trip(
 
     if "COMPLETED" not in VALID_TRIP_TRANSITIONS.get(trip.status, []):
         raise HTTPException(status_code=400, detail="Trip cannot be completed")
+
+    # Require all route stops to be departed before completing
+    route_stops = session.exec(
+        select(RouteStop).where(RouteStop.route_id == trip.route_id).order_by(RouteStop.sequence_number)
+    ).all()
+    for rs in route_stops:
+        progress = session.exec(
+            select(TripStopProgress).where(
+                TripStopProgress.trip_id == trip_id,
+                TripStopProgress.route_stop_id == rs.id,
+            )
+        ).first()
+        if not progress or progress.departed_at is None:
+            raise HTTPException(
+                status_code=400,
+                detail="Complete all stops (arrive and depart) before completing the trip",
+            )
 
     trip.status = "COMPLETED"
 
@@ -589,6 +639,26 @@ def mark_stop_arrived(
         raise HTTPException(status_code=404, detail="Stop not found")
     if stop.route_id != trip.route_id:
         raise HTTPException(status_code=400, detail="Stop does not belong to this trip route")
+
+    # Enforce route sequence: previous stop must be departed before marking current arrived
+    prev_stop = session.exec(
+        select(RouteStop).where(
+            RouteStop.route_id == trip.route_id,
+            RouteStop.sequence_number == stop.sequence_number - 1,
+        )
+    ).first()
+    if prev_stop:
+        prev_progress = session.exec(
+            select(TripStopProgress).where(
+                TripStopProgress.trip_id == trip_id,
+                TripStopProgress.route_stop_id == prev_stop.id,
+            )
+        ).first()
+        if not prev_progress or prev_progress.departed_at is None:
+            raise HTTPException(
+                status_code=400,
+                detail="Mark the previous stop as departed first.",
+            )
 
     progress = session.exec(
         select(TripStopProgress).where(

@@ -1,6 +1,15 @@
 import React from 'react';
 import { Button } from '../components/ui/Button';
 
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function nowTimeMin() {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
 export default function ScheduleTripModal({
   open,
   onClose,
@@ -14,6 +23,7 @@ export default function ScheduleTripModal({
   loading = false,
 }) {
   if (!open) return null;
+  const isToday = data.trip_date === todayStr();
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
@@ -86,6 +96,7 @@ export default function ScheduleTripModal({
               className="w-full border border-gray-300 rounded-lg px-3 py-2"
               value={data.trip_date || ''}
               onChange={(e) => onChange({ ...data, trip_date: e.target.value })}
+              min={todayStr()}
               required
             />
           </div>
@@ -96,6 +107,7 @@ export default function ScheduleTripModal({
               className="w-full border border-gray-300 rounded-lg px-3 py-2"
               value={data.start_time || '07:30'}
               onChange={(e) => onChange({ ...data, start_time: e.target.value })}
+              min={isToday ? nowTimeMin() : undefined}
               required
             />
           </div>

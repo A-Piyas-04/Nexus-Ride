@@ -24,6 +24,7 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/transport
       SECRET_KEY: supersecretkey123
       ALGORITHM: HS256
+      APP_TIMEZONE: Asia/Dhaka
     depends_on:
       - db
 

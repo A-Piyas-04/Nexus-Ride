@@ -30,6 +30,9 @@ def buy_token(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
+    if data.travel_date < date.today():
+        raise HTTPException(status_code=400, detail="Travel date must be today or a future date")
+
     # Find matching trip or create from template
     trip = get_or_create_trip(
         session=session,

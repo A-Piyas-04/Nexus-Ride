@@ -30,6 +30,29 @@ function formatTime(str) {
   return s.length >= 5 ? s.slice(0, 5) : s;
 }
 
+function isBeforeScheduledTime(trip) {
+  const dateStr = String(trip.trip_date || '').slice(0, 10);
+  const timeStr = String(trip.start_time || '').slice(0, 5);
+  if (!dateStr || !timeStr) return false;
+  const scheduled = new Date(dateStr + 'T' + timeStr + ':00');
+  return Date.now() < scheduled.getTime();
+}
+
+function allStopsDeparted(stops, progressList) {
+  if (!stops || stops.length === 0) return false;
+  return stops.every((stop) => {
+    const p = progressList.find((x) => String(x.route_stop_id) === String(stop.id));
+    return p && p.departed_at;
+  });
+}
+
+function canMarkArrived(stopIndex, stops, progressList) {
+  if (stopIndex === 0) return true;
+  const prevStop = stops[stopIndex - 1];
+  const prevP = progressList.find((x) => String(x.route_stop_id) === String(prevStop.id));
+  return Boolean(prevP && prevP.departed_at);
+}
+
 export default function DriverDashboard() {
   const navigate = useNavigate();
   const [status, setStatus] = useState(0);
@@ -244,20 +267,42 @@ export default function DriverDashboard() {
                               </div>
                               <div className="space-x-2">
                                 {trip.status === 'SCHEDULED' && (
-                                  <Button onClick={() => handleStart(trip)} disabled={actionId !== null}>
-                                    Start
-                                  </Button>
-                                )}
-                                {trip.status === 'STARTED' && (
                                   <>
-                                    <Button onClick={() => toggleStops(trip)} disabled={actionId !== null || stopsLoadingTripId === trip.id}>
-                                      {expandedTripId === trip.id ? 'Hide stops' : 'Stops'}
+                                    <Button
+                                      onClick={() => handleStart(trip)}
+                                      disabled={actionId !== null || isBeforeScheduledTime(trip)}
+                                      title={isBeforeScheduledTime(trip) ? `Available at ${formatDate(trip.trip_date)} ${formatTime(trip.start_time)}` : ''}
+                                    >
+                                      Start
                                     </Button>
-                                    <Button variant="secondary" onClick={() => handleComplete(trip)} disabled={actionId !== null}>
-                                      Complete
-                                    </Button>
+                                    {isBeforeScheduledTime(trip) && (
+                                      <span className="text-xs text-gray-500">Available at {formatTime(trip.start_time)}</span>
+                                    )}
                                   </>
                                 )}
+                                {trip.status === 'STARTED' && (() => {
+                                  const stops = stopsByRouteId[trip.route_id] || [];
+                                  const progressList = progressByTripId[trip.id] || [];
+                                  const allDeparted = allStopsDeparted(stops, progressList);
+                                  return (
+                                    <>
+                                      <Button onClick={() => toggleStops(trip)} disabled={actionId !== null || stopsLoadingTripId === trip.id}>
+                                        {expandedTripId === trip.id ? 'Hide stops' : 'Stops'}
+                                      </Button>
+                                      <Button
+                                        variant="secondary"
+                                        onClick={() => handleComplete(trip)}
+                                        disabled={actionId !== null || !allDeparted}
+                                        title={!allDeparted ? 'Mark all stops departed to complete the trip' : ''}
+                                      >
+                                        Complete
+                                      </Button>
+                                      {!allDeparted && expandedTripId === trip.id && (
+                                        <span className="text-xs text-amber-600">Mark all stops departed to complete the trip.</span>
+                                      )}
+                                    </>
+                                  );
+                                })()}
                                 {trip.status === 'COMPLETED' && (
                                   <span className="text-green-600 font-semibold px-3 py-1 bg-green-50 rounded-full">Completed</span>
                                 )}
@@ -270,11 +315,13 @@ export default function DriverDashboard() {
                                   <div className="text-sm text-gray-600">Loading stops...</div>
                                 ) : (
                                   <div className="space-y-2">
-                                    {(stopsByRouteId[trip.route_id] || []).map((stop) => {
+                                    {(stopsByRouteId[trip.route_id] || []).map((stop, stopIndex) => {
                                       const progressList = progressByTripId[trip.id] || [];
+                                      const stops = stopsByRouteId[trip.route_id] || [];
                                       const p = progressList.find((x) => String(x.route_stop_id) === String(stop.id));
                                       const departed = Boolean(p?.departed_at);
                                       const arrived = Boolean(p?.arrived_at);
+                                      const allowArrived = canMarkArrived(stopIndex, stops, progressList);
 
                                       return (
                                         <div key={stop.id} className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2">
@@ -289,7 +336,8 @@ export default function DriverDashboard() {
                                               <Button
                                                 variant="secondary"
                                                 onClick={() => handleArrived(trip, stop)}
-                                                disabled={Boolean(stopActionKey)}
+                                                disabled={Boolean(stopActionKey) || !allowArrived}
+                                                title={!allowArrived ? 'Mark the previous stop as departed first' : ''}
                                               >
                                                 Mark arrived
                                               </Button>
@@ -299,8 +347,9 @@ export default function DriverDashboard() {
                                                 variant="secondary"
                                                 onClick={() => handleDeparted(trip, stop)}
                                                 disabled={Boolean(stopActionKey)}
+                                                title="Mark this stop as departed"
                                               >
-                                                Start from here
+                                                Mark departed
                                               </Button>
                                             )}
                                           </div>

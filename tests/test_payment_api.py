@@ -145,7 +145,7 @@ def test_subscription_flow():
     print("\n--- Testing Subscription Flow (Payment -> Subscription) ---")
     headers, _ = create_user_and_get_token()
     
-    # 1. Apply for Subscription (Should be PENDING)
+    # 1. Apply for Subscription (Should be PAYMENT_PENDING until payment)
     sub_payload = {
         "start_month": "01",
         "end_month": "06",
@@ -163,7 +163,7 @@ def test_subscription_flow():
     sub_data = resp_apply.json()
     sub_id = sub_data["id"]
     print(f"Subscription Created: {sub_id} (Status: {sub_data['status']})")
-    assert sub_data["status"] == "PENDING"
+    assert sub_data["status"] == "PAYMENT_PENDING"
     
     # 2. Initiate Payment for Subscription
     pay_payload = {
