@@ -152,7 +152,6 @@ export default function RevenueOverTime() {
                           <thead>
                             <tr className="text-left text-gray-600">
                               <th className="py-2 pr-4 font-medium">Weekday</th>
-                              <th className="py-2 pr-4 font-medium">Days in range</th>
                               <th className="py-2 pr-4 font-medium">Avg token count</th>
                               <th className="py-2 pr-4 font-medium">Avg token amount (BDT)</th>
                             </tr>
@@ -161,7 +160,6 @@ export default function RevenueOverTime() {
                             {tokenAveragesByWeekday.map((row) => (
                               <tr key={row.weekday} className="border-t border-gray-100">
                                 <td className="py-2 pr-4">{row.weekday}</td>
-                                <td className="py-2 pr-4">{row.days}</td>
                                 <td className="py-2 pr-4">{row.avgTokenCount.toFixed(2)}</td>
                                 <td className="py-2 pr-4">
                                   {row.avgTokenAmount.toLocaleString('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
