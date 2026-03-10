@@ -41,6 +41,9 @@ import { NavigationControls } from './components/ui/NavigationControls';
 import PaymentStartPage from './pages/payment/PaymentStartPage';
 import PaymentPage from './pages/payment/PaymentPage';
 import UpdateLeavePage from './pages/update_leave_page';
+import RidershipOverTime from './pages/analytics/RidershipOverTime';
+import RidershipByRoute from './pages/analytics/RidershipByRoute';
+import RevenueOverTime from './pages/analytics/RevenueOverTime';
 
 
 
@@ -165,6 +168,30 @@ function AppRoutes() {
           element={
             <ProtectedRoute requiredRoles={[1, 3]}>
               <TripTemplateList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/analytics/ridership-over-time"
+          element={
+            <ProtectedRoute requiredRoles={[1, 3]}>
+              <RidershipOverTime />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/analytics/ridership-by-route"
+          element={
+            <ProtectedRoute requiredRoles={[1, 3]}>
+              <RidershipByRoute />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/analytics/revenue-over-time"
+          element={
+            <ProtectedRoute requiredRoles={[1, 3]}>
+              <RevenueOverTime />
             </ProtectedRoute>
           }
         />

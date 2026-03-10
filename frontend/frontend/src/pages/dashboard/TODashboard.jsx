@@ -25,7 +25,7 @@ import {
   getAllDrivers,
   getAllTransportRequests,
 } from '../../services/transport';
-import { getRidershipOverTime, getRidershipByRoute, getRevenueOverTime } from '../../services/analytics';
+ 
 import {
   BarChart,
   Bar,
@@ -120,11 +120,6 @@ export default function TODashboard() {
   const [driverRequestCount, setDriverRequestCount] = useState(0);
 
   // Analytics
-  const [ridershipOverTime, setRidershipOverTime] = useState([]);
-  const [ridershipByRoute, setRidershipByRoute] = useState([]);
-  const [revenueOverTime, setRevenueOverTime] = useState([]);
-  const [analyticsLoading, setAnalyticsLoading] = useState(false);
-  const [analyticsError, setAnalyticsError] = useState('');
 
   const navLinks = [
     { name: 'Overview', targetId: 'to-welcome' },
@@ -177,30 +172,6 @@ export default function TODashboard() {
     fetchCounts();
   }, []);
 
-  useEffect(() => {
-    const fetchAnalytics = async () => {
-      setAnalyticsLoading(true);
-      setAnalyticsError('');
-      try {
-        const [overTime, byRoute, revenue] = await Promise.all([
-          getRidershipOverTime(14),
-          getRidershipByRoute(30),
-          getRevenueOverTime(14),
-        ]);
-        setRidershipOverTime(Array.isArray(overTime) ? overTime : []);
-        setRidershipByRoute(Array.isArray(byRoute) ? byRoute : []);
-        setRevenueOverTime(Array.isArray(revenue) ? revenue : []);
-      } catch (err) {
-        setAnalyticsError(err.response?.data?.detail || err.message || 'Failed to load analytics');
-        setRidershipOverTime([]);
-        setRidershipByRoute([]);
-        setRevenueOverTime([]);
-      } finally {
-        setAnalyticsLoading(false);
-      }
-    };
-    fetchAnalytics();
-  }, []);
 
   useEffect(() => {
     const id = window.setInterval(() => setNowMs(Date.now()), 60000);
@@ -850,80 +821,33 @@ export default function TODashboard() {
             </div>
 
             <div id="to-analytics" className="scroll-mt-24">
-              <div className="space-y-6">
+              <div className="space-y-3">
                 <h2 className="text-xl font-bold text-gray-900">Analytics</h2>
-                {analyticsError && (
-                  <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">
-                    {analyticsError}
+                <div className="rounded-2xl border border-gray-200 bg-white/80 px-4 py-4">
+                  <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(160px,180px))] justify-start">
+                    <ActionCard
+                      icon={History}
+                      label="Ridership over time"
+                      description="Daily rides and seat usage."
+                      iconClassName="text-primary-600"
+                      onClick={() => navigate('/analytics/ridership-over-time')}
+                    />
+                    <ActionCard
+                      icon={FileText}
+                      label="Ridership by route"
+                      description="Top routes by passengers."
+                      iconClassName="text-primary-600"
+                      onClick={() => navigate('/analytics/ridership-by-route')}
+                    />
+                    <ActionCard
+                      icon={History}
+                      label="Revenue over time"
+                      description="Payments and totals."
+                      iconClassName="text-primary-600"
+                      onClick={() => navigate('/analytics/revenue-over-time')}
+                    />
                   </div>
-                )}
-                {analyticsLoading ? (
-                  <div className="rounded-2xl border border-gray-200 bg-white/80 px-4 py-8 text-center text-gray-500">
-                    Loading analytics…
-                  </div>
-                ) : (
-                  <div className="space-y-8">
-                    <div className="rounded-2xl border border-gray-200 bg-white/80 px-4 py-4">
-                      <h3 className="text-sm font-semibold text-gray-700 mb-3">Ridership over time (last 14 days)</h3>
-                      {ridershipOverTime.length === 0 ? (
-                        <p className="text-gray-500 text-sm py-4">No data for this period.</p>
-                      ) : (
-                        <div className="h-64">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={ridershipOverTime.map((d) => ({ ...d, dateLabel: String(d.date).slice(0, 10) }))} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                              <XAxis dataKey="dateLabel" tick={{ fontSize: 11 }} />
-                              <YAxis tick={{ fontSize: 11 }} />
-                              <Tooltip formatter={(value) => [value, '']} labelFormatter={(label) => `Date: ${label}`} />
-                              <Legend />
-                              <Bar dataKey="trips_count" name="Trips" fill="#6366f1" radius={[4, 4, 0, 0]} />
-                              <Bar dataKey="seats_used" name="Seats used" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
-                      )}
-                    </div>
-                    <div className="rounded-2xl border border-gray-200 bg-white/80 px-4 py-4">
-                      <h3 className="text-sm font-semibold text-gray-700 mb-3">Ridership by route (last 30 days)</h3>
-                      {ridershipByRoute.length === 0 ? (
-                        <p className="text-gray-500 text-sm py-4">No data for this period.</p>
-                      ) : (
-                        <div className="h-64">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={ridershipByRoute} layout="vertical" margin={{ top: 8, right: 8, left: 80, bottom: 0 }}>
-                              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                              <XAxis type="number" tick={{ fontSize: 11 }} />
-                              <YAxis type="category" dataKey="route_name" width={75} tick={{ fontSize: 11 }} />
-                              <Tooltip />
-                              <Bar dataKey="passengers_total" name="Passengers" fill="#6366f1" radius={[0, 4, 4, 0]} />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
-                      )}
-                    </div>
-                    <div className="rounded-2xl border border-gray-200 bg-white/80 px-4 py-4">
-                      <h3 className="text-sm font-semibold text-gray-700 mb-3">Revenue over time (last 14 days)</h3>
-                      {revenueOverTime.length === 0 ? (
-                        <p className="text-gray-500 text-sm py-4">No data for this period.</p>
-                      ) : (
-                        <div className="h-64">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={revenueOverTime.map((d) => ({ ...d, dateLabel: String(d.date).slice(0, 10), total_amount: Number(d.total_amount) }))} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                              <XAxis dataKey="dateLabel" tick={{ fontSize: 11 }} />
-                              <YAxis tick={{ fontSize: 11 }} />
-                              <Tooltip formatter={(value, name) => [name === 'total_amount' ? `BDT ${value}` : value, name === 'total_amount' ? 'Amount' : name]} labelFormatter={(label) => `Date: ${label}`} />
-                              <Legend />
-                              <Line type="monotone" dataKey="total_amount" name="Amount (BDT)" stroke="#6366f1" strokeWidth={2} dot={{ r: 3 }} />
-                              <Line type="monotone" dataKey="token_count" name="Token payments" stroke="#22c55e" strokeWidth={2} dot={{ r: 3 }} />
-                              <Line type="monotone" dataKey="subscription_count" name="Subscription payments" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} />
-                            </LineChart>
-                          </ResponsiveContainer>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
+                </div>
               </div>
             </div>
           </div>
