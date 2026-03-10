@@ -254,6 +254,18 @@ This document outlines the available API endpoints for the NexusRide University 
 - **Path**: `/subscription/leave/{leave_id}`
 - **Headers**: `Authorization: Bearer <token>`
 
+### 4.8 Change Pickup (Today Only)
+- **Method**: `POST`
+- **Path**: `/subscription/change-pickup-today`
+- **Headers**: `Authorization: Bearer <token>`
+- **Request Body**: `{"pickup_stop_id": "uuid"}`
+- **Rules**: Active subscription required; new stop must be on the same route; not allowed while on leave.
+
+### 4.9 Get Today's Pickup
+- **Method**: `GET`
+- **Path**: `/subscription/pickup-today`
+- **Headers**: `Authorization: Bearer <token>`
+- **Response**: Returns current pickup stop for today; includes override indicator.
 ---
 
 ## 5. Token Management (`/token`)
@@ -274,12 +286,20 @@ This document outlines the available API endpoints for the NexusRide University 
   }
   ```
 - **Response**: `PaymentRead` (payment is initiated and token is created on payment confirmation).
+- **Note**: `direction` accepts `"UP"` or `"DOWN"`; the backend normalizes to `"TO_IUT"` / `"FROM_IUT"`.
 
 ### 5.2 Get My Tokens
 - **Method**: `GET`
 - **Path**: `/token/my-tokens`
 - **Headers**: `Authorization: Bearer <token>`
 - **Response**: List of user's tokens.
+
+### 5.3 Token History
+- **Method**: `GET`
+- **Path**: `/token/history`
+- **Headers**: `Authorization: Bearer <token>`
+- **Query**: `limit` (int, default: 50), `offset` (int, default: 0)
+- **Response**: List of purchased tokens enriched with trip, route, vehicle, and driver info.
 
 ---
 
@@ -364,7 +384,7 @@ This document outlines the available API endpoints for the NexusRide University 
 ### 8.1 Get Trip Availability
 - **Method**: `GET`
 - **Path**: `/trips/availability`
-- **Response**: List of trips with seat counts.
+- **Response**: List of trips with seat counts. Includes `route_name`, `vehicle_number`, `driver_name`, `total_capacity`, `booked_seats`, and `available_seats`.
 
 ### 8.2 Get My Trips (Driver)
 - **Method**: `GET`
@@ -388,6 +408,44 @@ This document outlines the available API endpoints for the NexusRide University 
 - **Path**: `/trips/{trip_id}/complete`
 - **Headers**: `Authorization: Bearer <token>`
 - **Response**: Updated trip object with status `COMPLETED`.
+- **Rule**: All route stops must be marked arrived/departed before completion.
+
+### 8.6 Get Trip Passengers (Driver)
+- **Method**: `GET`
+- **Path**: `/trips/{trip_id}/passengers`
+- **Headers**: `Authorization: Bearer <token>`
+- **Response**: List of passengers (SeatAllocation and ACTIVE subscribers for the route/date). Driver-only for assigned trips.
+
+### 8.7 Get Stop Progress (Driver)
+- **Method**: `GET`
+- **Path**: `/trips/{trip_id}/progress`
+- **Headers**: `Authorization: Bearer <token>`
+- **Response**: Per-stop arrival/departure timestamps for the trip.
+
+### 8.8 Mark Stop Arrived (Driver)
+- **Method**: `PATCH`
+- **Path**: `/trips/{trip_id}/stops/{route_stop_id}/arrived`
+- **Headers**: `Authorization: Bearer <token>`
+- **Response**: Updated stop progress row. Requires trip `STARTED`. Enforces route sequence.
+
+### 8.9 Mark Stop Departed (Driver)
+- **Method**: `PATCH`
+- **Path**: `/trips/{trip_id}/stops/{route_stop_id}/departed`
+- **Headers**: `Authorization: Bearer <token>`
+- **Response**: Updated stop progress row. Requires trip `STARTED` and previously marked arrived.
+
+### 8.10 Get Live Tracking
+- **Method**: `GET`
+- **Path**: `/trips/tracking`
+- **Headers**: `Authorization: Bearer <token>`
+- **Query**: `trip_date` (date, default: today)
+- **Response**: Live tracking snapshot for trips relevant to the user (token buyers and subscribers).
+
+### 8.11 Tracking Stream
+- **Method**: `GET`
+- **Path**: `/trips/tracking/stream`
+- **Headers**: `Authorization: Bearer <token>`
+- **Response**: NDJSON stream of tracking events (`started`, `arrived`, `departed`) for relevant trips.
 
 ---
 
@@ -565,6 +623,29 @@ This document outlines the available API endpoints for the NexusRide University 
 - **Path**: `/notifications/{id}`
 - **Headers**: `Authorization: Bearer <token>`
 - **Response**: `204 No Content`
+
+---
+
+## 12. Analytics (`/analytics`)
+- **All endpoints require Transport Officer role.**
+
+### 12.1 Ridership Over Time
+- **Method**: `GET`
+- **Path**: `/analytics/ridership-over-time`
+- **Query**: `days` (int, default: 14)
+- **Response**: Daily points with `trips_count` and `seats_used`.
+
+### 12.2 Ridership by Route
+- **Method**: `GET`
+- **Path**: `/analytics/ridership-by-route`
+- **Query**: `days` (int, default: 30)
+- **Response**: Per-route aggregates: `trips_count`, `passengers_total`.
+
+### 12.3 Revenue Over Time
+- **Method**: `GET`
+- **Path**: `/analytics/revenue-over-time`
+- **Query**: `days` (int, default: 14)
+- **Response**: Daily totals: `total_amount`, `token_count`, `subscription_count`.
 
 ---
 

@@ -106,7 +106,7 @@ This document describes the complete database schema for the NexusRide Universit
 | `id` | INTEGER | PK |
 | `user_id` | UUID | FK → `user.id` |
 | `stop_name` | VARCHAR | Unique, FK → `route_stop.stop_name` |
-| `status` | VARCHAR | `PENDING`, `ACTIVE`, `INACTIVE` |
+| `status` | VARCHAR | `PENDING`, `PAYMENT_PENDING`, `ACTIVE`, `INACTIVE` |
 | `start_date` | DATE | Nullable |
 | `end_date` | DATE | Nullable |
 
@@ -176,6 +176,7 @@ This document describes the complete database schema for the NexusRide Universit
 | `direction` | VARCHAR | `TO_IUT` / `FROM_IUT` |
 | `trip_date` | DATE | |
 | `start_time` | TIME | |
+| `started_at` | TIMESTAMP | Nullable (set when trip starts) |
 | `status` | VARCHAR | `SCHEDULED`, `STARTED`, `COMPLETED` |
 
 ### `trip_template`
@@ -212,6 +213,16 @@ This document describes the complete database schema for the NexusRide Universit
 | `seat_type` | VARCHAR | `SUBSCRIPTION`, `TOKEN`, `GUEST` |
 | `pickup_stop_id` | UUID | FK → `route_stop.id` |
 
+### `trip_stop_progress`
+**Source**: `app/models/trip_stop_progress.py`
+| Column | Type | Notes |
+|---|---|---|
+| `id` | UUID | PK |
+| `trip_id` | UUID | FK → `trip.id`, Indexed |
+| `route_stop_id` | UUID | FK → `route_stop.id`, Indexed |
+| `arrived_at` | TIMESTAMP | UTC timestamp when arrived |
+| `departed_at` | TIMESTAMP | Nullable UTC timestamp when departed |
+
 ---
 
 ## 4. Finance & System
@@ -234,19 +245,30 @@ This document describes the complete database schema for the NexusRide Universit
 | `created_at` | TIMESTAMP | |
 | `updated_at` | TIMESTAMP | |
 
-### `notification_v2`
-**Source**: `app/notifications/models.py`
+### `notification`
+**Source**: `app/models/notification.py`
 | Column | Type | Notes |
 |---|---|---|
-| `id` | UUID | PK, default: `uuid4` |
+| `id` | UUID | PK |
 | `user_id` | UUID | FK → `user.id` |
-| `event_type` | VARCHAR | Index |
+| `event_type` | VARCHAR | Indexed |
 | `title` | VARCHAR | |
 | `message` | VARCHAR | |
 | `reference_type` | VARCHAR | |
-| `reference_id` | UUID | Nullable |
+| `reference_id` | VARCHAR | Nullable |
 | `is_read` | BOOLEAN | Default: `False` |
 | `created_at` | TIMESTAMP | Default: `now()` |
+
+### `subscription_pickup_override`
+**Source**: `app/models/subscription_override.py`
+| Column | Type | Notes |
+|---|---|---|
+| `id` | UUID | PK |
+| `subscription_id` | INTEGER | FK → `subscription.id` |
+| `date` | DATE | |
+| `pickup_stop_id` | UUID | FK → `route_stop.id` |
+| `created_at` | TIMESTAMP | Default: `now()` |
+| Constraint | Unique (`subscription_id`, `date`) |
 
 ---
 
@@ -311,6 +333,7 @@ This document describes the complete database schema for the NexusRide Universit
 - **Subscription ↔ RouteStop**: One-to-One (via `subscription.stop_name` ↔ `route_stop.stop_name`).
 - **User ↔ Token**: One-to-Many.
 - **Trip ↔ SeatAllocation**: One-to-Many (Tracks which user is on which trip).
+- **Trip ↔ TripStopProgress**: One-to-Many (Per-stop arrival/departure timestamps for tracking).
 
 ### Faculty Requests
 - **Faculty ↔ TransportRequest**: One-to-Many.

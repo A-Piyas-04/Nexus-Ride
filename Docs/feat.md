@@ -54,11 +54,13 @@ Data Model (models/subscription.py):
   - id (int, PK)
   - user_id (UUID, FK to user.id)
   - stop_name (FK to route_stop.stop_name)
-  - status: ACTIVE | PENDING | INACTIVE
+  - status: PENDING | PAYMENT_PENDING | ACTIVE | INACTIVE
   - start_date, end_date (date)
 - SubscriptionLeave fields:
   - subscription_id (FK to subscription.id)
   - from_date, to_date, reason (optional)
+ - SubscriptionPickupOverride (today-only pickup change):
+   - subscription_id, date, pickup_stop_id; unique per subscription/date
 
 Workflows:
 1) Apply for a subscription (POST /subscription/)
@@ -82,6 +84,8 @@ Workflows:
    - List pending requests (GET /subscription/requests): TO only, returns PENDING requests along with applicant names and resolved route names.
    - Approve (PUT /subscription/{id}/approve): Sets status to ACTIVE; echoes enriched subscription data.
    - Decline (PUT /subscription/{id}/decline): Sets status to INACTIVE; echoes enriched subscription data.
+   - Change pickup for today (POST /subscription/change-pickup-today): Active only; stop must be on same route.
+   - Get today’s pickup (GET /subscription/pickup-today): Returns override or default stop.
 
 Statuses:
 - PENDING: Newly applied or re-applied; awaits TO decision.
@@ -106,12 +110,17 @@ Data Model (models/trip.py):
   - direction: TO_IUT | FROM_IUT
   - trip_date (date)
   - start_time (time)
+  - started_at (datetime, set on start)
   - status: SCHEDULED | STARTED | COMPLETED
 
-APIs and behavior:
+ APIs and behavior:
 - Get my trips (GET `/drivers/my-trips`) — returns all trips assigned to the authenticated driver (see [drivers.py](file:///e:/Projects/NexusRide/app/api/drivers.py)).
 - Start a trip (PATCH `/trips/{trip_id}/start`) — only the assigned driver can start; validates legal state transition (see [trips.py](file:///e:/Projects/NexusRide/app/api/trips.py#L108)).
-- Complete a trip (PATCH `/trips/{trip_id}/complete`) — only the assigned driver can complete; validates legal state transition (see [trips.py](file:///e:/Projects/NexusRide/app/api/trips.py#L137)).
+- Complete a trip (PATCH `/trips/{trip_id}/complete`) — only the assigned driver can complete; requires all route stops to be marked departed.
+- Stop progress (GET `/trips/{trip_id}/progress`) — per-stop arrived/departed timestamps.
+- Mark stop arrived/departed (PATCH `/trips/{trip_id}/stops/{route_stop_id}/arrived|departed`) — enforces route sequence.
+- Passenger list (GET `/trips/{trip_id}/passengers`) — seat allocations + ACTIVE subscribers for route/date.
+- Live tracking (GET `/trips/tracking`, GET `/trips/tracking/stream`) — events for relevant trips.
 
 Frontend:
 - Driver Dashboard shows “Today’s Trips” with Start/Complete actions (see [DriverDashboard.jsx](file:///e:/Projects/NexusRide/frontend/frontend/src/pages/dashboard/DriverDashboard.jsx)).
@@ -164,7 +173,7 @@ Flow:
   - Email domain enforcement (@iut-dhaka.edu for staff).
   - Mobile number validation (Bangladeshi format).
 - **Status Workflows**: Strict transitions for transport requests (e.g., cannot assign before approval).
-- **Trip Direction Domain**: `TO_IUT` or `FROM_IUT` consistently across backend and frontend.
+- **Trip Direction Domain**: Backend uses `TO_IUT` / `FROM_IUT`; frontend may send `UP` / `DOWN` which is normalized server-side.
 - **Driver Trip Authorization**: Start/Complete operations restricted to the assigned driver profile.
 
 ## References

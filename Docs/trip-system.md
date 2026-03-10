@@ -24,7 +24,7 @@ Trips are used to:
 **Source**: [trip.py](file:///e:/Projects/NexusRide/app/models/trip.py)
 - **Key Fields**:
   - `route_id`, `vehicle_id`, `driver_profile_id`
-  - `trip_date`, `start_time`, `direction`
+  - `trip_date`, `start_time`, `direction`, `started_at`
   - `status` (`SCHEDULED`, `STARTED`, `COMPLETED`)
 - **Uniqueness**:
   - `(route_id, trip_date, start_time, direction)` is unique.
@@ -59,8 +59,10 @@ Trips are used to:
 ### 3.1 Trip Schemas
 **Source**: [trip.py](file:///e:/Projects/NexusRide/app/schemas/trip.py)
 - `TripCreate`, `TripRead`
-- `TripAvailabilityRead` (adds `route_name`, `vehicle_number`, `driver_name`, `capacity` and seat counts)
+- `TripAvailabilityRead` (adds `route_name`, `vehicle_number`, `driver_name`, `total_capacity`, `booked_seats`, `available_seats`)
 - `TripForDriverRead` (driver-specific list)
+- `TripStopProgressRead` (per-stop `arrived_at` / `departed_at`)
+- `TripTrackingRead` (last event + per-stop tracking snapshot)
 
 ### 3.2 Trip Template Schemas
 **Source**: [trip_template.py](file:///e:/Projects/NexusRide/app/schemas/trip_template.py)
@@ -80,6 +82,7 @@ Trips are used to:
 **Transitions** (enforced in [trips.py](file:///e:/Projects/NexusRide/app/api/trips.py)):
 - Only the assigned driver can start a trip.
 - Only the assigned driver can complete a started trip.
+- Completion requires every route stop to be marked arrived and departed (sequence enforced).
 
 ---
 
@@ -123,6 +126,7 @@ Trips are used to:
 - Token purchase begins with `POST /token/buy` (creates a Payment).
 - Token seat is allocated only after `POST /payments/{payment_id}/confirm` succeeds.
 - Allocation occurs in [payment.py](file:///e:/Projects/NexusRide/app/api/payment.py) → `create_token_from_payment`.
+ - The `direction` field accepts `"UP"` / `"DOWN"` from clients and is normalized to backend `"TO_IUT"` / `"FROM_IUT"`.
 
 ---
 
@@ -139,6 +143,12 @@ Trips are used to:
 - `POST /trips` (TO schedules one-off trip)
 - `PATCH /trips/{trip_id}/start` (driver starts)
 - `PATCH /trips/{trip_id}/complete` (driver completes)
+ - `GET /trips/{trip_id}/passengers` (driver-only passenger list)
+ - `GET /trips/{trip_id}/progress` (stop progress timeline)
+ - `PATCH /trips/{trip_id}/stops/{route_stop_id}/arrived`
+ - `PATCH /trips/{trip_id}/stops/{route_stop_id}/departed`
+ - `GET /trips/tracking` (live tracking snapshot)
+ - `GET /trips/tracking/stream` (NDJSON event stream)
 
 ### 7.4 Trip Templates
 - `POST /trip-templates`
@@ -158,6 +168,7 @@ Trips are used to:
 ### 8.2 Driver
 - View assigned trips (`/trips/my`).
 - Start and complete assigned trips.
+- Mark per-stop arrived/departed and view passengers.
 
 ### 8.3 Transport Officer (TO)
 - Manually schedule trips (`/trips`).
@@ -179,3 +190,4 @@ Trips are used to:
 5. **Payment Confirmation**: Payment confirmed (`/payments/{id}/confirm`) → token + seat allocation created.
 6. **Driver Execution**: Driver starts and completes trip (`/trips/{id}/start`, `/trips/{id}/complete`).
 7. **Subscription Impact**: Active subscriptions reserve seats and reduce availability unless on leave.
+8. **Live Tracking**: Tracking events are emitted to token buyers, allocated seats, and subscribers; users can poll `/trips/tracking` or connect to `/trips/tracking/stream`.
