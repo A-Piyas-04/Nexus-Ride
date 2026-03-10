@@ -78,11 +78,11 @@ def create_token_from_payment(payment: Payment, session: Session):
     except (KeyError, ValueError) as e:
         raise HTTPException(status_code=400, detail=f"Invalid payment metadata: {str(e)}")
 
-    # 2. Validate Trip and Seat Availability (Double Check)
-    trip = session.get(Trip, trip_id)
+    # 2. Validate Trip and Seat Availability (Double Check) with row lock to prevent overbooking
+    trip = session.exec(select(Trip).where(Trip.id == trip_id).with_for_update()).first()
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
-        
+
     vehicle = session.get(Vehicle, trip.vehicle_id)
     allocated = session.exec(
         select(func.count(SeatAllocation.id))
@@ -150,54 +150,15 @@ def activate_subscription_from_payment(payment: Payment, session: Session):
     if subscription.status == "ACTIVE":
         return
 
-    # Validate State
-    if subscription.status != "PENDING":
-        # If INACTIVE or other states, we might not want to auto-activate without review?
-        # Requirement says: "Subscription becomes ACTIVE only when payment.status == SUCCESS"
-        # And "If subscription already ACTIVE -> do nothing"
-        # We assume PENDING -> ACTIVE is the valid transition.
-        # If it's INACTIVE (e.g. declined), we probably shouldn't activate it via payment?
-        # Let's assume only PENDING can be activated.
+    # Validate State: only PAYMENT_PENDING (just paid) or PENDING (already sent to TO) can proceed
+    if subscription.status not in ("PAYMENT_PENDING", "PENDING"):
         raise HTTPException(status_code=400, detail=f"Cannot activate subscription in {subscription.status} state")
 
-    # Activate
-    # CHANGED: Instead of setting ACTIVE directly, we keep it as PENDING (or set to a dedicated "PAID_WAITING_APPROVAL" state if exists)
-    # The requirement is: "set the subscription status to pending and send a subscription request to the transport officer"
-    # Since it is ALREADY "PENDING" when created, we just ensure it stays PENDING but now it has a linked successful payment.
-    # The TO will see it in the requests list because the requests list filters by PENDING.
-    # We can add a flag or just rely on the fact that payment is confirmed.
-    
-    # However, to distinguish "Applied but not paid" vs "Paid and waiting approval", 
-    # ideally we should have a status change or the TO list should filter by "Has Successful Payment".
-    # Given the current schema only has status string, and `get_subscription_requests` filters by `PENDING`.
-    # If we leave it as PENDING, it appears in the list.
-    
-    # Let's check `get_subscription_requests` implementation in `app/api/subscription.py`:
-    # `where(Subscription.status == "PENDING")`
-    
-    # So if we just do NOTHING here (except maybe logging), it remains PENDING, and the TO sees it.
-    # But we need to ensure the TO knows it is PAID.
-    # The `Subscription` model doesn't have a `is_paid` field.
-    # The link is via `Payment.reference_id`.
-    
-    # For now, per instruction "set the subscription status to pending" (it is already pending),
-    # we will NOT set it to ACTIVE.
-    
-    # subscription.status = "ACTIVE"  <-- REMOVED
-    
-    # We can optionally set it to "PENDING" explicitly to be safe, 
-    # or if there was an "INITIATED" state before.
-    # But `subscribe` endpoint sets it to "PENDING".
-    
-    # So, effectively, we just save the payment link (which is done by the caller confirming the payment)
-    # and maybe update updated_at.
-    
-    # Let's just touch the subscription to ensure session tracks it if needed, 
-    # but effectively we stop auto-activating.
-    
-    pass 
+    # After successful payment: move PAYMENT_PENDING to PENDING so TO sees the request
+    if subscription.status == "PAYMENT_PENDING":
+        subscription.status = "PENDING"
+        session.add(subscription)
 
-    
     # Commit happens in the caller (confirm_payment)
 
 # 1. Initiate Payment

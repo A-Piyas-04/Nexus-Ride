@@ -217,14 +217,14 @@ def subscribe(
         ).first()
 
         if subscription:
-            if subscription.status in {"ACTIVE", "PENDING"}:
+            if subscription.status in {"ACTIVE", "PENDING", "PAYMENT_PENDING"}:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Subscription already active or pending"
                 )
 
             subscription.stop_name = data.stop_name
-            subscription.status = "PENDING"
+            subscription.status = "PAYMENT_PENDING"
             subscription.start_date = start_date
             subscription.end_date = end_date
             session.add(subscription) # Ensure update is tracked
@@ -233,7 +233,7 @@ def subscribe(
             subscription = Subscription(
                 user_id=current_user.id,
                 stop_name=data.stop_name,
-                status="PENDING",
+                status="PAYMENT_PENDING",
                 start_date=start_date,
                 end_date=end_date
             )

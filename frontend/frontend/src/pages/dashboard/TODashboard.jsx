@@ -343,15 +343,16 @@ export default function TODashboard() {
       return;
     }
     try {
-      await createSubscription(
+      const created = await createSubscription(
         { start_month: startMonth, end_month: endMonth, year: Number(year), stop_name: stopName },
         token
       );
       setSubscribeOpen(false);
-      const sub = await getSubscription(token);
-      setSubscriptionStatus(sub?.status);
-      setSubscriptionDetails(sub);
-      window.alert('Subscription request submitted successfully!');
+      setSubscriptionStatus(created?.status);
+      setSubscriptionDetails(created);
+      navigate('/payment', {
+        state: { referenceType: 'SUBSCRIPTION', referenceId: String(created?.id ?? '') },
+      });
     } catch (error) {
       const message = error.response?.data?.detail || 'Subscription failed';
       window.alert(message);
@@ -369,10 +370,16 @@ export default function TODashboard() {
             <div id="to-welcome" className="scroll-mt-24">
               <WelcomeBanner>
                 {subscriptionStatus !== 'ACTIVE' && (
-                  <div className="inline-block" title={subscriptionStatus === 'PENDING' ? 'Subscription request pending' : ''}>
-                    <Button onClick={() => setSubscribeOpen(true)} disabled={subscriptionStatus === 'PENDING'}>
-                      {subscriptionStatus === 'PENDING' ? 'Pending Approval' : 'Subscribe'}
-                    </Button>
+                  <div className="inline-block" title={subscriptionStatus === 'PENDING' ? 'Subscription request pending' : subscriptionStatus === 'PAYMENT_PENDING' ? 'Complete payment to send request to Transport Officer' : ''}>
+                    {subscriptionStatus === 'PAYMENT_PENDING' ? (
+                      <Button onClick={() => navigate('/payment', { state: { referenceType: 'SUBSCRIPTION', referenceId: String(subscriptionDetails?.id ?? '') } })}>
+                        Complete payment
+                      </Button>
+                    ) : (
+                      <Button onClick={() => setSubscribeOpen(true)} disabled={subscriptionStatus === 'PENDING'}>
+                        {subscriptionStatus === 'PENDING' ? 'Pending Approval' : 'Subscribe'}
+                      </Button>
+                    )}
                   </div>
                 )}
               </WelcomeBanner>

@@ -40,19 +40,25 @@ export default function DriverPassengerListPage() {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
   const fetchTrips = useCallback(async () => {
-    if (!token) return;
+    if (!token) {
+      setError('You must be logged in to view passenger lists.');
+      setTrips([]);
+      setLoading(false);
+      navigate('/login');
+      return;
+    }
     setLoading(true);
     setError('');
     try {
       const data = await getMyTrips(token);
       setTrips(Array.isArray(data) ? data : []);
-    } catch {
-      setError('Failed to load trips.');
+    } catch (err) {
+      setError(err?.response?.data?.detail || 'Failed to load trips.');
       setTrips([]);
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, navigate]);
 
   useEffect(() => {
     fetchTrips();
@@ -64,8 +70,9 @@ export default function DriverPassengerListPage() {
     try {
       const list = await getTripPassengers(tripId, token);
       setPassengersByTripId((prev) => ({ ...prev, [tripId]: list }));
-    } catch {
+    } catch (err) {
       setPassengersByTripId((prev) => ({ ...prev, [tripId]: null }));
+      setError(err?.response?.data?.detail || 'Failed to load passengers.');
     } finally {
       setLoadingPassengers((prev) => ({ ...prev, [tripId]: false }));
     }

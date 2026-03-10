@@ -36,7 +36,7 @@ def test_subscription_post():
         
         if response.status_code == 200:
             data = response.json()
-            if data["status"] == "PENDING":
+            if data["status"] == "PAYMENT_PENDING":
                 print("✅ Subscription POST Test Passed")
             else:
                 print(f"❌ Unexpected status: {data.get('status')}")

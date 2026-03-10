@@ -419,10 +419,16 @@ export default function DashboardPage() {
           <div id="dashboard-welcome" className="scroll-mt-24">
             <WelcomeBanner>
               {subscriptionStatus !== 'ACTIVE' && (
-                  <div className="inline-block" title={subscriptionStatus === 'PENDING' ? "Subscription request pending" : ""}>
-                  <Button onClick={handleOpenSubscribe} disabled={subscriptionStatus === 'PENDING'}>
+                  <div className="inline-block" title={subscriptionStatus === 'PENDING' ? 'Subscription request pending' : subscriptionStatus === 'PAYMENT_PENDING' ? 'Complete payment to send request to Transport Officer' : ''}>
+                  {subscriptionStatus === 'PAYMENT_PENDING' ? (
+                    <Button onClick={() => navigate('/payment', { state: { referenceType: 'SUBSCRIPTION', referenceId: String(subscriptionDetails?.id || '') } })}>
+                      Complete payment
+                    </Button>
+                  ) : (
+                    <Button onClick={handleOpenSubscribe} disabled={subscriptionStatus === 'PENDING'}>
                       {subscriptionStatus === 'PENDING' ? 'Pending Approval' : 'Subscribe'}
-                  </Button>
+                    </Button>
+                  )}
                   </div>
               )}
             </WelcomeBanner>
@@ -506,7 +512,7 @@ export default function DashboardPage() {
                       if (t.last_event_type === 'arrived' && t.last_stop_name) {
                         statusLine = `Vehicle arrived at ${t.last_stop_name} ${when}.`;
                       } else if (t.last_event_type === 'departed' && t.last_stop_name) {
-                        statusLine = `Started from ${t.last_stop_name} ${when}.`;
+                        statusLine = `Departed from ${t.last_stop_name} ${when}.`;
                       }
 
                       const hasStops = Array.isArray(t.stops) && t.stops.length > 0;

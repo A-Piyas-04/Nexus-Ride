@@ -23,10 +23,11 @@ export default function BuyToken() {
 
   const [formData, setFormData] = useState({
     route_id: "",
-    pickup_stop_id: ""
+    pickup_stop_id: "",
+    travel_date: new Date().toISOString().split("T")[0],
   });
 
-  const today = new Date().toISOString().split("T")[0];
+  const todayStr = new Date().toISOString().split("T")[0];
 
   // ================= LOAD ROUTES =================
   useEffect(() => {
@@ -67,7 +68,7 @@ export default function BuyToken() {
           route_id: formData.route_id,
           pickup_stop_id: formData.pickup_stop_id,
           consumer_email: userEmail || consumerEmail,
-          travel_date: today,
+          travel_date: formData.travel_date,
           direction,
         },
       },
@@ -86,6 +87,17 @@ export default function BuyToken() {
             <option value="UP">To IUT</option>
             <option value="DOWN">From IUT</option>
           </select>
+
+          <Label>Travel date</Label>
+          <input
+            type="date"
+            name="travel_date"
+            value={formData.travel_date}
+            onChange={handleChange}
+            min={todayStr}
+            required
+            className="w-full mb-4 border border-gray-300 rounded px-3 py-2"
+          />
 
           <Label>Select Route</Label>
           <select name="route_id" value={formData.route_id} onChange={handleChange} required className="w-full mb-4">
