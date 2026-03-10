@@ -15,12 +15,48 @@ export default function RevenueOverTime() {
   const [rangeUnit, setRangeUnit] = useState('weeks');
   const [rangeValue, setRangeValue] = useState(2);
   const chartContainerRef = useRef(null);
+  const tokenUnitPrice = 50;
 
   const days = useMemo(() => {
     const v = Number(rangeValue) || 1;
     const d = rangeUnit === 'months' ? v * 30 : v * 7;
     return Math.min(90, Math.max(1, d));
   }, [rangeUnit, rangeValue]);
+
+  const tokenAveragesByWeekday = useMemo(() => {
+    const weekdayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const stats = weekdayNames.map((name) => ({
+      weekday: name,
+      days: 0,
+      tokenCountTotal: 0,
+      tokenAmountTotal: 0,
+    }));
+
+    for (const point of data) {
+      const dt = new Date(point?.date);
+      if (Number.isNaN(dt.getTime())) continue;
+      const weekdayIndex = dt.getDay();
+      const tokenCount = Number(point?.token_count) || 0;
+      const tokenAmount = Number(point?.token_amount) || tokenCount * tokenUnitPrice;
+
+      stats[weekdayIndex].days += 1;
+      stats[weekdayIndex].tokenCountTotal += tokenCount;
+      stats[weekdayIndex].tokenAmountTotal += tokenAmount;
+    }
+
+    const order = [6, 0, 1, 2, 3, 4, 5];
+    return order.map((idx) => {
+      const row = stats[idx];
+      const avgCount = row.days ? row.tokenCountTotal / row.days : 0;
+      const avgAmount = row.days ? row.tokenAmountTotal / row.days : 0;
+      return {
+        weekday: row.weekday,
+        days: row.days,
+        avgTokenCount: avgCount,
+        avgTokenAmount: avgAmount,
+      };
+    });
+  }, [data, tokenUnitPrice]);
 
   const navLinks = [
     { name: 'Revenue', targetId: 'revenue-over-time' },
@@ -107,6 +143,37 @@ export default function RevenueOverTime() {
                           <Line type="monotone" dataKey="subscription_count" name="Subscription payments" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} />
                         </LineChart>
                       </ResponsiveContainer>
+                    </div>
+
+                    <div className="mt-6">
+                      <div className="text-sm font-semibold text-gray-800">Average token payments by weekday</div>
+                      <div className="mt-2 overflow-x-auto">
+                        <table className="min-w-full text-sm">
+                          <thead>
+                            <tr className="text-left text-gray-600">
+                              <th className="py-2 pr-4 font-medium">Weekday</th>
+                              <th className="py-2 pr-4 font-medium">Days in range</th>
+                              <th className="py-2 pr-4 font-medium">Avg token count</th>
+                              <th className="py-2 pr-4 font-medium">Avg token amount (BDT)</th>
+                            </tr>
+                          </thead>
+                          <tbody className="text-gray-800">
+                            {tokenAveragesByWeekday.map((row) => (
+                              <tr key={row.weekday} className="border-t border-gray-100">
+                                <td className="py-2 pr-4">{row.weekday}</td>
+                                <td className="py-2 pr-4">{row.days}</td>
+                                <td className="py-2 pr-4">{row.avgTokenCount.toFixed(2)}</td>
+                                <td className="py-2 pr-4">
+                                  {row.avgTokenAmount.toLocaleString('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div className="mt-2 text-xs text-gray-500">
+                        Token amount is estimated as token count × {tokenUnitPrice} BDT.
+                      </div>
                     </div>
                   </div>
                 )}

@@ -25,6 +25,8 @@ services:
       SECRET_KEY: supersecretkey123
       ALGORITHM: HS256
       APP_TIMEZONE: Asia/Dhaka
+      SEED_DEMO_DATA: "true"
+      SEED_DEMO_DATA_MODE: "reset"
     depends_on:
       - db
 

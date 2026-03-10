@@ -2,11 +2,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+import os
 from datetime import date
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlmodel import SQLModel, Session
+from sqlmodel import SQLModel, Session, select
 
 from app.db.session import engine
 from app.services.trip_generator import generate_trips_for_date
@@ -47,10 +48,17 @@ from app.seeds.routes import seed_routes
 from app.seeds.vehicles import seed_vehicles
 from app.seeds.drivers import seed_drivers
 from app.seeds.trips import seed_trip_templates
+from seedDemoData import seed_demo_data, DEMO_PREFIX
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    seed_demo_data_enabled = os.getenv("SEED_DEMO_DATA", "").lower() in ("1", "true", "yes")
+    seed_demo_mode = os.getenv("SEED_DEMO_DATA_MODE", "if_missing").lower()
+
+    if seed_demo_data_enabled and seed_demo_mode == "reset":
+        SQLModel.metadata.drop_all(engine)
+
     SQLModel.metadata.create_all(engine)
 
     # Run seeds
@@ -61,6 +69,15 @@ async def lifespan(app: FastAPI):
         seed_drivers(session)
         seed_trip_templates(session)
         generate_trips_for_date(session, date.today())
+        if seed_demo_data_enabled:
+            if seed_demo_mode in ("always", "append", "reset"):
+                seed_demo_data(session)
+            else:
+                existing_demo = session.exec(
+                    select(StaffProfile).where(StaffProfile.staff_code.like(f"{DEMO_PREFIX}-STAFF-%"))
+                ).first()
+                if not existing_demo:
+                    seed_demo_data(session)
 
     start_scheduler()
     discover_handlers()
