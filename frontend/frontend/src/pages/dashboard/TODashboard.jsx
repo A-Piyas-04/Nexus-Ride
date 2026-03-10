@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Bus,
@@ -17,7 +17,7 @@ import { WelcomeBanner } from '../../components/ui/WelcomeBanner';
 import SubscriptionModal from '../../modals/SubscriptionModal';
 import SubscriptionDetailsModal from '../../modals/SubscriptionDetailsModal';
 import ScheduleTripModal from '../../modals/ScheduleTripModal';
-import { createSubscription, getSubscription, createLeave, getMyLeaves, deleteLeave, getSubscriptionRequests, getDriverRequests } from '../../services/auth';
+import { createSubscription, getSubscription, createLeave, getMyLeaves, deleteLeave, getSubscriptionRequests, getDriverRequests, getTripTracking } from '../../services/auth';
 import {
   createTrip,
   getRoutes,
@@ -43,6 +43,37 @@ import DashboardLayout from './DashboardLayout';
 import { useAuth } from '../../context/auth-context';
 
 const MAX_LEAVE_DAYS = 120;
+
+function normalizeIsoToUtc(s) {
+  if (!s) return s;
+  const str = String(s);
+  if (/[zZ]$/.test(str) || /[+-]\d{2}:\d{2}$/.test(str)) return str;
+  return `${str}Z`;
+}
+
+function timeAgo(isoString, nowMs) {
+  if (!isoString) return '—';
+  const ts = new Date(normalizeIsoToUtc(isoString)).getTime();
+  if (Number.isNaN(ts)) return '—';
+  const diffMs = Math.max(0, nowMs - ts);
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'just now';
+  if (mins === 1) return '1 minute ago';
+  if (mins < 60) return `${mins} minutes ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs === 1) return '1 hour ago';
+  if (hrs < 24) return `${hrs} hours ago`;
+  const days = Math.floor(hrs / 24);
+  if (days === 1) return '1 day ago';
+  return `${days} days ago`;
+}
+
+function formatTimeLocal(isoString) {
+  if (!isoString) return '';
+  const d = new Date(normalizeIsoToUtc(isoString));
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
 
 export default function TODashboard() {
   const navigate = useNavigate();
@@ -78,6 +109,11 @@ export default function TODashboard() {
   const [leaveSuccessView, setLeaveSuccessView] = useState(false);
   const [leaveSuccessPeriod, setLeaveSuccessPeriod] = useState(null);
 
+  const [tracking, setTracking] = useState([]);
+  const [trackingLoading, setTrackingLoading] = useState(false);
+  const [trackingError, setTrackingError] = useState('');
+  const [nowMs, setNowMs] = useState(() => Date.now());
+
   // Counts for Review & Notify section
   const [subscriptionCount, setSubscriptionCount] = useState(0);
   const [transportRequestCount, setTransportRequestCount] = useState(0);
@@ -92,6 +128,7 @@ export default function TODashboard() {
 
   const navLinks = [
     { name: 'Overview', targetId: 'to-welcome' },
+    { name: 'Tracking', targetId: 'to-tracking' },
     { name: 'Review', targetId: 'to-review' },
     { name: 'Manage', targetId: 'to-manage' },
     { name: 'Services', targetId: 'to-services' },
@@ -164,6 +201,100 @@ export default function TODashboard() {
     };
     fetchAnalytics();
   }, []);
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNowMs(Date.now()), 60000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const fetchTracking = useCallback(async (token, { silent = false } = {}) => {
+    if (!token) return;
+    if (!silent) setTrackingLoading(true);
+    setTrackingError('');
+    try {
+      const data = await getTripTracking(token);
+      setTracking(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setTrackingError(err.response?.data?.detail || 'Failed to load live tracking.');
+    } finally {
+      if (!silent) setTrackingLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    let cancelled = false;
+    fetchTracking(token);
+    const intervalId = window.setInterval(() => {
+      if (!cancelled) fetchTracking(token, { silent: true });
+    }, 30000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [fetchTracking]);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    const controller = new AbortController();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let closed = false;
+    let debounceId = null;
+
+    const scheduleRefresh = () => {
+      if (debounceId) return;
+      debounceId = window.setTimeout(() => {
+        debounceId = null;
+        fetchTracking(token, { silent: true });
+      }, 300);
+    };
+
+    const run = async () => {
+      try {
+        const res = await fetch(`${baseUrl}/trips/tracking/stream`, {
+          method: 'GET',
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
+        });
+
+        if (!res.ok || !res.body) return;
+
+        const reader = res.body.getReader();
+        while (!closed) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const parts = buffer.split('\n');
+          buffer = parts.pop() || '';
+
+          for (const line of parts) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+            try {
+              const msg = JSON.parse(trimmed);
+              if (msg?.type === 'tracking_event') scheduleRefresh();
+            } catch {
+              0;
+            }
+          }
+        }
+      } catch {
+        0;
+      }
+    };
+
+    run();
+    return () => {
+      closed = true;
+      if (debounceId) window.clearTimeout(debounceId);
+      controller.abort();
+    };
+  }, [fetchTracking]);
 
   useEffect(() => {
     if (subscriptionStatus === 'ACTIVE') loadLeaves();
@@ -388,6 +519,111 @@ export default function TODashboard() {
                   You are on leave for this period: {activeLeavePeriods.map((l) => `${formatLeaveDate(l.from_date)} – ${formatLeaveDate(l.to_date)}${l.reason ? ` (${l.reason})` : ''}`).join('; ')}.
                 </div>
               )}
+            </div>
+
+            <div id="to-tracking" className="scroll-mt-24">
+              <div className="space-y-3">
+                <h2 className="text-xl font-bold text-gray-900">Live tracking</h2>
+                <div className="rounded-2xl border border-gray-200 bg-white/80 px-4 py-4">
+                  {trackingLoading ? (
+                    <div className="text-sm text-gray-600">Loading live updates...</div>
+                  ) : trackingError ? (
+                    <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{trackingError}</div>
+                  ) : tracking.length === 0 ? (
+                    <div className="text-sm text-gray-600">No active trips to track right now.</div>
+                  ) : (
+                    <div className="space-y-3">
+                      {tracking.map((t) => {
+                        const eventAt = t.last_event_at || t.started_at;
+                        const when = timeAgo(eventAt, nowMs);
+
+                        let statusLine = `Trip started ${when}.`;
+                        if (t.last_event_type === 'arrived' && t.last_stop_name) {
+                          statusLine = `Vehicle arrived at ${t.last_stop_name} ${when}.`;
+                        } else if (t.last_event_type === 'departed' && t.last_stop_name) {
+                          statusLine = `Departed from ${t.last_stop_name} ${when}.`;
+                        }
+
+                        const hasStops = Array.isArray(t.stops) && t.stops.length > 0;
+
+                        return (
+                          <div key={t.trip_id} className="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div className="min-w-0">
+                                <div className="font-semibold text-gray-900 truncate">{t.route_name || 'Route'}</div>
+                                <div className="text-xs text-gray-500">Direction: {t.direction}</div>
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {String(t.trip_date).slice(0, 10)} | {String(t.start_time).slice(0, 5)}
+                              </div>
+                            </div>
+                            <div className="mt-2 text-sm text-gray-700">{statusLine}</div>
+                            {hasStops && (
+                              <div className="mt-3">
+                                <div className="relative">
+                                  <div className="absolute left-3 top-0 bottom-0 w-px bg-gray-200" />
+                                  {t.stops
+                                    .slice()
+                                    .sort((a, b) => (a.sequence_number || 0) - (b.sequence_number || 0))
+                                    .map((stop, index, arr) => {
+                                      const prev = index > 0 ? arr[index - 1] : null;
+                                      const arrived = Boolean(stop.arrived_at);
+                                      const departed = Boolean(stop.departed_at);
+                                      const isCurrent =
+                                        t.last_event_type === 'arrived' && t.last_stop_name && t.last_stop_name === stop.stop_name;
+
+                                      let dotClass = 'border-gray-300 bg-white';
+                                      if (departed || isCurrent) {
+                                        dotClass = 'border-emerald-500 bg-emerald-500';
+                                      } else if (arrived) {
+                                        dotClass = 'border-emerald-500 bg-white';
+                                      }
+
+                                      const topActive = prev && prev.departed_at;
+                                      const bottomActive = departed;
+
+                                      return (
+                                        <div key={`${stop.sequence_number}-${stop.stop_name}`} className="relative flex items-start">
+                                          <div className="flex flex-col items-center mr-3">
+                                            {index > 0 && (
+                                              <div
+                                                className={`h-4 w-px ${topActive ? 'bg-emerald-500' : 'bg-gray-200'}`}
+                                              />
+                                            )}
+                                            <div
+                                              className={`h-3 w-3 rounded-full border-2 ${dotClass}`}
+                                              style={{ marginTop: index === 0 ? 0 : 0 }}
+                                            />
+                                            {index < arr.length - 1 && (
+                                              <div
+                                                className={`h-4 w-px ${bottomActive ? 'bg-emerald-500' : 'bg-gray-200'}`}
+                                              />
+                                            )}
+                                          </div>
+                                          <div className="pb-3">
+                                            <div className="text-sm font-medium text-gray-900">{stop.stop_name}</div>
+                                            <div className="text-xs text-gray-500 space-x-2">
+                                              {stop.arrived_at && (
+                                                <span>Arrived: {formatTimeLocal(stop.arrived_at)}</span>
+                                              )}
+                                              {stop.departed_at && (
+                                                <span>Departed: {formatTimeLocal(stop.departed_at)}</span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div id="to-review" className="scroll-mt-24">

@@ -439,58 +439,6 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Subscription Section */}
-          <div id="dashboard-subscription" className="scroll-mt-24">
-            <div className="space-y-3">
-              <h2 className="text-xl font-bold text-gray-900">Subscription</h2>
-              <div className="rounded-2xl border border-gray-200 bg-white/80 px-4 py-4">
-                <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(120px,150px))] justify-start">
-                <div className={isOnLeave ? 'opacity-70' : ''}>
-                  <ActionCard
-                    icon={Ticket}
-                    label="Take leave"
-                    description={isOnLeave ? 'You are on leave for the selected period.' : 'Release reserved seats for specific days.'}
-                    iconClassName={isOnLeave ? 'text-gray-400' : isSubscribed ? 'text-primary-600' : 'text-gray-400'}
-                    onClick={handleTakeLeave}
-                    disabled={!isSubscribed}
-                    title={!isSubscribed ? 'Subscribe first' : isOnLeave ? 'You are already on a leave' : ''}
-                  />
-                </div>
-
-                <ActionCard
-                  icon={Ticket}
-                  label="Update leave"
-                  description="Edit or cancel your leave periods."
-                  iconClassName={isSubscribed && hasAnyLeave ? 'text-primary-600' : 'text-gray-400'}
-                  onClick={openUpdateLeave}
-                  disabled={!isSubscribed || !hasAnyLeave}
-                  title={!isSubscribed ? 'Subscribe first' : !hasAnyLeave ? 'No leave to update' : ''}
-                />
-
-                <ActionCard
-                icon={Ticket}
-                label="Change pickup"
-                description="Update your pickup location."
-                iconClassName={isSubscribed ? "text-primary-600" : "text-gray-400"}
-                onClick={handleChangePickup}
-                disabled={!isSubscribed}
-                title={!isSubscribed ? "Subscribe first" : ""}
-                />
-
-                <ActionCard
-                icon={User}
-                label="Subscription details"
-                description="View your current plan and status."
-                iconClassName={isSubscribed ? "text-primary-600" : "text-gray-400"}
-                onClick={handleSubscriptionDetails}
-                disabled={!isSubscribed}
-                title={!isSubscribed ? "Subscribe first" : ""}
-                />
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Live Tracking Section */}
           <div id="dashboard-tracking" className="scroll-mt-24">
             <div className="space-y-3">
@@ -593,6 +541,58 @@ export default function DashboardPage() {
                     })}
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+
+          {/* Subscription Section */}
+          <div id="dashboard-subscription" className="scroll-mt-24">
+            <div className="space-y-3">
+              <h2 className="text-xl font-bold text-gray-900">Subscription</h2>
+              <div className="rounded-2xl border border-gray-200 bg-white/80 px-4 py-4">
+                <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(120px,150px))] justify-start">
+                <div className={isOnLeave ? 'opacity-70' : ''}>
+                  <ActionCard
+                    icon={Ticket}
+                    label="Take leave"
+                    description={isOnLeave ? 'You are on leave for the selected period.' : 'Release reserved seats for specific days.'}
+                    iconClassName={isOnLeave ? 'text-gray-400' : isSubscribed ? 'text-primary-600' : 'text-gray-400'}
+                    onClick={handleTakeLeave}
+                    disabled={!isSubscribed}
+                    title={!isSubscribed ? 'Subscribe first' : isOnLeave ? 'You are already on a leave' : ''}
+                  />
+                </div>
+
+                <ActionCard
+                  icon={Ticket}
+                  label="Update leave"
+                  description="Edit or cancel your leave periods."
+                  iconClassName={isSubscribed && hasAnyLeave ? 'text-primary-600' : 'text-gray-400'}
+                  onClick={openUpdateLeave}
+                  disabled={!isSubscribed || !hasAnyLeave}
+                  title={!isSubscribed ? 'Subscribe first' : !hasAnyLeave ? 'No leave to update' : ''}
+                />
+
+                <ActionCard
+                icon={Ticket}
+                label="Change pickup"
+                description="Update your pickup location."
+                iconClassName={isSubscribed ? "text-primary-600" : "text-gray-400"}
+                onClick={handleChangePickup}
+                disabled={!isSubscribed}
+                title={!isSubscribed ? "Subscribe first" : ""}
+                />
+
+                <ActionCard
+                icon={User}
+                label="Subscription details"
+                description="View your current plan and status."
+                iconClassName={isSubscribed ? "text-primary-600" : "text-gray-400"}
+                onClick={handleSubscriptionDetails}
+                disabled={!isSubscribed}
+                title={!isSubscribed ? "Subscribe first" : ""}
+                />
+                </div>
               </div>
             </div>
           </div>
