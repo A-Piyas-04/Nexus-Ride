@@ -443,99 +443,141 @@ export default function DashboardPage() {
           <div id="dashboard-tracking" className="scroll-mt-24">
             <div className="space-y-3">
               <h2 className="text-xl font-bold text-gray-900">Live tracking</h2>
-              <div className="rounded-2xl border border-gray-200 bg-white/80 px-4 py-4">
+              <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
                 {trackingLoading ? (
-                  <div className="text-sm text-gray-600">Loading live updates...</div>
+                  <div className="px-4 py-4 text-sm text-gray-600">Loading live updates...</div>
                 ) : trackingError ? (
-                  <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{trackingError}</div>
+                  <div className="px-4 py-4">
+                    <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{trackingError}</div>
+                  </div>
                 ) : tracking.length === 0 ? (
-                  <div className="text-sm text-gray-600">No active trips to track right now.</div>
+                  <div className="px-4 py-10 text-center">
+                    <div className="text-sm font-medium text-gray-900">No active trips right now</div>
+                    <div className="mt-1 text-xs text-gray-500">Live updates will appear automatically when your trip starts.</div>
+                  </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="divide-y divide-gray-100">
                     {tracking.map((t) => {
                       const eventAt = t.last_event_at || t.started_at;
                       const when = timeAgo(eventAt, nowMs);
 
-                      let statusLine = `Trip started ${when}.`;
-                      if (t.last_event_type === 'arrived' && t.last_stop_name) {
-                        statusLine = `Vehicle arrived at ${t.last_stop_name} ${when}.`;
-                      } else if (t.last_event_type === 'departed' && t.last_stop_name) {
-                        statusLine = `Departed from ${t.last_stop_name} ${when}.`;
-                      }
+                      const isArrived = t.last_event_type === 'arrived' && t.last_stop_name;
+                      const isDeparted = t.last_event_type === 'departed' && t.last_stop_name;
+                      const statusLabel = isArrived ? 'Arrived at' : isDeparted ? 'Departed from' : 'Trip started';
+                      const statusStopName = (isArrived || isDeparted) ? t.last_stop_name : '—';
+                      const statusChipClass = isArrived
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : isDeparted
+                          ? 'bg-amber-100 text-amber-800'
+                          : 'bg-blue-100 text-blue-800';
+                      const timeChipClass = isArrived
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        : isDeparted
+                          ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                          : 'bg-blue-50 text-blue-700 border border-blue-200';
 
                       const hasStops = Array.isArray(t.stops) && t.stops.length > 0;
 
                       return (
-                        <div key={t.trip_id} className="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <div className="min-w-0">
-                              <div className="font-semibold text-gray-900 truncate">{t.route_name || 'Route'}</div>
-                              <div className="text-xs text-gray-500">Direction: {t.direction}</div>
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {String(t.trip_date).slice(0, 10)} | {String(t.start_time).slice(0, 5)}
-                            </div>
-                          </div>
-                          <div className="mt-2 text-sm text-gray-700">{statusLine}</div>
-                          {hasStops && (
-                            <div className="mt-3">
-                              <div className="relative">
-                                <div className="absolute left-3 top-0 bottom-0 w-px bg-gray-200" />
-                                {t.stops
-                                  .slice()
-                                  .sort((a, b) => (a.sequence_number || 0) - (b.sequence_number || 0))
-                                  .map((stop, index, arr) => {
-                                    const prev = index > 0 ? arr[index - 1] : null;
-                                    const arrived = Boolean(stop.arrived_at);
-                                    const departed = Boolean(stop.departed_at);
-                                    const isCurrent =
-                                      t.last_event_type === 'arrived' && t.last_stop_name && t.last_stop_name === stop.stop_name;
+                        <div key={t.trip_id} className="p-4 sm:p-5">
+                          <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+                            <div className="p-4 sm:p-5">
+                              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                                <div className="min-w-0">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <div className="text-lg font-semibold text-gray-900 truncate">{t.route_name || 'Route'}</div>
+                                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${statusChipClass}`}>{statusLabel}</span>
+                                  </div>
+                                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                                    <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                                      Direction: {t.direction}
+                                    </span>
+                                    <span className="text-xs text-gray-500">
+                                      {String(t.trip_date).slice(0, 10)} • {String(t.start_time).slice(0, 5)}
+                                    </span>
+                                  </div>
+                                </div>
 
-                                    let dotClass = 'border-gray-300 bg-white';
-                                    if (departed || isCurrent) {
-                                      dotClass = 'border-emerald-500 bg-emerald-500';
-                                    } else if (arrived) {
-                                      dotClass = 'border-emerald-500 bg-white';
-                                    }
-
-                                    const topActive = prev && prev.departed_at;
-                                    const bottomActive = departed;
-
-                                    return (
-                                      <div key={`${stop.sequence_number}-${stop.stop_name}`} className="relative flex items-start">
-                                        <div className="flex flex-col items-center mr-3">
-                                          {index > 0 && (
-                                            <div
-                                              className={`h-4 w-px ${topActive ? 'bg-emerald-500' : 'bg-gray-200'}`}
-                                            />
-                                          )}
-                                          <div
-                                            className={`h-3 w-3 rounded-full border-2 ${dotClass}`}
-                                            style={{ marginTop: index === 0 ? 0 : 0 }}
-                                          />
-                                          {index < arr.length - 1 && (
-                                            <div
-                                              className={`h-4 w-px ${bottomActive ? 'bg-emerald-500' : 'bg-gray-200'}`}
-                                            />
-                                          )}
-                                        </div>
-                                        <div className="pb-3">
-                                          <div className="text-sm font-medium text-gray-900">{stop.stop_name}</div>
-                                          <div className="text-xs text-gray-500 space-x-2">
-                                            {stop.arrived_at && (
-                                              <span>Arrived: {formatTimeLocal(stop.arrived_at)}</span>
-                                            )}
-                                            {stop.departed_at && (
-                                              <span>Departed: {formatTimeLocal(stop.departed_at)}</span>
-                                            )}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
+                                <div className="sm:text-right">
+                                  <div className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">
+                                    {statusStopName}
+                                  </div>
+                                  <div className={`mt-2 inline-flex items-center rounded-full px-3 py-1 text-sm font-bold ${timeChipClass}`}>
+                                    {when}
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                          )}
+
+                            {hasStops && (
+                              <div className="border-t border-gray-100 bg-gray-50/70 p-4 sm:p-5">
+                                <div className="relative pl-1">
+                                  <div className="absolute left-3 top-2 bottom-2 w-px bg-gray-200" />
+                                  <div className="space-y-2">
+                                    {t.stops
+                                      .slice()
+                                      .sort((a, b) => (a.sequence_number || 0) - (b.sequence_number || 0))
+                                      .map((stop, index, arr) => {
+                                        const prev = index > 0 ? arr[index - 1] : null;
+                                        const arrived = Boolean(stop.arrived_at);
+                                        const departed = Boolean(stop.departed_at);
+                                        const isCurrent =
+                                          t.last_event_type === 'arrived' && t.last_stop_name && t.last_stop_name === stop.stop_name;
+
+                                        const topActive = prev && prev.departed_at;
+                                        const bottomActive = departed;
+                                        const dotClass = departed || isCurrent
+                                          ? 'border-emerald-500 bg-emerald-500'
+                                          : arrived
+                                            ? 'border-emerald-500 bg-white'
+                                            : 'border-gray-300 bg-white';
+                                        const rowClass = isCurrent
+                                          ? 'border-emerald-200 bg-emerald-50/60'
+                                          : departed
+                                            ? 'border-emerald-200 bg-white'
+                                            : arrived
+                                              ? 'border-gray-200 bg-white'
+                                              : 'border-gray-200 bg-white';
+
+                                        return (
+                                          <div key={`${stop.sequence_number}-${stop.stop_name}`} className={`relative flex gap-3 rounded-xl border ${rowClass} px-3 py-2`}>
+                                            <div className="relative z-10 flex flex-col items-center pt-1">
+                                              {index > 0 && (
+                                                <div className={`h-4 w-px ${topActive ? 'bg-emerald-500' : 'bg-gray-200'}`} />
+                                              )}
+                                              <div className={`h-4 w-4 rounded-full border-2 ${dotClass}`} />
+                                              {index < arr.length - 1 && (
+                                                <div className={`h-4 w-px ${bottomActive ? 'bg-emerald-500' : 'bg-gray-200'}`} />
+                                              )}
+                                            </div>
+
+                                            <div className="min-w-0 flex-1">
+                                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                                <div className={`truncate text-sm font-semibold ${isCurrent ? 'text-emerald-900' : 'text-gray-900'}`}>
+                                                  {stop.stop_name}
+                                                </div>
+                                                <div className="flex flex-wrap items-center gap-1">
+                                                  {stop.arrived_at && (
+                                                    <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">
+                                                      Arr {formatTimeLocal(stop.arrived_at)}
+                                                    </span>
+                                                  )}
+                                                  {stop.departed_at && (
+                                                    <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">
+                                                      Dep {formatTimeLocal(stop.departed_at)}
+                                                    </span>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       );
                     })}
