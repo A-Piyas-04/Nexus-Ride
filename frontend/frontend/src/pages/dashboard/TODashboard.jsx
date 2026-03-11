@@ -5,7 +5,6 @@ import {
   History,
   MapPin,
   Ticket,
-  XCircle,
   FileText,
   User,
   Calendar,
@@ -761,13 +760,6 @@ export default function TODashboard() {
                       description="Purchase a token for a one-time ride."
                       iconClassName="text-primary-600"
                       onClick={() => navigate('/buy-token')}
-                    />
-                    <ActionCard
-                      icon={XCircle}
-                      label="Cancel token"
-                      description="Cancel an existing token and free the seat."
-                      iconClassName="text-red-600"
-                      onClick={() => window.alert('Cancel token')}
                     />
                     <ActionCard
                       icon={History}

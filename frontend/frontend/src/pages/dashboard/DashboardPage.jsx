@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { History, Ticket, XCircle, User, Briefcase, Car } from 'lucide-react';
+import { History, Ticket, User, Briefcase, Car } from 'lucide-react';
 import axios from 'axios';
 
 import { Button } from '../../components/ui/Button';
@@ -231,7 +231,6 @@ export default function DashboardPage() {
 
   const handleSeatAvailability = () => navigate('/seat-availability');
   const handleBuyToken = () => navigate('/buy-token');
-  const handleCancelToken = () => window.alert('Cancel token');
   const handleTokenHistory = () => navigate('/token-history');
   
   const handleOpenSubscribe = () => setSubscribeOpen(true);
@@ -672,14 +671,6 @@ export default function DashboardPage() {
                 description="Purchase a token for a one-time ride."
                 iconClassName="text-primary-600"
                 onClick={handleBuyToken}
-                />
-
-                <ActionCard
-                icon={XCircle}
-                label="Cancel token"
-                description="Cancel an existing token and free the seat."
-                iconClassName="text-red-600"
-                onClick={handleCancelToken}
                 />
 
                 <ActionCard
