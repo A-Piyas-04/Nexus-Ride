@@ -12,3 +12,7 @@ email-validator
 python-dotenv
 apscheduler
 Pillow
+
+# Unit testing
+pytest
+pytest-asyncio
