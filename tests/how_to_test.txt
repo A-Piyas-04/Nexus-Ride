@@ -23,3 +23,17 @@ How to Run Tests
 
    # Test Subscription Retrieval
    python tests/test_subscription_get.py
+
+
+
+Unit Testing ---------------------------->
+python :
+.\venv\Scripts\activate
+pytest tests/unit-testing -v
+
+pytest tests/unit-testing/irfan -v
+pytest tests/unit-testing/nafiz -v
+
+frontend :
+cd frontend/frontend
+npm test

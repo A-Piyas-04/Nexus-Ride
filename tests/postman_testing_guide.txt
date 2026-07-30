@@ -1,0 +1,384 @@
+================================================================================
+NexusRide - Postman API Testing Guide
+================================================================================
+
+Base URL:  http://127.0.0.1:8000
+Swagger:   http://127.0.0.1:8000/docs
+
+
+--------------------------------------------------------------------------------
+PART A - SETUP STEPS (do this first)
+--------------------------------------------------------------------------------
+
+1. Start the backend server
+   - Open a terminal in the project folder: E:\Projects\NexusRide
+   - Activate venv:
+       .\venv\Scripts\activate
+   - Run:
+       uvicorn app.main:app --reload --port 8000
+   - You should see something like: Uvicorn running on http://127.0.0.1:8000
+
+2. Open Postman
+   - Download/open Postman desktop app (or use Postman web)
+
+3. Create a new Collection (optional but helpful)
+   - Click "Collections" -> "New Collection"
+   - Name it: NexusRide API
+
+4. Create an Environment (recommended)
+   - Click "Environments" -> "Create Environment"
+   - Name it: NexusRide Local
+   - Add these variables:
+       base_url   = http://127.0.0.1:8000
+       token      =   (leave empty for now)
+   - Save and select this environment at the top-right of Postman
+
+5. How to send a request in Postman
+   - Method: choose GET / POST / PUT / PATCH / DELETE
+   - URL: {{base_url}}/auth/login   (or full URL http://127.0.0.1:8000/auth/login)
+   - Body (for POST/PUT/PATCH):
+       -> Body tab
+       -> select "raw"
+       -> select "JSON" from dropdown
+       -> paste the JSON body
+   - Auth (for protected APIs):
+       -> Authorization tab
+       -> Type: Bearer Token
+       -> Token: {{token}}
+       OR Headers tab:
+       Key: Authorization
+       Value: Bearer {{token}}
+   - Click Send
+   - Check Status Code and Response body at the bottom
+
+6. After Login, save the token
+   - From login response, copy "access_token"
+   - Paste it into your environment variable "token"
+   - Now other requests can use Bearer {{token}}
+
+
+--------------------------------------------------------------------------------
+PART B - 10 POSTMAN TEST EXAMPLES
+--------------------------------------------------------------------------------
+
+IMPORTANT NOTES:
+- Staff email MUST end with @iut-dhaka.edu
+- Password should be at least 8 characters
+- For Examples 3-10, first do Example 2 (Login) and save the token
+- Use a NEW email each time you signup (or you will get "Email already registered")
+
+
+================================================================================
+EXAMPLE 1 - Staff Signup
+================================================================================
+Method : POST
+URL    : http://127.0.0.1:8000/auth/signup
+Auth   : None
+Headers:
+  Content-Type: application/json
+
+Body (raw JSON):
+{
+  "email": "demo.user01@iut-dhaka.edu",
+  "password": "password123",
+  "full_name": "Demo User"
+}
+
+Expected:
+- Status: 200
+- Response has message like "Signup successful"
+
+
+================================================================================
+EXAMPLE 2 - Staff Login (get JWT token)
+================================================================================
+Method : POST
+URL    : http://127.0.0.1:8000/auth/login
+Auth   : None
+Headers:
+  Content-Type: application/json
+
+Body (raw JSON):
+{
+  "email": "demo.user01@iut-dhaka.edu",
+  "password": "password123"
+}
+
+Expected:
+- Status: 200
+- Response like:
+  {
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+
+Next step:
+- Copy access_token
+- Put it in Postman environment variable "token"
+
+
+================================================================================
+EXAMPLE 3 - Get Current User (/auth/me)
+================================================================================
+Method : GET
+URL    : http://127.0.0.1:8000/auth/me
+Auth   : Bearer Token = {{token}}
+Body   : None
+
+Expected:
+- Status: 200
+- Response includes id, email, full_name, user_type, roles
+
+
+================================================================================
+EXAMPLE 4 - Transport Officer Login
+================================================================================
+Method : POST
+URL    : http://127.0.0.1:8000/auth/login
+Auth   : None
+Headers:
+  Content-Type: application/json
+
+Body (raw JSON):
+{
+  "email": "transportofficer@iut-dhaka.edu",
+  "password": "transportofficer@iut-dhaka.edu"
+}
+
+Expected:
+- Status: 200
+- You get an access_token for the Transport Officer account
+
+Tip:
+- Save this in a second variable like "to_token" if you want
+- Use TO token for approve/decline subscription and manage requests
+
+
+================================================================================
+EXAMPLE 5 - Get All Routes
+================================================================================
+Method : GET
+URL    : http://127.0.0.1:8000/routes
+Auth   : None (no token needed)
+Body   : None
+
+Expected:
+- Status: 200
+- A list of routes (each route also includes its stops)
+- Copy one route "id"
+- You can also copy a stop "id" from the nested stops here
+  (or use Example 6)
+
+
+================================================================================
+EXAMPLE 6 - Get Stops for One Route
+================================================================================
+Method : GET
+URL    : http://127.0.0.1:8000/stops/{route_id}/stops
+
+Replace {route_id} with a real route id from Example 5.
+Example:
+  http://127.0.0.1:8000/stops/11111111-2222-3333-4444-555555555555/stops
+
+Auth : None (no token needed)
+Body : None
+
+Expected:
+- Status: 200
+- List of stops for that route
+- Copy one stop id (use as pickup_stop_id in Example 9)
+
+
+================================================================================
+EXAMPLE 7 - Create Subscription
+================================================================================
+Method : POST
+URL    : http://127.0.0.1:8000/subscription/
+Auth   : Bearer Token = {{token}}   (staff token from Example 2)
+Headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+
+Body (raw JSON):
+{
+  "start_month": "01",
+  "end_month": "03",
+  "year": 2026,
+  "stop_name": "Tongi Station Road"
+}
+
+Expected:
+- Status: 200
+- Response includes subscription fields
+- status may be like "PAYMENT_PENDING"
+
+If you get 400:
+- User may already have a subscription
+- Or stop_name may not match seeded stop names (check routes/stops)
+
+
+================================================================================
+EXAMPLE 8 - Get My Subscription
+================================================================================
+Method : GET
+URL    : http://127.0.0.1:8000/subscription/
+Auth   : Bearer Token = {{token}}
+Body   : None
+
+Expected:
+- Status: 200
+- Your subscription details (stop_name, status, dates, etc.)
+
+
+================================================================================
+EXAMPLE 9 - Buy Token (start token payment)
+================================================================================
+Method : POST
+URL    : http://127.0.0.1:8000/token/buy
+Auth   : Bearer Token = {{token}}
+Headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+
+Body (raw JSON):
+{
+  "route_id": "PASTE_ROUTE_ID_HERE",
+  "pickup_stop_id": "PASTE_STOP_ID_HERE",
+  "travel_date": "2026-08-10",
+  "direction": "UP",
+  "payment_method": "BKASH",
+  "consumer_email": "demo.user01@iut-dhaka.edu"
+}
+
+How to fill:
+1. Get route_id from Example 5
+2. Get pickup_stop_id from Example 6
+3. travel_date must be today or a future date (YYYY-MM-DD)
+4. direction is usually "UP" or "DOWN"
+5. payment_method can be: BKASH, NAGAD, or UPAY
+
+Expected:
+- Status: 200
+- Payment object with status "INITIATED"
+- Often includes payment_url and payment id
+
+
+================================================================================
+EXAMPLE 10 - Confirm Payment
+================================================================================
+Method : POST
+URL    : http://127.0.0.1:8000/payments/{payment_id}/confirm
+
+Replace {payment_id} with the "id" from Example 9 response.
+Example:
+  http://127.0.0.1:8000/payments/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee/confirm
+
+Auth   : Bearer Token = {{token}}
+Headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+
+Body (raw JSON):
+{
+  "external_txn_id": "TXN-POSTMAN-001",
+  "status": "SUCCESS"
+}
+
+Expected:
+- Status: 200
+- Payment status becomes SUCCESS
+- For token buy, token should be created after success
+
+
+--------------------------------------------------------------------------------
+BONUS QUICK CHECKS (optional)
+--------------------------------------------------------------------------------
+
+A) Get my tokens
+Method : GET
+URL    : http://127.0.0.1:8000/token/my-tokens
+Auth   : Bearer {{token}}
+
+B) Get notifications
+Method : GET
+URL    : http://127.0.0.1:8000/notifications/
+Auth   : Bearer {{token}}
+
+C) Get staff profile
+Method : GET
+URL    : http://127.0.0.1:8000/staff/profile/me
+Auth   : Bearer {{token}}
+
+D) List vehicles
+Method : GET
+URL    : http://127.0.0.1:8000/vehicles
+Auth   : Bearer {{token}}   (may require TO/staff role)
+
+
+--------------------------------------------------------------------------------
+PART C - COMMON MISTAKES
+--------------------------------------------------------------------------------
+
+1. Wrong URL for /auth/me
+   Wrong: GET /auth/login
+   Right: GET /auth/me
+
+2. Forgot "Bearer " before token
+   Wrong: Authorization: eyJhbGci...
+   Right: Authorization: Bearer eyJhbGci...
+
+3. Wrong Content-Type
+   For JSON body, always use Body -> raw -> JSON
+
+4. Email not @iut-dhaka.edu
+   Signup/login staff email must end with @iut-dhaka.edu
+
+5. Using old/expired token
+   Login again and update {{token}}
+
+6. travel_date in the past
+   Token buy will fail if date is before today
+
+7. Server not running
+   If Postman shows "Could not get any response", start uvicorn first
+
+
+--------------------------------------------------------------------------------
+PART D - SUGGESTED ORDER TO TEST
+--------------------------------------------------------------------------------
+
+1) Example 1   POST /auth/signup
+2) Example 2   POST /auth/login           -> save token
+3) Example 3   GET  /auth/me
+4) Example 4   POST /auth/login           (TO account, optional)
+5) Example 5   GET  /routes
+6) Example 6   GET  /stops/{route_id}/stops
+7) Example 7   POST /subscription/
+8) Example 8   GET  /subscription/
+9) Example 9   POST /token/buy
+10) Example 10 POST /payments/{payment_id}/confirm
+11) Bonus A    GET  /token/my-tokens
+
+
+--------------------------------------------------------------------------------
+PART E - QUICK URL CHECKLIST (correct paths)
+--------------------------------------------------------------------------------
+
+POST   /auth/signup
+POST   /auth/login
+GET    /auth/me
+GET    /routes
+GET    /stops/{route_id}/stops
+POST   /subscription/
+GET    /subscription/
+POST   /token/buy
+GET    /token/my-tokens
+POST   /payments/{payment_id}/confirm
+GET    /payments/me
+GET    /notifications/
+GET    /staff/profile/me
+GET    /vehicles
+
+
+================================================================================
+End of Postman Testing Guide
+================================================================================
